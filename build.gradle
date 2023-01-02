@@ -1,7 +1,7 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.5'
+    id 'org.springframework.boot' version '3.0.1'
     id 'io.spring.dependency-management' version '1.1.0'
-    id 'io.freefair.lombok' version '6.5.1'
+    id 'io.freefair.lombok' version '6.6.1'
     id 'java'
     id 'jacoco'
 }
@@ -36,7 +36,7 @@ dependencies {
 
 tasks.named("jar") {enabled = false }
 
-tasks.withType(Test) { useJUnitPlatform() }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
 test {
     reports {
         junitXml.required = false

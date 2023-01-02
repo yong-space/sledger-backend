@@ -1,14 +1,13 @@
 package tech.sledger;
 
+import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.user.SledgerUser;
-import javax.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,8 +21,6 @@ public class AccountTests extends BaseTest {
 
     @PostConstruct
     public void init() {
-        userConfig.setupUsers();
-
         accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
         accountIssuer = accountIssuerService.add(accountIssuer);
@@ -35,7 +32,7 @@ public class AccountTests extends BaseTest {
         AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123);
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isBadRequest())
-            .andExpect(status().reason("No such issuer"));
+            .andExpect(jsonPath("$.detail").value("No such issuer"));
     }
 
     @Test
@@ -78,7 +75,7 @@ public class AccountTests extends BaseTest {
 
         mvc.perform(delete("/api/account/" + account.getId()))
             .andExpect(status().isUnauthorized())
-            .andExpect(status().reason("You are not the owner of this account"));
+            .andExpect(jsonPath("$.detail").value("You are not the owner of this account"));
     }
 
     @Test
@@ -105,6 +102,6 @@ public class AccountTests extends BaseTest {
     public void deleteMissingAccount() throws Exception {
         mvc.perform(delete("/api/account/99999"))
             .andExpect(status().isNotFound())
-            .andExpect(status().reason("No such account id"));
+            .andExpect(jsonPath("$.detail").value("No such account id"));
     }
 }

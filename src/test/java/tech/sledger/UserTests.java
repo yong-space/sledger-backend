@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static com.mongodb.assertions.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 
@@ -24,7 +25,7 @@ public class UserTests extends BaseTest {
         Registration registration = new Registration("u0", "p1", "p2");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
-            .andExpect(status().reason("Passwords do not match"));
+            .andExpect(jsonPath("$.detail").value("Passwords do not match"));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class UserTests extends BaseTest {
             .andExpect(status().isOk());
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
-            .andExpect(status().reason("Username already exists"));
+            .andExpect(jsonPath("$.detail").value("Username already exists"));
     }
 
     @Test

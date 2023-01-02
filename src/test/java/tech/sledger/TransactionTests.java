@@ -1,17 +1,18 @@
 package tech.sledger;
 
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CreditTransaction;
-import tech.sledger.model.user.SledgerUser;
-import javax.annotation.PostConstruct;
+import tech.sledger.service.UserService;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,12 +22,12 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class TransactionTests extends BaseTest {
+    @Autowired
+    private UserService userService;
     private long accountId;
 
     @PostConstruct
     public void init() {
-        List<SledgerUser> users = userConfig.setupUsers();
-
         AccountIssuer accountIssuerA = new AccountIssuer();
         accountIssuerA.setName("a");
         accountIssuerA = accountIssuerService.add(accountIssuerA);
@@ -34,7 +35,7 @@ public class TransactionTests extends BaseTest {
         Account cashAccount = Account.builder()
             .issuer(accountIssuerA)
             .name("My Cash Account")
-            .owner(users.get(0))
+            .owner(userService.get("basic-user@company.com"))
             .type(AccountType.Cash)
             .build();
         accountId = accountService.add(cashAccount).getId();
@@ -52,7 +53,7 @@ public class TransactionTests extends BaseTest {
 
         mvc.perform(request(POST, "/api/transaction", cashTx))
             .andExpect(status().isNotFound())
-            .andExpect(status().reason("No such account id"));
+            .andExpect(jsonPath("$.detail").value("No such account id"));
     }
 
     @Test

@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.endpoints.AdminEndpoints;
 import tech.sledger.model.account.AccountIssuer;
-import javax.annotation.PostConstruct;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,11 +13,6 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class AdminTests extends BaseTest {
-    @PostConstruct
-    public void init() {
-        userConfig.setupUsers();
-    }
-
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addIssuerForbidden() throws Exception {
@@ -96,6 +90,6 @@ public class AdminTests extends BaseTest {
     public void deleteMissingIssuer() throws Exception {
         mvc.perform(delete("/api/admin/account-issuer/99999"))
             .andExpect(status().isNotFound())
-            .andExpect(status().reason("No such account issuer id"));
+            .andExpect(jsonPath("$.detail").value("No such account issuer id"));
     }
 }

@@ -2,14 +2,12 @@ package tech.sledger.endpoints;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.SledgerUser;
@@ -35,11 +33,11 @@ public class PublicEndpoints {
         if (!registration.getPassword().trim().equals(registration.getPassword2().trim())) {
             throw new ResponseStatusException(BAD_REQUEST, "Passwords do not match");
         }
-        SledgerUser user = SledgerUser.builder()
+        SledgerUser user = userService.add(SledgerUser.builder()
             .username(registration.getUsername().trim().toLowerCase())
             .password(registration.getPassword().trim())
-            .build();
-        userService.add(user);
+            .build());
+        log.info("New Registration: {}", user);
     }
 
     @PostMapping("/authenticate")
@@ -55,5 +53,10 @@ public class PublicEndpoints {
         } catch (AuthenticationException e) {
             throw new ResponseStatusException(UNAUTHORIZED, "Invalid Credentials");
         }
+    }
+
+    @GetMapping("/invalid")
+    public String invalid() {
+        throw new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT);
     }
 }
