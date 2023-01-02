@@ -1,0 +1,19 @@
+spring:
+  jmx.enabled: false
+  main:
+    banner-mode: off
+    lazy-initialization: true
+  data.mongodb.uri: mongodb://mongodb/sledger
+
+server.error.include-message: always
+
+sledger:
+  secret-key: x
+
+logging.level:
+  org.springframework:
+    boot: ERROR
+    data: ERROR
+    context: ERROR
+  org.apache: ERROR
+  org.mongodb: ERROR
