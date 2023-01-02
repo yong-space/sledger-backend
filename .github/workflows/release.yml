@@ -19,10 +19,6 @@ jobs:
       with:
         arguments: build
 
-    - uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-
     - uses: docker/metadata-action@v4
       id: meta
       with:
