@@ -1,16 +1,13 @@
 package tech.sledger;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
-import tech.sledger.endpoints.UserEndpoints;
+import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
-import tech.sledger.repo.AccountIssuerRepo;
-import tech.sledger.repo.AccountRepo;
 import javax.annotation.PostConstruct;
-import static com.mongodb.assertions.Assertions.assertNotNull;
+import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,13 +16,6 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class AccountTests extends BaseTest {
-    @Autowired
-    public UserConfig userConfig;
-    @Autowired
-    public AccountIssuerRepo accountIssuerRepo;
-    @Autowired
-    public AccountRepo accountRepo;
-
     @PostConstruct
     public void init() {
         userConfig.setupUsers();
@@ -39,7 +29,7 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addAccountBadIssuer() throws Exception {
-        UserEndpoints.NewAccount account = new UserEndpoints.NewAccount("a", AccountType.Cash, 123);
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123);
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isBadRequest())
             .andExpect(status().reason("No such issuer"));
@@ -48,24 +38,29 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addListDeleteAccount() throws Exception {
-        UserEndpoints.NewAccount account = new UserEndpoints.NewAccount("a", AccountType.Cash, 1);
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, 1);
+        AtomicLong id1 = new AtomicLong();
+        AtomicLong id2 = new AtomicLong();
         mvc.perform(request(POST, "/api/account", account))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andDo(res -> id1.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
         mvc.perform(request(POST, "/api/account", account))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andDo(res -> id2.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
         mvc.perform(get("/api/account"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(2));
-        mvc.perform(delete("/api/account/1"))
+            .andExpect(jsonPath("$.[?(@.id == " + id1.get() + ")]").exists())
+            .andExpect(jsonPath("$.[?(@.id == " + id2.get() + ")]").exists());
+        mvc.perform(delete("/api/account/" + id1.get()))
             .andExpect(status().isOk());
-        mvc.perform(delete("/api/account/2"))
+        mvc.perform(delete("/api/account/" + id2.get()))
             .andExpect(status().isOk());
     }
 
     @Test
     @WithUserDetails("basic-user@company.com")
     public void updateAccount() throws Exception {
-        UserEndpoints.NewAccount newAccount = new UserEndpoints.NewAccount("a", AccountType.Cash, 1);
+        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, 1);
         mvc.perform(request(POST, "/api/account", newAccount))
             .andExpect(status().isOk());
         Account account = accountRepo.findById(1L).orElse(null);

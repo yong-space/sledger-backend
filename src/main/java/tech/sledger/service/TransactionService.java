@@ -19,6 +19,10 @@ public class TransactionService {
         return txRepo.save(transaction);
     }
 
+    public Transaction get(long id) {
+        return txRepo.findById(id).orElse(null);
+    }
+
     public List<Transaction> list(Account account) {
         return txRepo.findAllByAccountOrderByDate(account);
     }
@@ -29,9 +33,5 @@ public class TransactionService {
 
     public void delete(Transaction transaction) {
         txRepo.delete(transaction);
-    }
-
-    public void deleteAll() {
-        txRepo.deleteAll();
     }
 }

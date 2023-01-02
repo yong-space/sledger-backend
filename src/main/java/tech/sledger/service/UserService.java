@@ -44,20 +44,16 @@ public class UserService {
         userRepo.delete(user);
     }
 
-    public void authorise(Authentication auth, Account account) {
-        SledgerUser user = (SledgerUser) auth.getPrincipal();
-        SledgerUser owner = accountService.get(account.getId()).getOwner();
-        if (user.getId() != owner.getId()) {
-            throw new ResponseStatusException(UNAUTHORIZED, "You are not the owner of this account");
-        }
-    }
-
     public Account authorise(Authentication auth, long accountId) {
         Account account = accountService.get(accountId);
         if (account == null) {
             throw new ResponseStatusException(NOT_FOUND, "No such account id");
         }
-        authorise(auth, account);
+        SledgerUser user = (SledgerUser) auth.getPrincipal();
+        SledgerUser owner = account.getOwner();
+        if (user.getId() != owner.getId()) {
+            throw new ResponseStatusException(UNAUTHORIZED, "You are not the owner of this account");
+        }
         return account;
     }
 }

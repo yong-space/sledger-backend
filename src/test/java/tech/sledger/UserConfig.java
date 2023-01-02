@@ -12,7 +12,7 @@ public class UserConfig {
     @Autowired
     public SledgerUserRepo userRepo;
 
-    public void setupUsers() {
+    public List<SledgerUser> setupUsers() {
         SledgerUser basicUser = SledgerUser.builder()
             .id(12345L)
             .username("basic-user@company.com")
@@ -25,6 +25,6 @@ public class UserConfig {
             .password("admin-user")
             .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
             .build();
-        userRepo.saveAll(List.of(basicUser, adminUser));
+        return userRepo.saveAll(List.of(basicUser, adminUser));
     }
 }

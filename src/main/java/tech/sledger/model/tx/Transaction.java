@@ -1,5 +1,7 @@
 package tech.sledger.model.tx;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -8,11 +10,18 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import tech.sledger.model.account.Account;
 import java.math.BigDecimal;
 import java.time.Instant;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
-public abstract class Transaction {
+@JsonTypeInfo(use = NAME, include = PROPERTY)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = CashTransaction.class, name = "cash"),
+    @JsonSubTypes.Type(value = CreditTransaction.class, name = "credit")
+})
+public class Transaction {
     @Id
     private long id;
     @DBRef

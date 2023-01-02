@@ -13,25 +13,20 @@ import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
 import java.util.List;
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
-public class UserEndpoints {
+@RequestMapping("/api/account")
+public class AccountEndpoints {
     private final AccountIssuerService accountIssuerService;
     private final AccountService accountService;
     private final UserService userService;
 
     public record NewAccount(String name, AccountType type, long issuerId) {}
 
-    @GetMapping("/account-issuer")
-    public List<AccountIssuer> listAccountIssuers() {
-        return accountIssuerService.list();
-    }
-
-    @PostMapping("/account")
+    @PostMapping
     public Account addAccountIssuer(Authentication auth, @RequestBody NewAccount newAccount) {
         SledgerUser user = (SledgerUser) auth.getPrincipal();
 
@@ -49,19 +44,19 @@ public class UserEndpoints {
         return accountService.add(account);
     }
 
-    @PutMapping("/account")
+    @PutMapping
     public Account updateAccount(Authentication auth, @RequestBody Account account) {
-        userService.authorise(auth, account);
+        userService.authorise(auth, account.getId());
         return accountService.save(account);
     }
 
-    @DeleteMapping("/account/{accountId}")
+    @DeleteMapping("/{accountId}")
     public void deleteAccount(Authentication auth, @PathVariable long accountId) {
         Account account = userService.authorise(auth, accountId);
         accountService.delete(account);
     }
 
-    @GetMapping("/account")
+    @GetMapping
     public List<Account> listAccounts(Authentication auth) {
         return accountService.list((SledgerUser) auth.getPrincipal());
     }

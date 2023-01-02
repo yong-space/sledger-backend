@@ -16,7 +16,7 @@ logging.level:
       boot: ERROR
       data: ERROR
       context: ERROR
-      security: DEBUG
+      security: ERROR
     apache: ERROR
     mongodb: ERROR
     testcontainers: ERROR

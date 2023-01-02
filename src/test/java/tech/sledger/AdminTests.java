@@ -1,11 +1,9 @@
 package tech.sledger;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.endpoints.AdminEndpoints;
 import tech.sledger.model.account.AccountIssuer;
-import tech.sledger.repo.AccountIssuerRepo;
 import javax.annotation.PostConstruct;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -16,11 +14,6 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class AdminTests extends BaseTest {
-    @Autowired
-    public UserConfig userConfig;
-    @Autowired
-    public AccountIssuerRepo accountIssuerRepo;
-
     @PostConstruct
     public void init() {
         userConfig.setupUsers();
