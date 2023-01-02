@@ -1,14 +1,12 @@
 package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import tech.sledger.model.user.SledgerUser;
 import tech.sledger.repo.SledgerUserRepo;
 
-@Profile("!in-memory-uds")
 @Service
 @RequiredArgsConstructor
 public class UserDetailService implements UserDetailsService {

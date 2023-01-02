@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.sledger.service.UserService;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 @SpringBootTest
 @Testcontainers
@@ -29,6 +29,8 @@ public class BaseTest {
     @Autowired
     public UserService userService;
 
+    enum SubmitMethod { PUT, POST }
+
     @DynamicPropertySource
     @SuppressWarnings("resource")
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
@@ -37,10 +39,13 @@ public class BaseTest {
         registry.add("spring.data.mongodb.uri", container::getReplicaSetUrl);
     }
 
-    public MockHttpServletRequestBuilder postRequest(String uri, Object payload) {
+    public MockHttpServletRequestBuilder request(SubmitMethod method, String uri, Object payload) {
         try {
-            return post(uri)
-                .contentType(MediaType.APPLICATION_JSON)
+            MockHttpServletRequestBuilder builder = switch (method) {
+                case PUT -> put(uri);
+                case POST -> post(uri);
+            };
+            return builder.contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException e) {
             return null;

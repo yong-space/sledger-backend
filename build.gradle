@@ -49,7 +49,7 @@ jacocoTestReport {
     dependsOn test
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [ '**/tech/sledger/model/**' ])
+            fileTree(dir: it, exclude: [ 'tech/sledger/*.class', 'tech/sledger/model/**' ])
         })
     }
     reports {
