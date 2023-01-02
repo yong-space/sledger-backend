@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.SledgerUser;
+import tech.sledger.model.user.SledgerUser;
 import tech.sledger.repo.SledgerUserRepo;
 import java.util.List;
 
@@ -24,7 +24,12 @@ public class UserService implements UserDetailsService {
         return user;
     }
 
-    public SledgerUser add(SledgerUser user) {
+    public SledgerUser add(SledgerUser user) throws Exception {
+        SledgerUser existing = userRepo.findFirstByUsername(user.getUsername());
+        if (existing != null) {
+            throw new Exception("Username already exists");
+        }
+
         SledgerUser previous = userRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
         user.setId(id);

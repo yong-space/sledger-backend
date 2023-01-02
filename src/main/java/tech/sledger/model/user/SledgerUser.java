@@ -1,4 +1,4 @@
-package tech.sledger.model;
+package tech.sledger.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;

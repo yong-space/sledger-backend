@@ -1,7 +1,7 @@
 package tech.sledger.repo;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
-import tech.sledger.model.SledgerUser;
+import tech.sledger.model.user.SledgerUser;
 import tech.sledger.model.account.Account;
 import java.util.List;
 

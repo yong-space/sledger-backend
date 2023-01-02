@@ -2,14 +2,12 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import tech.sledger.model.SledgerUser;
-import tech.sledger.model.account.Account;
-import tech.sledger.model.account.AccountType;
-import tech.sledger.model.tx.CashTransaction;
-import java.math.BigDecimal;
-import java.time.Instant;
+import org.springframework.web.server.ResponseStatusException;
+import tech.sledger.model.user.SledgerUser;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @RestController
@@ -19,31 +17,21 @@ public class WebService {
     private final AccountService accountService;
     private final TransactionService txService;
 
-    @GetMapping("/api/public/hello")
-    public String hello() {
-        userService.deleteAll();
-        accountService.deleteAll();
-        txService.deleteAll();
+    public record Registration(String username, String password, String password2) {}
 
-        SledgerUser user = userService.add(SledgerUser.builder()
-            .username("abc@def.com")
-            .password("hello")
-            .build());
-
-        Account cashAccount = accountService.add(Account.builder()
-            .owner(user)
-            .type(AccountType.Cash)
-            .name("Meh Meh Account")
-            .build());
-
-        CashTransaction cashTx = txService.add(CashTransaction.builder()
-            .date(Instant.now())
-            .account(cashAccount)
-            .amount(BigDecimal.valueOf(200L))
-            .category("Meh Meh")
-            .remarks("Hello World")
-            .build());
-
-        return "Hello";
+    @PostMapping("/api/public/register")
+    public void register(@RequestBody Registration registration) {
+        if (!registration.password.trim().equals(registration.password2.trim())) {
+            throw new ResponseStatusException(BAD_REQUEST, "Passwords do not match");
+        }
+        SledgerUser user = SledgerUser.builder()
+            .username(registration.username.trim().toLowerCase())
+            .password(registration.password.trim())
+            .build();
+        try {
+            userService.add(user);
+        } catch (Exception e) {
+            throw new ResponseStatusException(BAD_REQUEST, e.getMessage());
+        }
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tech.sledger.model.SledgerUser;
+import tech.sledger.model.user.SledgerUser;
 import tech.sledger.service.UserService;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;

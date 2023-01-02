@@ -3,16 +3,17 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.14.RELEASE'
     id 'io.freefair.lombok' version '6.5.1'
     id 'java'
+    id 'jacoco'
 }
-
-group = 'tech.sledger'
-version = '1.0.0'
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
+
+group = 'tech.sledger'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
@@ -24,11 +25,34 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.bouncycastle:bcprov-jdk18on:1.72'
     implementation 'com.auth0:java-jwt:4.0.0'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
 
-tasks.named('test') {
-    useJUnitPlatform()
+    def testContainersVersion = '1.17.3'
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
+    testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+    testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 }
 
 tasks.named("jar") {enabled = false }
+
+tasks.withType(Test) { useJUnitPlatform() }
+test {
+    reports {
+        junitXml.enabled = false
+        html.enabled = false
+    }
+    finalizedBy jacocoTestReport
+    jacoco { excludes = [ 'tech.sledger.model.*' ] }
+}
+jacocoTestReport {
+    dependsOn test
+    afterEvaluate {
+        getClassDirectories().setFrom(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [ '**/tech/sledger/model/**' ])
+        })
+    }
+    reports {
+        xml.required = true
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}

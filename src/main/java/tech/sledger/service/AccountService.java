@@ -2,7 +2,7 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.SledgerUser;
+import tech.sledger.model.user.SledgerUser;
 import tech.sledger.model.account.Account;
 import tech.sledger.repo.AccountRepo;
 import java.util.List;
