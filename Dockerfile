@@ -1,4 +1,4 @@
-FROM openjdk:17-slim-bullseye
+FROM amazoncorretto:17
 WORKDIR /build
 COPY ./build/libs/*.jar app.jar
 RUN jar -xf app.jar && jdeps -q \
@@ -23,4 +23,4 @@ FROM gcr.io/distroless/java-base-debian11
 COPY --from=0 /jre /jre
 COPY --from=0 /build/BOOT-INF/lib /lib
 COPY --from=0 /app .
-ENTRYPOINT [ "/jre/bin/java", "-cp", ".:/lib/*", "tech.sledger.Sledger" ]
+ENTRYPOINT [ "/jre/bin/java", "-cp", ".:/lib/*", "tech.sledger.Sledger", "--spring.profiles.active=prod" ]
