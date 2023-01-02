@@ -39,11 +39,7 @@ public class PublicEndpoints {
             .username(registration.getUsername().trim().toLowerCase())
             .password(registration.getPassword().trim())
             .build();
-        try {
-            userService.add(user);
-        } catch (Exception e) {
-            throw new ResponseStatusException(BAD_REQUEST, e.getMessage());
-        }
+        userService.add(user);
     }
 
     @PostMapping("/authenticate")

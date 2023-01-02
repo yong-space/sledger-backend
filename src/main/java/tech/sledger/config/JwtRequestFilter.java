@@ -1,7 +1,6 @@
 package tech.sledger.config;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,8 +26,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(
         HttpServletRequest request,
-        @NonNull HttpServletResponse response,
-        @NonNull FilterChain chain
+        HttpServletResponse response,
+        FilterChain chain
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 

@@ -7,6 +7,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
+import tech.sledger.model.user.SledgerUser;
+import java.util.concurrent.atomic.AtomicReference;
+import static com.mongodb.assertions.Assertions.assertNotNull;
+import static com.mongodb.assertions.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 
@@ -27,13 +32,29 @@ public class UserTests extends BaseTest {
         Registration registration = new Registration("u1", "p1", "p1");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
-        UserDetails u = userDetailsService.loadUserByUsername("u1");
-        Assertions.assertTrue(passwordEncoder.matches("p1", u.getPassword()));
+        UserDetails user = userDetailsService.loadUserByUsername("u1");
+        Assertions.assertTrue(passwordEncoder.matches("p1", user.getPassword()));
+
+        SledgerUser u1 = userService.list().stream().filter(u -> u.getUsername().equals("u1")).findFirst().orElse(null);
+        assertNotNull(u1);
+    }
+
+    @Test
+    public void editDeleteUser() throws Exception {
+        SledgerUser user = SledgerUser.builder().username("u3").password("abc").displayName("Jake").build();
+        userService.add(user);
+
+        user.setDisplayName("Tom");
+        userService.save(user);
+        assertTrue(userService.get("u3").getDisplayName().equals("Tom"));
+
+        userService.delete(user);
+        assertTrue(userService.get("u3") == null);
     }
 
     @Test
     public void registerUsernameExists() throws Exception {
-        Registration registration = new Registration("u2", "p1", "p1");
+        Registration registration = new Registration("u3", "p1", "p1");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
         mvc.perform(request(POST, "/api/public/register", registration))
@@ -54,8 +75,26 @@ public class UserTests extends BaseTest {
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
 
+        AtomicReference<String> jwt = new AtomicReference<>();
+
         PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials("aaa", "bbb");
         mvc.perform(request(POST, "/api/public/authenticate", credentials))
+            .andExpect(status().isOk())
+            .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), PublicEndpoints.TokenResponse.class).token()));
+
+        mvc.perform(get("/api/account").header("Authorization", "Bearer " + jwt.get()))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    public void badJwt() throws Exception {
+        mvc.perform(get("/api/account"))
+            .andExpect(status().isUnauthorized());
+
+        mvc.perform(get("/api/account").header("Authorization", ""))
+            .andExpect(status().isUnauthorized());
+
+        mvc.perform(get("/api/account").header("Authorization", "Bearer xyz"))
+            .andExpect(status().isUnauthorized());
     }
 }

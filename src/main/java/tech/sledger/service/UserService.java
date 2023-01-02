@@ -9,8 +9,7 @@ import tech.sledger.model.account.Account;
 import tech.sledger.model.user.SledgerUser;
 import tech.sledger.repo.SledgerUserRepo;
 import java.util.List;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -19,10 +18,10 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AccountService accountService;
 
-    public SledgerUser add(SledgerUser user) throws Exception {
+    public SledgerUser add(SledgerUser user) {
         SledgerUser existing = userRepo.findFirstByUsername(user.getUsername());
         if (existing != null) {
-            throw new Exception("Username already exists");
+            throw new ResponseStatusException(BAD_REQUEST, "Username already exists");
         }
 
         SledgerUser previous = userRepo.findFirstByOrderByIdDesc();
@@ -30,6 +29,10 @@ public class UserService {
         user.setId(id);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepo.save(user);
+    }
+
+    public SledgerUser get(String username) {
+        return userRepo.findFirstByUsername(username.toLowerCase());
     }
 
     public List<SledgerUser> list() {

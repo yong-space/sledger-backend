@@ -4,27 +4,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import tech.sledger.model.user.SledgerUser;
-import tech.sledger.repo.SledgerUserRepo;
+import tech.sledger.service.UserService;
 import java.util.List;
 
 @Service
 public class UserConfig {
     @Autowired
-    public SledgerUserRepo userRepo;
+    public UserService userService;
+    SledgerUser basicUser = null;
+    SledgerUser adminUser = null;
 
     public List<SledgerUser> setupUsers() {
-        SledgerUser basicUser = SledgerUser.builder()
-            .id(12345L)
-            .username("basic-user@company.com")
-            .password("basic-user")
-            .authorities(List.of())
-            .build();
-        SledgerUser adminUser = SledgerUser.builder()
-            .id(123456L)
-            .username("admin-user@company.com")
-            .password("admin-user")
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
-            .build();
-        return userRepo.saveAll(List.of(basicUser, adminUser));
+        if (basicUser == null && adminUser == null) {
+            basicUser = userService.add(SledgerUser.builder()
+                .username("basic-user@company.com")
+                .password("basic-user")
+                .authorities(List.of())
+                .build());
+            adminUser = userService.add(SledgerUser.builder()
+                .id(123456L)
+                .username("admin-user@company.com")
+                .password("admin-user")
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                .build());
+        }
+        return List.of(basicUser, adminUser);
     }
 }
