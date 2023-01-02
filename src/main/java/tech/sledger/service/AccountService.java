@@ -2,7 +2,6 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.user.SledgerUser;
 import tech.sledger.model.account.Account;
 import tech.sledger.repo.AccountRepo;
@@ -20,16 +19,16 @@ public class AccountService {
         return accountRepo.save(account);
     }
 
+    public Account edit(Account account) {
+        return accountRepo.save(account);
+    }
+
     public Account get(long id) {
         return accountRepo.findById(id).orElse(null);
     }
 
     public List<Account> list(SledgerUser owner) {
         return accountRepo.findAllByOwnerOrderByName(owner);
-    }
-
-    public Account save(Account account) {
-        return accountRepo.save(account);
     }
 
     public void delete(Account account) {

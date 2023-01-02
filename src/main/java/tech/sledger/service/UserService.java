@@ -31,16 +31,16 @@ public class UserService {
         return userRepo.save(user);
     }
 
+    public SledgerUser edit(SledgerUser user) {
+        return userRepo.save(user);
+    }
+
     public SledgerUser get(String username) {
         return userRepo.findFirstByUsername(username.toLowerCase());
     }
 
     public List<SledgerUser> list() {
         return userRepo.findAll();
-    }
-
-    public SledgerUser save(SledgerUser user) {
-        return userRepo.save(user);
     }
 
     public void delete(SledgerUser user) {

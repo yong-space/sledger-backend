@@ -29,7 +29,7 @@ public class TransactionEndpoints {
     @PutMapping
     public Transaction updateTransaction(Authentication auth, @RequestBody Transaction transaction) {
         userService.authorise(auth, transaction.getAccount().getId());
-        return txService.save(transaction);
+        return txService.edit(transaction);
     }
 
     @DeleteMapping("/{transactionId}")

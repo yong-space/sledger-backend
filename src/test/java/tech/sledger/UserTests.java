@@ -40,12 +40,12 @@ public class UserTests extends BaseTest {
     }
 
     @Test
-    public void editDeleteUser() throws Exception {
+    public void editDeleteUser() {
         SledgerUser user = SledgerUser.builder().username("u3").password("abc").displayName("Jake").build();
         userService.add(user);
 
         user.setDisplayName("Tom");
-        userService.save(user);
+        userService.edit(user);
         assertTrue(userService.get("u3").getDisplayName().equals("Tom"));
 
         userService.delete(user);

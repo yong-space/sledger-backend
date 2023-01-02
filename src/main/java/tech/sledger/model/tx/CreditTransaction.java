@@ -10,8 +10,6 @@ import java.time.Instant;
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=true)
-public class CreditTransaction extends Transaction {
+public class CreditTransaction extends CashTransaction {
     private Instant billingMonth;
-    private String category;
-    private String remarks;
 }

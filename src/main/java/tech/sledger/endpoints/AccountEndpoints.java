@@ -47,7 +47,7 @@ public class AccountEndpoints {
     @PutMapping
     public Account updateAccount(Authentication auth, @RequestBody Account account) {
         userService.authorise(auth, account.getId());
-        return accountService.save(account);
+        return accountService.edit(account);
     }
 
     @DeleteMapping("/{accountId}")

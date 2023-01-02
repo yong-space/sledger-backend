@@ -28,4 +28,5 @@ public class Transaction {
     private Account account;
     private Instant date;
     private BigDecimal amount;
+    private BigDecimal balance;
 }

@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.bouncycastle:bcprov-jdk18on:1.72'
     implementation 'com.auth0:java-jwt:4.0.0'
 
-    def testContainersVersion = '1.17.3'
+    def testContainersVersion = '1.17.4'
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"

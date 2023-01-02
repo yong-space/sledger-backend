@@ -58,24 +58,35 @@ public class TransactionTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addDeleteCashTx() throws Exception {
+        Instant date = Instant.ofEpochMilli(1640995200000L);
         CashTransaction cashTx = CashTransaction.builder()
-            .date(Instant.now())
+            .date(date)
             .account(Account.builder().id(accountId).build())
             .amount(BigDecimal.ONE)
             .remarks("Cash")
             .build();
 
-        AtomicLong id = new AtomicLong();
+        AtomicLong id1 = new AtomicLong();
+        AtomicLong id2 = new AtomicLong();
 
         mvc.perform(request(POST, "/api/transaction", cashTx))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.remarks").value("Cash"))
-            .andDo(res -> id.set(objectMapper.readValue(res.getResponse().getContentAsString(), CashTransaction.class).getId()));
+            .andDo(res -> id1.set(objectMapper.readValue(res.getResponse().getContentAsString(), CashTransaction.class).getId()));
 
-        mvc.perform(delete("/api/transaction/" + id))
+        mvc.perform(request(POST, "/api/transaction", cashTx))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.date").value("2022-01-01T00:00:01Z"))
+            .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(2)))
+            .andDo(res -> id2.set(objectMapper.readValue(res.getResponse().getContentAsString(), CashTransaction.class).getId()));
+
+        mvc.perform(delete("/api/transaction/" + id1))
             .andExpect(status().isOk());
 
-        mvc.perform(delete("/api/transaction/" + id))
+        mvc.perform(delete("/api/transaction/" + id2))
+            .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/transaction/" + id1))
             .andExpect(status().isNotFound());
     }
 

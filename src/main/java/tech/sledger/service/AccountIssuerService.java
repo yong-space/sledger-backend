@@ -18,6 +18,10 @@ public class AccountIssuerService {
         return accountIssuerRepo.save(accountIssuer);
     }
 
+    public AccountIssuer edit(AccountIssuer accountIssuer) {
+        return accountIssuerRepo.save(accountIssuer);
+    }
+
     public AccountIssuer get(String name) {
         return accountIssuerRepo.findFirstByName(name);
     }
@@ -28,10 +32,6 @@ public class AccountIssuerService {
 
     public List<AccountIssuer> list() {
         return accountIssuerRepo.findAll();
-    }
-
-    public AccountIssuer save(AccountIssuer accountIssuer) {
-        return accountIssuerRepo.save(accountIssuer);
     }
 
     public void delete(AccountIssuer accountIssuer) {

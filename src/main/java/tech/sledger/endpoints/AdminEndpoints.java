@@ -26,7 +26,7 @@ public class AdminEndpoints {
 
     @PutMapping("/account-issuer")
     public AccountIssuer updateAccountIssuer(@RequestBody AccountIssuer accountIssuer) {
-        return accountIssuerService.save(accountIssuer);
+        return accountIssuerService.edit(accountIssuer);
     }
 
     @DeleteMapping("/account-issuer/{accountIssuerId}")
