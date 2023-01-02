@@ -1,19 +1,18 @@
 package tech.sledger;
 
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.stereotype.Service;
 import tech.sledger.model.user.SledgerUser;
+import tech.sledger.repo.SledgerUserRepo;
 import java.util.List;
 
-@TestConfiguration
+@Service
 public class UserConfig {
-    @Bean
-    @Primary
-    public UserDetailsService userDetailsService() {
+    @Autowired
+    public SledgerUserRepo userRepo;
+
+    public void setupUsers() {
         SledgerUser basicUser = SledgerUser.builder()
             .id(12345L)
             .username("basic-user@company.com")
@@ -26,6 +25,6 @@ public class UserConfig {
             .password("admin-user")
             .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
             .build();
-        return new InMemoryUserDetailsManager(List.of(basicUser, adminUser));
+        userRepo.saveAll(List.of(basicUser, adminUser));
     }
 }

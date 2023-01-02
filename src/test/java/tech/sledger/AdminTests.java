@@ -2,11 +2,11 @@ package tech.sledger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.endpoints.AdminEndpoints;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.repo.AccountIssuerRepo;
+import javax.annotation.PostConstruct;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,10 +15,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
-@Import(UserConfig.class)
 public class AdminTests extends BaseTest {
     @Autowired
+    public UserConfig userConfig;
+    @Autowired
     public AccountIssuerRepo accountIssuerRepo;
+
+    @PostConstruct
+    public void init() {
+        userConfig.setupUsers();
+    }
 
     @Test
     @WithUserDetails("basic-user@company.com")
@@ -41,7 +47,7 @@ public class AdminTests extends BaseTest {
 
     @Test
     @WithUserDetails("admin-user@company.com")
-    public void addMultipleIssuerAndDeleteSuccess() throws Exception {
+    public void addMultipleIssuer() throws Exception {
         AdminEndpoints.NewAccountIssuer a1 = new AdminEndpoints.NewAccountIssuer("a1");
         AdminEndpoints.NewAccountIssuer a2 = new AdminEndpoints.NewAccountIssuer("a2");
 
@@ -51,10 +57,18 @@ public class AdminTests extends BaseTest {
             .andExpect(status().isOk());
         mvc.perform(get("/api/account-issuer"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[1].id").value(2L));
-        mvc.perform(delete("/api/admin/account-issuer/1"))
-            .andExpect(status().isOk());
-        mvc.perform(delete("/api/admin/account-issuer/2"))
+            .andExpect(jsonPath("$.[?(@.id > 1)]").exists());
+    }
+
+    @Test
+    @WithUserDetails("admin-user@company.com")
+    public void deleteIssuer() throws Exception {
+        AccountIssuer accountIssuer = new AccountIssuer();
+        accountIssuer.setName("b");
+        accountIssuer.setId(123);
+        accountIssuerRepo.save(accountIssuer);
+
+        mvc.perform(delete("/api/admin/account-issuer/123"))
             .andExpect(status().isOk());
     }
 
@@ -68,7 +82,7 @@ public class AdminTests extends BaseTest {
 
         mvc.perform(get("/api/account-issuer"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].name").value("b"));
+            .andExpect(jsonPath("$.[?(@.name == 'b')]").exists());
         accountIssuerRepo.delete(accountIssuer);
     }
 
