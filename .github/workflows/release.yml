@@ -1,8 +1,8 @@
-name: Build
+name: Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [ release ]
 
 jobs:
   build:
@@ -43,5 +43,5 @@ jobs:
       with:
         context: .
         platforms: linux/arm64
-        push: false
+        push: true
         tags: ${{ steps.meta.outputs.tags }}
