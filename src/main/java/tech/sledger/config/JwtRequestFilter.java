@@ -3,15 +3,16 @@ package tech.sledger.config;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tech.sledger.model.user.SledgerUser;
-import tech.sledger.service.UserService;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -24,13 +25,14 @@ import java.util.Collection;
 public class JwtRequestFilter extends OncePerRequestFilter {
     @Value("${sledger.secret-key}")
     private String secretKey;
-    private final UserService userService;
+    private final UserDetailsService userDetailsService;
 
     @Override
+
     protected void doFilterInternal(
         HttpServletRequest request,
-        HttpServletResponse response,
-        FilterChain chain
+        @NonNull HttpServletResponse response,
+        @NonNull FilterChain chain
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
@@ -39,9 +41,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 String jwt = authHeader.substring(7);
                 DecodedJWT token = validate(jwt);
                 String username = token.getSubject();
-                SledgerUser sledgerUser = userService.loadUserByUsername(username);
-                Collection<? extends GrantedAuthority> authorities = sledgerUser.getAuthorities();
-                var authToken = new UsernamePasswordAuthenticationToken(sledgerUser, null, authorities);
+                UserDetails user = userDetailsService.loadUserByUsername(username);
+                Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
+                var authToken = new UsernamePasswordAuthenticationToken(user, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } catch (Exception e) {
                 response.setStatus(401);

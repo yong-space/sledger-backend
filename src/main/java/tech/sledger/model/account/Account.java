@@ -17,6 +17,8 @@ public class Account {
     private long id;
     @DBRef
     private SledgerUser owner;
+    @DBRef
+    private AccountIssuer issuer;
     private AccountType type;
     private String name;
 }

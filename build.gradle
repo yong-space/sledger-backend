@@ -28,6 +28,7 @@ dependencies {
 
     def testContainersVersion = '1.17.3'
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
     testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
     testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
@@ -38,8 +39,8 @@ tasks.named("jar") {enabled = false }
 tasks.withType(Test) { useJUnitPlatform() }
 test {
     reports {
-        junitXml.enabled = false
-        html.enabled = false
+        junitXml.required = false
+        html.required = false
     }
     finalizedBy jacocoTestReport
     jacoco { excludes = [ 'tech.sledger.model.*' ] }

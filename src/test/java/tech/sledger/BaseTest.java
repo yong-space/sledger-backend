@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,9 +25,12 @@ public class BaseTest {
     @Autowired
     public ObjectMapper objectMapper;
     @Autowired
+    public UserDetailsService userDetailsService;
+    @Autowired
     public UserService userService;
 
     @DynamicPropertySource
+    @SuppressWarnings("resource")
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
         MongoDBContainer container = new MongoDBContainer("mongo:5.0.8");
         container.start();
@@ -35,7 +39,7 @@ public class BaseTest {
 
     public MockHttpServletRequestBuilder postRequest(String uri, Object payload) {
         try {
-            return post("/api/public/register")
+            return post(uri)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload));
         } catch (JsonProcessingException e) {
