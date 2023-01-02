@@ -17,12 +17,16 @@ public class SledgerUser implements UserDetails {
     @JsonIgnore
     private String password;
     @JsonIgnore
+    @Builder.Default
     private boolean accountNonExpired = true;
     @JsonIgnore
+    @Builder.Default
     private boolean accountNonLocked = true;
     @JsonIgnore
+    @Builder.Default
     private boolean credentialsNonExpired = true;
     @JsonIgnore
+    @Builder.Default
     private boolean enabled = true;
     private Collection<? extends GrantedAuthority> authorities;
 }
