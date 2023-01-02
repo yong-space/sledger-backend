@@ -1,11 +1,13 @@
 package tech.sledger;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import tech.sledger.model.user.SledgerUser;
 import javax.annotation.PostConstruct;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -16,14 +18,15 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class AccountTests extends BaseTest {
+    private AccountIssuer accountIssuer;
+
     @PostConstruct
     public void init() {
         userConfig.setupUsers();
 
-        AccountIssuer accountIssuer = new AccountIssuer();
+        accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
-        accountIssuer.setId(1);
-        accountIssuerRepo.save(accountIssuer);
+        accountIssuer = accountIssuerService.add(accountIssuer);
     }
 
     @Test
@@ -38,7 +41,7 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addListDeleteAccount() throws Exception {
-        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, 1);
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, accountIssuer.getId());
         AtomicLong id1 = new AtomicLong();
         AtomicLong id2 = new AtomicLong();
         mvc.perform(request(POST, "/api/account", account))
@@ -59,17 +62,42 @@ public class AccountTests extends BaseTest {
 
     @Test
     @WithUserDetails("basic-user@company.com")
+    public void deleteOtherOwnerAccount() throws Exception {
+        SledgerUser otherOwner = userService.add(SledgerUser.builder()
+            .username("someone-else@company.com")
+            .password("password")
+            .displayName("Miles")
+            .build());
+
+        Account account = accountService.add(accountService.add(Account.builder()
+            .type(AccountType.Cash)
+            .name("Hello")
+            .issuer(accountIssuer)
+            .owner(otherOwner)
+            .build()));
+
+        mvc.perform(delete("/api/account/" + account.getId()))
+            .andExpect(status().isUnauthorized())
+            .andExpect(status().reason("You are not the owner of this account"));
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
     public void updateAccount() throws Exception {
-        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, 1);
+        AtomicLong id = new AtomicLong();
+        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId());
         mvc.perform(request(POST, "/api/account", newAccount))
-            .andExpect(status().isOk());
-        Account account = accountRepo.findById(1L).orElse(null);
+            .andExpect(status().isOk())
+            .andDo(res -> id.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
+
+        Account account = accountService.get(id.get());
+
         assert account != null;
         account.setName("a2");
         mvc.perform(request(PUT, "/api/account", account))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("a2"));
-        accountRepo.deleteById(1L);
+        accountService.delete(account);
     }
 
     @Test

@@ -21,23 +21,23 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class TransactionTests extends BaseTest {
+    private long accountId;
+
     @PostConstruct
     public void init() {
         List<SledgerUser> users = userConfig.setupUsers();
 
-        AccountIssuer accountIssuer = new AccountIssuer();
-        accountIssuer.setName("b");
-        accountIssuer.setId(1);
-        accountIssuerRepo.save(accountIssuer);
+        AccountIssuer accountIssuerA = new AccountIssuer();
+        accountIssuerA.setName("a");
+        accountIssuerA = accountIssuerService.add(accountIssuerA);
 
         Account cashAccount = Account.builder()
-            .issuer(accountIssuer)
+            .issuer(accountIssuerA)
             .name("My Cash Account")
             .owner(users.get(0))
             .type(AccountType.Cash)
-            .id(1)
             .build();
-        accountRepo.save(cashAccount);
+        accountId = accountService.add(cashAccount).getId();
     }
 
     @Test
@@ -60,7 +60,7 @@ public class TransactionTests extends BaseTest {
     public void addDeleteCashTx() throws Exception {
         CashTransaction cashTx = CashTransaction.builder()
             .date(Instant.now())
-            .account(Account.builder().id(1).build())
+            .account(Account.builder().id(accountId).build())
             .amount(BigDecimal.ONE)
             .remarks("Cash")
             .build();
@@ -86,7 +86,7 @@ public class TransactionTests extends BaseTest {
             .date(Instant.now())
             .category("Shopping Test")
             .billingMonth(Instant.now())
-            .account(Account.builder().id(1).build())
+            .account(Account.builder().id(accountId).build())
             .amount(BigDecimal.ONE)
             .remarks("Credit")
             .build();
@@ -95,7 +95,7 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.category").value("Shopping Test"));
 
-        mvc.perform(get("/api/transaction/1"))
+        mvc.perform(get("/api/transaction/" + accountId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.category == 'Shopping Test')]").exists());
     }
@@ -105,7 +105,7 @@ public class TransactionTests extends BaseTest {
     public void updateTx() throws Exception {
         CashTransaction cashTx = CashTransaction.builder()
             .date(Instant.now())
-            .account(Account.builder().id(1).build())
+            .account(Account.builder().id(accountId).build())
             .amount(BigDecimal.ONE)
             .remarks("Cash")
             .build();

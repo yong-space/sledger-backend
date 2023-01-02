@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
@@ -38,5 +39,23 @@ public class UserTests extends BaseTest {
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(status().reason("Username already exists"));
+    }
+
+    @Test
+    public void loginBadCredentials() throws Exception {
+        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials("a", "b");
+        mvc.perform(request(POST, "/api/public/authenticate", credentials))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void loginSuccess() throws Exception {
+        Registration registration = new Registration("aaa", "bbb", "bbb");
+        mvc.perform(request(POST, "/api/public/register", registration))
+            .andExpect(status().isOk());
+
+        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials("aaa", "bbb");
+        mvc.perform(request(POST, "/api/public/authenticate", credentials))
+            .andExpect(status().isOk());
     }
 }

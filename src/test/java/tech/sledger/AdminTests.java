@@ -33,9 +33,9 @@ public class AdminTests extends BaseTest {
         AdminEndpoints.NewAccountIssuer issuer = new AdminEndpoints.NewAccountIssuer("a");
         mvc.perform(request(POST, "/api/admin/account-issuer", issuer))
             .andExpect(status().isOk());
-        AccountIssuer accountIssuer = accountIssuerRepo.findFirstByName("a");
+        AccountIssuer accountIssuer = accountIssuerService.get("a");
         assertNotNull(accountIssuer);
-        accountIssuerRepo.delete(accountIssuer);
+        accountIssuerService.delete(accountIssuer);
     }
 
     @Test
@@ -58,10 +58,9 @@ public class AdminTests extends BaseTest {
     public void deleteIssuer() throws Exception {
         AccountIssuer accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
-        accountIssuer.setId(123);
-        accountIssuerRepo.save(accountIssuer);
+        accountIssuer = accountIssuerService.add(accountIssuer);
 
-        mvc.perform(delete("/api/admin/account-issuer/123"))
+        mvc.perform(delete("/api/admin/account-issuer/" + accountIssuer.getId()))
             .andExpect(status().isOk());
     }
 
@@ -70,29 +69,26 @@ public class AdminTests extends BaseTest {
     public void listIssuerSuccess() throws Exception {
         AccountIssuer accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
-        accountIssuer.setId(1);
-        accountIssuerRepo.save(accountIssuer);
+        accountIssuer = accountIssuerService.add(accountIssuer);
 
         mvc.perform(get("/api/account-issuer"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.name == 'b')]").exists());
-        accountIssuerRepo.delete(accountIssuer);
+        accountIssuerService.delete(accountIssuer);
     }
 
     @Test
     @WithUserDetails("admin-user@company.com")
     public void editIssuerSuccess() throws Exception {
-        AdminEndpoints.NewAccountIssuer issuer = new AdminEndpoints.NewAccountIssuer("c");
-        mvc.perform(request(POST, "/api/admin/account-issuer", issuer))
-            .andExpect(status().isOk());
-        AccountIssuer editedIssuer = new AccountIssuer();
-        editedIssuer.setName("c2");
-        editedIssuer.setId(1);
+        AccountIssuer accountIssuer = new AccountIssuer();
+        accountIssuer.setName("c");
+        accountIssuer = accountIssuerService.add(accountIssuer);
 
-        mvc.perform(request(PUT, "/api/admin/account-issuer", editedIssuer))
+        accountIssuer.setName("c2");
+        mvc.perform(request(PUT, "/api/admin/account-issuer", accountIssuer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("c2"));
-        accountIssuerRepo.delete(editedIssuer);
+        accountIssuerService.delete(accountIssuer);
     }
 
     @Test

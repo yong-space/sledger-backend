@@ -17,6 +17,7 @@ import java.util.Collection;
 public class SledgerUser implements UserDetails {
     @Id
     private long id;
+    private String displayName;
     private String username;
     @JsonIgnore
     private String password;

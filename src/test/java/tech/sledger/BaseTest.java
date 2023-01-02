@@ -13,11 +13,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import tech.sledger.repo.AccountIssuerRepo;
-import tech.sledger.repo.AccountRepo;
-import tech.sledger.repo.TransactionRepo;
+import tech.sledger.service.AccountIssuerService;
+import tech.sledger.service.AccountService;
+import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 @SpringBootTest
 @Testcontainers
@@ -34,11 +35,11 @@ public class BaseTest {
     @Autowired
     public UserConfig userConfig;
     @Autowired
-    public AccountIssuerRepo accountIssuerRepo;
+    public AccountIssuerService accountIssuerService;
     @Autowired
-    public AccountRepo accountRepo;
+    public AccountService accountService;
     @Autowired
-    public TransactionRepo transactionRepo;
+    public TransactionService transactionService;
 
     enum SubmitMethod { PUT, POST }
 

@@ -18,6 +18,10 @@ public class AccountIssuerService {
         return accountIssuerRepo.save(accountIssuer);
     }
 
+    public AccountIssuer get(String name) {
+        return accountIssuerRepo.findFirstByName(name);
+    }
+
     public AccountIssuer get(long id) {
         return accountIssuerRepo.findById(id).orElse(null);
     }
