@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
 import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
 import java.util.List;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @RestController
@@ -21,7 +23,7 @@ public class TransactionEndpoints {
     @PostMapping
     public Transaction addTransaction(Authentication auth, @RequestBody Transaction transaction) {
         userService.authorise(auth, transaction.getAccount().getId());
-        return txService.save(transaction);
+        return txService.add(transaction);
     }
 
     @PutMapping
@@ -31,8 +33,11 @@ public class TransactionEndpoints {
     }
 
     @DeleteMapping("/{transactionId}")
-    public void deleteAccount(Authentication auth, @PathVariable long transactionId) {
+    public void deleteTransaction(Authentication auth, @PathVariable long transactionId) {
         Transaction transaction = txService.get(transactionId);
+        if (transaction == null) {
+            throw new ResponseStatusException(NOT_FOUND, "No such transaction id");
+        }
         userService.authorise(auth, transaction.getAccount().getId());
         txService.delete(transaction);
     }

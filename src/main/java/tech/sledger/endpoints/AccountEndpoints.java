@@ -27,7 +27,7 @@ public class AccountEndpoints {
     public record NewAccount(String name, AccountType type, long issuerId) {}
 
     @PostMapping
-    public Account addAccountIssuer(Authentication auth, @RequestBody NewAccount newAccount) {
+    public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
         SledgerUser user = (SledgerUser) auth.getPrincipal();
 
         AccountIssuer issuer = accountIssuerService.get(newAccount.issuerId);
