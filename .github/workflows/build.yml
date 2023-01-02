@@ -8,8 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      DEPLOYMENT: ${{ github.repository }}
     steps:
     - uses: actions/checkout@v3
 
@@ -26,7 +24,7 @@ jobs:
     - uses: docker/metadata-action@v4
       id: meta
       with:
-        images: ghcr.io/${DEPLOYMENT}
+        images: ghcr.io/${{ github.repository }}
         flavor: latest=false
         tags: type=sha
 
