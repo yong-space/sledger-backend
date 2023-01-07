@@ -22,7 +22,7 @@ public class UserTests extends BaseTest {
 
     @Test
     public void registerMismatchedPasswords() throws Exception {
-        Registration registration = new Registration("u0", "p1", "p2");
+        Registration registration = new Registration("d1", "u0", "p1", "p2");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Passwords do not match"));
@@ -30,7 +30,7 @@ public class UserTests extends BaseTest {
 
     @Test
     public void registerSuccess() throws Exception {
-        Registration registration = new Registration("u1", "p1", "p1");
+        Registration registration = new Registration("d1", "u1", "p1", "p1");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
         UserDetails user = userDetailsService.loadUserByUsername("u1");
@@ -55,7 +55,7 @@ public class UserTests extends BaseTest {
 
     @Test
     public void registerUsernameExists() throws Exception {
-        Registration registration = new Registration("u3", "p1", "p1");
+        Registration registration = new Registration("d1", "u3", "p1", "p1");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
         mvc.perform(request(POST, "/api/public/register", registration))
@@ -72,7 +72,7 @@ public class UserTests extends BaseTest {
 
     @Test
     public void loginSuccess() throws Exception {
-        Registration registration = new Registration("aaa", "bbb", "bbb");
+        Registration registration = new Registration("ddd", "aaa", "bbb", "bbb");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
 

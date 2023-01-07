@@ -27,21 +27,35 @@ public class PublicEndpoints {
 
     public record Credentials(String username, String password) {}
     public record TokenResponse(String token) {}
+    public record RegistrationResponse(String status) {}
 
     @PostMapping("/register")
-    public void register(@RequestBody Registration registration) {
+    public RegistrationResponse register(@RequestBody Registration registration) {
+        if (
+            registration.getDisplayName() == null ||
+            registration.getUsername() == null ||
+            registration.getPassword() == null ||
+            registration.getPassword2() == null
+        ) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid Registration");
+        }
         if (!registration.getPassword().trim().equals(registration.getPassword2().trim())) {
             throw new ResponseStatusException(BAD_REQUEST, "Passwords do not match");
         }
         SledgerUser user = userService.add(SledgerUser.builder()
+            .displayName(registration.getDisplayName().trim())
             .username(registration.getUsername().trim().toLowerCase())
             .password(registration.getPassword().trim())
             .build());
-        log.info("New Registration: {}", user);
+        log.info("New Registration: {}", user.getUsername());
+        return new RegistrationResponse("ok");
     }
 
     @PostMapping("/authenticate")
     public TokenResponse authenticate(@RequestBody Credentials credentials) {
+        if (credentials.username == null || credentials.password == null) {
+            throw new ResponseStatusException(UNAUTHORIZED, "Invalid Credentials");
+        }
         String email = credentials.username().trim().toLowerCase();
         var token = new UsernamePasswordAuthenticationToken(email, credentials.password());
         try {
