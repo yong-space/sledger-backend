@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tags }}
     steps:
     - uses: actions/checkout@v3
 
@@ -46,3 +48,14 @@ jobs:
         platforms: linux/arm64
         push: true
         tags: ${{ steps.meta.outputs.tags }}
+
+  release:
+    needs: build
+    runs-on: self-hosted
+    steps:
+    - name: Perform rolling update
+      env:
+        DEPLOYMENT: ${{ github.event.repository.name }}
+      run: |
+        kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.tag }}
+        kubectl rollout status deployment/${DEPLOYMENT}
