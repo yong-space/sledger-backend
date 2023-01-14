@@ -12,9 +12,6 @@ java {
     }
 }
 
-group = 'tech.sledger'
-version = '1.0.0'
-
 repositories {
     mavenCentral()
 }
