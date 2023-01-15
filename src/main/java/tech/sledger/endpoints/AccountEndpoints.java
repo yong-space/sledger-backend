@@ -8,7 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
@@ -28,7 +28,7 @@ public class AccountEndpoints {
 
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
-        SledgerUser user = (SledgerUser) auth.getPrincipal();
+        User user = (User) auth.getPrincipal();
 
         AccountIssuer issuer = accountIssuerService.get(newAccount.issuerId);
         if (issuer == null) {
@@ -58,6 +58,6 @@ public class AccountEndpoints {
 
     @GetMapping
     public List<Account> listAccounts(Authentication auth) {
-        return accountService.list((SledgerUser) auth.getPrincipal());
+        return accountService.list((User) auth.getPrincipal());
     }
 }

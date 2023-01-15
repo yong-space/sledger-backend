@@ -14,7 +14,7 @@ import java.util.Collection;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SledgerUser implements UserDetails {
+public class User implements UserDetails {
     @Id
     private long id;
     private String displayName;
@@ -31,7 +31,6 @@ public class SledgerUser implements UserDetails {
     @Builder.Default
     private boolean credentialsNonExpired = true;
     @JsonIgnore
-    @Builder.Default
-    private boolean enabled = true;
+    private boolean enabled;
     private Collection<? extends GrantedAuthority> authorities;
 }

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 
 @Data
 @Builder
@@ -16,7 +16,7 @@ public class Account {
     @Id
     private long id;
     @DBRef
-    private SledgerUser owner;
+    private User owner;
     @DBRef
     private AccountIssuer issuer;
     private AccountType type;

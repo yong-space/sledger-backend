@@ -2,7 +2,7 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 import tech.sledger.model.account.Account;
 import tech.sledger.repo.AccountRepo;
 import java.util.List;
@@ -27,7 +27,7 @@ public class AccountService {
         return accountRepo.findById(id).orElse(null);
     }
 
-    public List<Account> list(SledgerUser owner) {
+    public List<Account> list(User owner) {
         return accountRepo.findAllByOwnerOrderByName(owner);
     }
 

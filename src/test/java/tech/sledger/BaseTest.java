@@ -15,7 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.Registration;
+import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.TransactionService;
@@ -42,26 +43,32 @@ public class BaseTest {
     public UserService userService;
     @Autowired
     public UserDetailsService userDetailsService;
+    static boolean init = false;
 
     enum SubmitMethod { PUT, POST }
 
     @PostConstruct
     public void initUsers() {
-        if (userService.get("basic-user@company.com") != null) {
+        if (init) {
             return;
         }
-        userService.add(SledgerUser.builder()
-            .id(123455L)
-            .username("basic-user@company.com")
-            .password("basic-user")
-            .authorities(List.of())
-            .build());
-        userService.add(SledgerUser.builder()
-            .id(123456L)
-            .username("admin-user@company.com")
-            .password("admin-user")
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
-            .build());
+        Registration u1Reg = new Registration("Basic User 1", "basic-user@company.com", "B4SicUs3r!");
+        User u1User = userService.add(u1Reg);
+        u1User.setEnabled(true);
+        userService.edit(u1User);
+
+        Registration u2Reg = new Registration("Basic User 2", "basic-user2@company.com", "B4SicUs3r!");
+        User u2User = userService.add(u2Reg);
+        u2User.setEnabled(true);
+        userService.edit(u2User);
+
+        Registration aReg = new Registration("Admin User", "admin-user@company.com", "aDm1nU53r$");
+        User aUser = userService.add(aReg);
+        aUser.setEnabled(true);
+        aUser.setAuthorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        userService.edit(aUser);
+
+        init = true;
     }
 
     @DynamicPropertySource

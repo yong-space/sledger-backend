@@ -6,7 +6,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -23,7 +23,7 @@ public class JwtService {
             .verify(token);
     }
 
-    public String generate(String username, SledgerUser user) {
+    public String generate(String username, User user) {
         Instant now = Instant.now();
         return JWT.create()
             .withIssuedAt(Date.from(now))

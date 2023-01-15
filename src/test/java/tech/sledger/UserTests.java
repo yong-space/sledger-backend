@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static com.mongodb.assertions.Assertions.assertTrue;
@@ -21,41 +21,36 @@ public class UserTests extends BaseTest {
     public PasswordEncoder passwordEncoder;
 
     @Test
-    public void registerMismatchedPasswords() throws Exception {
-        Registration registration = new Registration("d1", "u0", "p1", "p2");
-        mvc.perform(request(POST, "/api/public/register", registration))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Passwords do not match"));
-    }
-
-    @Test
     public void registerSuccess() throws Exception {
-        Registration registration = new Registration("d1", "u1", "p1", "p1");
+        String username = "user@company.com";
+        String password = "P4s5w0rdz!";
+        Registration registration = new Registration("Display Name", username, password);
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
-        UserDetails user = userDetailsService.loadUserByUsername("u1");
-        Assertions.assertTrue(passwordEncoder.matches("p1", user.getPassword()));
+        UserDetails user = userDetailsService.loadUserByUsername(username);
+        Assertions.assertTrue(passwordEncoder.matches(password, user.getPassword()));
 
-        SledgerUser u1 = userService.list().stream().filter(u -> u.getUsername().equals("u1")).findFirst().orElse(null);
+        User u1 = userService.list().stream().filter(u -> u.getUsername().equals(username)).findFirst().orElse(null);
         assertNotNull(u1);
     }
 
     @Test
     public void editDeleteUser() {
-        SledgerUser user = SledgerUser.builder().username("u3").password("abc").displayName("Jake").build();
-        userService.add(user);
+        String username = "disposable@company.com";
+        userService.add(new Registration("Disposable", username, "M3hm3h!z%"));
 
+        User user = userService.get(username);
         user.setDisplayName("Tom");
         userService.edit(user);
-        assertTrue(userService.get("u3").getDisplayName().equals("Tom"));
+        assertTrue(userService.get(username).getDisplayName().equals("Tom"));
 
         userService.delete(user);
-        assertTrue(userService.get("u3") == null);
+        assertTrue(userService.get(username) == null);
     }
 
     @Test
     public void registerUsernameExists() throws Exception {
-        Registration registration = new Registration("d1", "u3", "p1", "p1");
+        Registration registration = new Registration("Duplicate", "duplicate@company.com", "M3hm3h!z%");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
         mvc.perform(request(POST, "/api/public/register", registration))
@@ -72,13 +67,9 @@ public class UserTests extends BaseTest {
 
     @Test
     public void loginSuccess() throws Exception {
-        Registration registration = new Registration("ddd", "aaa", "bbb", "bbb");
-        mvc.perform(request(POST, "/api/public/register", registration))
-            .andExpect(status().isOk());
-
+        String username = "basic-user@company.com";
         AtomicReference<String> jwt = new AtomicReference<>();
-
-        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials("aaa", "bbb");
+        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials(username, "B4SicUs3r!");
         mvc.perform(request(POST, "/api/public/authenticate", credentials))
             .andExpect(status().isOk())
             .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), PublicEndpoints.TokenResponse.class).token()));

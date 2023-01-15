@@ -7,7 +7,7 @@ import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
-import tech.sledger.model.user.SledgerUser;
+import tech.sledger.model.user.User;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,17 +60,11 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void deleteOtherOwnerAccount() throws Exception {
-        SledgerUser otherOwner = userService.add(SledgerUser.builder()
-            .username("someone-else@company.com")
-            .password("password")
-            .displayName("Miles")
-            .build());
-
         Account account = accountService.add(accountService.add(Account.builder()
             .type(AccountType.Cash)
             .name("Hello")
             .issuer(accountIssuer)
-            .owner(otherOwner)
+            .owner(userService.get("basic-user2@company.com"))
             .build()));
 
         mvc.perform(delete("/api/account/" + account.getId()))
