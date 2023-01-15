@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static com.mongodb.assertions.Assertions.assertTrue;
@@ -21,7 +22,7 @@ public class UserTests extends BaseTest {
     public PasswordEncoder passwordEncoder;
 
     @Test
-    public void registerSuccess() throws Exception {
+    public void registerActivateSuccess() throws Exception {
         String username = "user@company.com";
         String password = "P4s5w0rdz!";
         Registration registration = new Registration("Display Name", username, password);
@@ -30,8 +31,18 @@ public class UserTests extends BaseTest {
         UserDetails user = userDetailsService.loadUserByUsername(username);
         Assertions.assertTrue(passwordEncoder.matches(password, user.getPassword()));
 
-        User u1 = userService.list().stream().filter(u -> u.getUsername().equals(username)).findFirst().orElse(null);
+        User u1 = userService.get(username);
         assertNotNull(u1);
+
+        String code = userService.getActivation(u1.getUsername()).getCode();
+        mvc.perform(get("/api/public/activate/" + code))
+            .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    public void activateFail() throws Exception {
+        mvc.perform(get("/api/public/activate/abc"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -56,6 +67,22 @@ public class UserTests extends BaseTest {
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Username already exists"));
+    }
+
+    @Test
+    public void registerBadPassword() throws Exception {
+        Registration registration = new Registration("Validate", "validate@company.com", "A1a@!");
+        mvc.perform(request(POST, "/api/public/register", registration))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Password should be between 8 and 100 characters"));
+    }
+
+    @Test
+    public void loginNoCredentials() throws Exception {
+        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", "u")))
+            .andExpect(status().isBadRequest());
+        mvc.perform(request(POST, "/api/public/authenticate", Map.of("password", "p")))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

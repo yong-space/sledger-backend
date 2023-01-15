@@ -58,10 +58,6 @@ public class UserService {
         return userRepo.findFirstByUsername(username.toLowerCase());
     }
 
-    public List<User> list() {
-        return userRepo.findAll();
-    }
-
     public void delete(User user) {
         userRepo.delete(user);
     }

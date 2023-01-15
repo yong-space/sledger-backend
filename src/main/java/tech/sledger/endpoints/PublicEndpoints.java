@@ -39,9 +39,7 @@ public class PublicEndpoints {
         BindingResult binding
     ) {
         if (binding.hasErrors()) {
-            String error = binding.getFieldError() == null ?
-                "Invalid Registration" : binding.getFieldError().getDefaultMessage();
-            throw new ResponseStatusException(BAD_REQUEST, error);
+            throw new ResponseStatusException(BAD_REQUEST, binding.getFieldError().getDefaultMessage());
         }
         User user = userService.add(registration);
         log.info("New Registration: {}", user.getUsername());
@@ -57,7 +55,7 @@ public class PublicEndpoints {
     @PostMapping("/authenticate")
     public TokenResponse authenticate(@RequestBody Credentials credentials) {
         if (credentials.username == null || credentials.password == null) {
-            throw new ResponseStatusException(UNAUTHORIZED, "Invalid Credentials");
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid Credentials");
         }
         String email = credentials.username().trim().toLowerCase();
         var token = new UsernamePasswordAuthenticationToken(email, credentials.password().trim());
