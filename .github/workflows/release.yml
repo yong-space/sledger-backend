@@ -52,10 +52,18 @@ jobs:
   release:
     needs: build
     runs-on: self-hosted
+    env:
+      DEPLOYMENT: ${{ github.event.repository.name }}
     steps:
     - name: Perform rolling update
-      env:
-        DEPLOYMENT: ${{ github.event.repository.name }}
       run: |
         kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.tag }}
         kubectl rollout status deployment/${DEPLOYMENT}
+
+    - uses: smartsquaregmbh/delete-old-packages@v0.6.0
+      with:
+        keep: 2
+        type: container
+        names: ${{ env.DEPLOYMENT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        organization: ${{ github.event.organization.login }}
