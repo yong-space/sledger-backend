@@ -14,8 +14,13 @@ public class MiscTests {
     @Autowired
     public MockMvc mvc;
 
+    static {
+        System.setProperty("SLEDGER_SECRET_KEY", "my-secret-key");
+        System.setProperty("MONGO_URI", "mongodb://localhost/sledger");
+    }
+
     @Test
-    public void registerMismatchedPasswords() throws Exception {
+    public void invalid() throws Exception {
         mvc.perform(get( "/api/public/invalid"))
             .andExpect(status().isIAmATeapot());
     }

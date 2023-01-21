@@ -12,8 +12,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import tech.sledger.model.user.Activation;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
+import tech.sledger.service.EmailService;
 import tech.sledger.service.JwtService;
 import tech.sledger.service.UserService;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @RequestMapping("/api/public")
 public class PublicEndpoints {
     private final UserService userService;
+    private final EmailService emailService;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
 
@@ -41,7 +44,9 @@ public class PublicEndpoints {
         if (binding.hasErrors()) {
             throw new ResponseStatusException(BAD_REQUEST, binding.getFieldError().getDefaultMessage());
         }
-        User user = userService.add(registration);
+        Activation activation = userService.add(registration);
+        User user = activation.getUser();
+        emailService.sendActivation(user.getUsername(), user.getDisplayName(), activation.getCode());
         log.info("New Registration: {}", user.getUsername());
         return new RegistrationResponse("ok");
     }

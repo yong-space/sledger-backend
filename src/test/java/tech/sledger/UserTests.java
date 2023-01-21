@@ -3,15 +3,20 @@ package tech.sledger;
 import com.mongodb.assertions.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
+import tech.sledger.service.EmailService;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static com.mongodb.assertions.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,9 +25,14 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 public class UserTests extends BaseTest {
     @Autowired
     public PasswordEncoder passwordEncoder;
+    @MockBean
+    private EmailService emailService;
 
     @Test
     public void registerActivateSuccess() throws Exception {
+        when(emailService.sendActivation(any(String.class), any(String.class), any(String.class)))
+            .thenReturn(CompletableFuture.completedFuture(true));
+
         String username = "user@company.com";
         String password = "P4s5w0rdz!";
         Registration registration = new Registration("Display Name", username, password);
@@ -61,6 +71,9 @@ public class UserTests extends BaseTest {
 
     @Test
     public void registerUsernameExists() throws Exception {
+        when(emailService.sendActivation(any(String.class), any(String.class), any(String.class)))
+            .thenReturn(CompletableFuture.completedFuture(true));
+
         Registration registration = new Registration("Duplicate", "duplicate@company.com", "M3hm3h!z%");
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isOk());
@@ -87,17 +100,16 @@ public class UserTests extends BaseTest {
 
     @Test
     public void loginBadCredentials() throws Exception {
-        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials("a", "b");
-        mvc.perform(request(POST, "/api/public/authenticate", credentials))
+        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", "a", "password", "b")))
             .andExpect(status().isUnauthorized());
     }
 
     @Test
     public void loginSuccess() throws Exception {
         String username = "basic-user@company.com";
+        String password = "B4SicUs3r!";
         AtomicReference<String> jwt = new AtomicReference<>();
-        PublicEndpoints.Credentials credentials = new PublicEndpoints.Credentials(username, "B4SicUs3r!");
-        mvc.perform(request(POST, "/api/public/authenticate", credentials))
+        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", username, "password", password)))
             .andExpect(status().isOk())
             .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), PublicEndpoints.TokenResponse.class).token()));
 

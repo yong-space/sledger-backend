@@ -12,7 +12,6 @@ import tech.sledger.model.user.User;
 import tech.sledger.repo.ActivationRepo;
 import tech.sledger.repo.UserRepo;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import static org.springframework.http.HttpStatus.*;
@@ -25,7 +24,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AccountService accountService;
 
-    public User add(Registration registration) {
+    public Activation add(Registration registration) {
         String username = registration.getUsername().trim();
         User existing = userRepo.findFirstByUsername(username);
         if (existing != null) {
@@ -41,13 +40,14 @@ public class UserService {
             .password(passwordEncoder.encode(registration.getPassword().trim()))
             .build());
 
-        activationRepo.save(Activation.builder()
+        Activation activation = Activation.builder()
             .user(user)
             .code(UUID.randomUUID().toString())
             .date(Instant.now())
-            .build());
+            .build();
+        activationRepo.save(activation);
 
-        return user;
+        return activation;
     }
 
     public User edit(User user) {
