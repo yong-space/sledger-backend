@@ -2,6 +2,8 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -12,6 +14,8 @@ import tech.sledger.model.user.User;
 import tech.sledger.repo.ActivationRepo;
 import tech.sledger.repo.UserRepo;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import static org.springframework.http.HttpStatus.*;
@@ -36,11 +40,17 @@ public class UserService {
         User previous = userRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
 
+        List<GrantedAuthority> roles = new ArrayList<>();
+        if (id == 1) {
+            roles.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        }
+
         User user = userRepo.save(User.builder()
             .id(id)
             .displayName(registration.getDisplayName().trim())
             .username(username)
             .password(passwordEncoder.encode(registration.getPassword().trim()))
+            .authorities(roles)
             .build());
 
         Activation activation = Activation.builder()
