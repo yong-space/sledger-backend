@@ -1,5 +1,6 @@
 package tech.sledger.endpoints;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class PublicEndpoints {
     public RegistrationResponse register(
         @RequestBody @Valid Registration registration,
         BindingResult binding
-    ) {
+    ) throws MessagingException {
         if (binding.hasErrors()) {
             throw new ResponseStatusException(BAD_REQUEST, binding.getFieldError().getDefaultMessage());
         }
