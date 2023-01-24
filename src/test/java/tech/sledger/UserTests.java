@@ -79,7 +79,14 @@ public class UserTests extends BaseTest {
             .andExpect(status().isOk());
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Username already exists"));
+            .andExpect(jsonPath("$.detail").value("Account pending activation"));
+
+        User user = userService.get("duplicate@company.com");
+        user.setEnabled(true);
+        userService.edit(user);
+        mvc.perform(request(POST, "/api/public/register", registration))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Email already in use"));
     }
 
     @Test

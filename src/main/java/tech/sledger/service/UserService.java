@@ -28,7 +28,10 @@ public class UserService {
         String username = registration.getUsername().trim();
         User existing = userRepo.findFirstByUsername(username);
         if (existing != null) {
-            throw new ResponseStatusException(BAD_REQUEST, "Username already exists");
+            if (!existing.isEnabled()) {
+                throw new ResponseStatusException(BAD_REQUEST, "Account pending activation");
+            }
+            throw new ResponseStatusException(BAD_REQUEST, "Email already in use");
         }
         User previous = userRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
