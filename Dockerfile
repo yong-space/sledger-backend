@@ -23,4 +23,11 @@ FROM gcr.io/distroless/java-base-debian11
 COPY --from=0 /jre /jre
 COPY --from=0 /build/BOOT-INF/lib /lib
 COPY --from=0 /app .
-ENTRYPOINT [ "/jre/bin/java", "-cp", ".:/lib/*", "tech.sledger.Sledger", "--spring.profiles.active=prod" ]
+ENTRYPOINT [ \
+  "/jre/bin/java", \
+  "-cp", ".:/lib/*", \
+  "-Djavax.net.ssl.trustStore=/truststore/truststore", \
+  "-Djavax.net.ssl.trustStorePassword=changeit", \
+  "tech.sledger.Sledger", \
+  "--spring.profiles.active=prod" \
+]
