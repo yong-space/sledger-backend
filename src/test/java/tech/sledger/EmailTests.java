@@ -33,9 +33,10 @@ public class EmailTests {
     public void sendActivation() throws MessagingException {
         emailService.sendActivation("user@company.com", "Bob Doe", "hash").join();
         MimeMessage receivedMessage = greenMail.getReceivedMessages()[0];
+        String body = GreenMailUtil.getBody(receivedMessage);
         assertEquals("Sledger Activation", receivedMessage.getSubject());
         assertEquals("Bob Doe <user@company.com>", receivedMessage.getAllRecipients()[0].toString());
-        assertTrue(GreenMailUtil.getBody(receivedMessage).contains("Hello Bob Doe,"));
-        assertTrue(GreenMailUtil.getBody(receivedMessage).contains("/activate/hash"));
+        assertTrue(body.contains("Hello Bob Doe,"));
+        assertTrue(body.contains("/activate/hash"));
     }
 }
