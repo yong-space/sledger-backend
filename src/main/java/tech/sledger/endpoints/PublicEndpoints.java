@@ -68,7 +68,7 @@ public class PublicEndpoints {
         try {
             Authentication auth = authManager.authenticate(token);
             User user = (User) auth.getPrincipal();
-            String jwt = jwtService.generate(email, user);
+            String jwt = jwtService.generate(user);
             log.info("User logged in: {}", user.getUsername());
             return new TokenResponse(jwt);
         } catch (AuthenticationException e) {

@@ -1,15 +1,19 @@
 package tech.sledger;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
+import tech.sledger.service.JwtService;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,6 +24,8 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 public class UserTests extends BaseTest {
     @MockBean
     private EmailService emailService;
+    @Autowired
+    private JwtService jwtService;
 
     @Test
     public void activateFail() throws Exception {
@@ -106,5 +112,13 @@ public class UserTests extends BaseTest {
 
         mvc.perform(get("/api/account").header("Authorization", "Bearer xyz"))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void jwtRoleTest() {
+        DecodedJWT basicJwt = jwtService.validate(jwtService.generate(userService.get("basic-user@company.com")));
+        DecodedJWT adminJwt = jwtService.validate(jwtService.generate(userService.get("admin-user@company.com")));
+        assertEquals("false", basicJwt.getClaims().get("admin").toString());
+        assertEquals("true", adminJwt.getClaims().get("admin").toString());
     }
 }
