@@ -9,6 +9,7 @@ import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.JwtService;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -116,9 +117,14 @@ public class UserTests extends BaseTest {
 
     @Test
     public void jwtRoleTest() {
-        DecodedJWT basicJwt = jwtService.validate(jwtService.generate(userService.get("basic-user@company.com")));
-        DecodedJWT adminJwt = jwtService.validate(jwtService.generate(userService.get("admin-user@company.com")));
+        User basicUser = userService.get("basic-user@company.com");
+        User adminUser = userService.get("admin-user@company.com");
+        DecodedJWT basicJwt = jwtService.validate(jwtService.generate(basicUser));
+        DecodedJWT adminJwt = jwtService.validate(jwtService.generate(adminUser));
+        basicUser.setAuthorities(List.of());
+        DecodedJWT basicJwt2 = jwtService.validate(jwtService.generate(basicUser));
         assertEquals("false", basicJwt.getClaims().get("admin").toString());
+        assertEquals("false", basicJwt2.getClaims().get("admin").toString());
         assertEquals("true", adminJwt.getClaims().get("admin").toString());
     }
 }

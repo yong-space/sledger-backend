@@ -3,7 +3,9 @@ spring:
   main:
     banner-mode: off
     lazy-initialization: true
-  data.mongodb.uri: ${MONGO_URI}
+  data.mongodb:
+    uri: ${MONGO_URI}
+    auto-index-creation: true
   mail:
     host: localhost
     port: 3025

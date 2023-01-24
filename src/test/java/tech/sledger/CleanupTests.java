@@ -26,6 +26,8 @@ public class CleanupTests extends BaseTest {
 
     @Test
     public void cleanup() {
+        cleanupService.cleanup();
+
         String password = passwordEncoder.encode("T3stU52r!$");
         User u1 = User.builder().id(4).displayName("User A").username("a@a.com").password(password).build();
         User u2 = User.builder().id(5).displayName("User B").username("b@b.com").password(password).build();

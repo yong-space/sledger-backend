@@ -2,14 +2,19 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.repo.AccountIssuerRepo;
+import tech.sledger.repo.AccountRepo;
 import java.util.List;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
 @RequiredArgsConstructor
 public class AccountIssuerService {
     private final AccountIssuerRepo accountIssuerRepo;
+    private final AccountRepo accountRepo;
 
     public AccountIssuer add(AccountIssuer accountIssuer) {
         AccountIssuer previous = accountIssuerRepo.findFirstByOrderByIdDesc();
@@ -35,6 +40,10 @@ public class AccountIssuerService {
     }
 
     public void delete(AccountIssuer accountIssuer) {
+        List<Account> existing = accountRepo.findAllByIssuer(accountIssuer);
+        if (!existing.isEmpty()) {
+            throw new ResponseStatusException(BAD_REQUEST, "There are existing accounts under this issuer");
+        }
         accountIssuerRepo.delete(accountIssuer);
     }
 }

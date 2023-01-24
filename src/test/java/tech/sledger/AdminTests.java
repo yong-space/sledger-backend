@@ -2,9 +2,14 @@ package tech.sledger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.endpoints.AdminEndpoints;
+import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
+import tech.sledger.model.account.AccountType;
 import static com.mongodb.assertions.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +34,18 @@ public class AdminTests extends BaseTest {
             .andExpect(status().isOk());
         AccountIssuer accountIssuer = accountIssuerService.get("a");
         assertNotNull(accountIssuer);
+
+        Account account = accountService.add(Account.builder()
+            .issuer(accountIssuer)
+            .name("Hello")
+            .type(AccountType.Cash)
+            .owner(userService.get("basic-user@company.com"))
+            .build());
+
+        ResponseStatusException thrown = assertThrows(ResponseStatusException.class, () -> accountIssuerService.delete(accountIssuer));
+        assertEquals("There are existing accounts under this issuer", thrown.getReason());
+
+        accountService.delete(account);
         accountIssuerService.delete(accountIssuer);
     }
 
