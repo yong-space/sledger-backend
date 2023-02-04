@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import static com.mongodb.assertions.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,15 +37,11 @@ public class UserTests extends BaseTest {
     }
 
     @Test
-    public void editDeleteUser() {
+    public void deleteUser() {
         String username = "disposable@company.com";
         userService.add(new Registration("Disposable", username, "M3hm3h!z%"));
 
         User user = userService.get(username);
-        user.setDisplayName("Tom");
-        userService.edit(user);
-        assertTrue(userService.get(username).getDisplayName().equals("Tom"));
-
         userService.delete(user);
         assertTrue(userService.get(username) == null);
     }
@@ -61,11 +59,18 @@ public class UserTests extends BaseTest {
             .andExpect(jsonPath("$.detail").value("Account pending activation"));
 
         User user = userService.get("duplicate@company.com");
-        user.setEnabled(true);
-        userService.edit(user);
+        userService.activate(user);
+
         mvc.perform(request(POST, "/api/public/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Email already in use"));
+    }
+
+    @Test
+    public void missingActivation() {
+        User user = userService.get("basic-user@company.com");
+        ResponseStatusException thrown = assertThrows(ResponseStatusException.class, () -> userService.activate(user));
+        assertEquals("User has no pending activation", thrown.getReason());
     }
 
     @Test

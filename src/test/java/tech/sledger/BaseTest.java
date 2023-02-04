@@ -45,7 +45,7 @@ public class BaseTest {
     @Autowired
     public UserRepo userRepo;
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    public PasswordEncoder passwordEncoder;
     @Autowired
     public UserDetailsService userDetailsService;
 

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.user.Activation;
+import tech.sledger.model.user.Profile;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.ActivationRepo;
@@ -63,7 +64,15 @@ public class UserService {
         return activation;
     }
 
-    public User edit(User user) {
+    public User edit(User user, Profile profile) {
+        if (profile.getPassword() != null && profile.getNewPassword() != null) {
+            if (!passwordEncoder.matches(profile.getPassword(), user.getPassword())) {
+                throw new ResponseStatusException(UNAUTHORIZED, "Invalid Credentials");
+            }
+            user.setPassword(passwordEncoder.encode(profile.getNewPassword().trim()));
+        }
+        user.setUsername(profile.getUsername());
+        user.setDisplayName(profile.getDisplayName());
         return userRepo.save(user);
     }
 
@@ -77,6 +86,17 @@ public class UserService {
 
     public Activation getActivation(String username) {
         return activationRepo.findFirstByUser(get(username));
+    }
+
+    public void activate(User user) {
+        Activation activation = activationRepo.findFirstByUser(user);
+        if (activation != null) {
+            user.setEnabled(true);
+            userRepo.save(user);
+            activationRepo.delete(activation);
+        } else {
+            throw new ResponseStatusException(BAD_REQUEST, "User has no pending activation");
+        }
     }
 
     public void activate(String code) {
