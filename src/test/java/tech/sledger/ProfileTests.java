@@ -2,14 +2,32 @@ package tech.sledger;
 
 import com.mongodb.assertions.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.user.Profile;
+import tech.sledger.model.user.TokenResponse;
+import tech.sledger.service.JwtService;
+import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class ProfileTests extends BaseTest {
+    @Autowired
+    private JwtService jwtService;
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void getProfile() throws Exception {
+        AtomicReference<String> jwt = new AtomicReference<>();
+        mvc.perform(get("/api/profile"))
+            .andExpect(status().isOk())
+            .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), TokenResponse.class).token()));
+        jwtService.validate(jwt.get());
+    }
+
     @Test
     @WithUserDetails("basic-user@company.com")
     public void updateProfileBadNameWithoutPassword() throws Exception {

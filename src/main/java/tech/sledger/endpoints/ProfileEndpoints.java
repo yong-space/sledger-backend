@@ -6,12 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Profile;
+import tech.sledger.model.user.TokenResponse;
 import tech.sledger.model.user.User;
 import tech.sledger.service.JwtService;
 import tech.sledger.service.UserService;
@@ -26,7 +24,11 @@ public class ProfileEndpoints {
     private final UserService userService;
     private final JwtService jwtService;
 
-    public record TokenResponse(String token) {}
+    @GetMapping
+    public TokenResponse getProfile(Authentication auth) {
+        String jwt = jwtService.generate((User) auth.getPrincipal());
+        return new TokenResponse(jwt);
+    }
 
     @PutMapping
     public TokenResponse updateProfile(

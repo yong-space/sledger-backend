@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.web.server.ResponseStatusException;
-import tech.sledger.endpoints.PublicEndpoints;
 import tech.sledger.model.user.Registration;
+import tech.sledger.model.user.TokenResponse;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.JwtService;
@@ -102,7 +102,7 @@ public class UserTests extends BaseTest {
         AtomicReference<String> jwt = new AtomicReference<>();
         mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", username, "password", password)))
             .andExpect(status().isOk())
-            .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), PublicEndpoints.TokenResponse.class).token()));
+            .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), TokenResponse.class).token()));
 
         mvc.perform(get("/api/account").header("Authorization", "Bearer " + jwt.get()))
             .andExpect(status().isOk());

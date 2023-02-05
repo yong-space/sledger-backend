@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Activation;
 import tech.sledger.model.user.Registration;
+import tech.sledger.model.user.TokenResponse;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.JwtService;
@@ -34,7 +35,6 @@ public class PublicEndpoints {
     private final JwtService jwtService;
 
     public record Credentials(String username, String password) {}
-    public record TokenResponse(String token) {}
     public record RegistrationResponse(String status) {}
 
     @PostMapping("/register")
