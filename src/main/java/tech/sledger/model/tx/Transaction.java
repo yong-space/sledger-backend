@@ -1,5 +1,6 @@
 package tech.sledger.model.tx;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class Transaction {
     @Id
     private long id;
     @DBRef
+    @JsonIdentityReference(alwaysAsId = true)
     private Account account;
     private Instant date;
     private BigDecimal amount;
