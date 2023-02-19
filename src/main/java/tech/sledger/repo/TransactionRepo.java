@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface TransactionRepo extends MongoRepository<Transaction, Long> {
     Transaction findFirstByOrderByIdDesc();
-    Transaction findFirstByDate(Instant date);
     List<Transaction> findAllByAccountOrderByDate(Account account);
     Transaction findFirstByDateBeforeOrderByDateDesc(Instant date);
+    Transaction findFirstByDateBetweenOrderByDateDesc(Instant before, Instant after);
     List<? extends Transaction> findAllByDateAfter(Instant date);
 }

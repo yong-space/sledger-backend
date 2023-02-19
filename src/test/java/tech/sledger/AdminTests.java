@@ -44,9 +44,6 @@ public class AdminTests extends BaseTest {
 
         ResponseStatusException thrown = assertThrows(ResponseStatusException.class, () -> accountIssuerService.delete(accountIssuer));
         assertEquals("There are existing accounts under this issuer", thrown.getReason());
-
-        accountService.delete(account);
-        accountIssuerService.delete(accountIssuer);
     }
 
     @Test

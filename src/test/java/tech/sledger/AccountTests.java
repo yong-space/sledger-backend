@@ -7,6 +7,7 @@ import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -42,10 +43,10 @@ public class AccountTests extends BaseTest {
         AtomicLong id2 = new AtomicLong();
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isOk())
-            .andDo(res -> id1.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
+            .andDo(res -> id1.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isOk())
-            .andDo(res -> id2.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
+            .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
         mvc.perform(get("/api/account"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.id == " + id1.get() + ")]").exists())
@@ -78,13 +79,20 @@ public class AccountTests extends BaseTest {
         AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId());
         mvc.perform(request(POST, "/api/account", newAccount))
             .andExpect(status().isOk())
-            .andDo(res -> id.set(objectMapper.readValue(res.getResponse().getContentAsString(), Account.class).getId()));
+            .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
 
         Account account = accountService.get(id.get());
 
-        assert account != null;
-        account.setName("a2");
-        mvc.perform(request(PUT, "/api/account", account))
+        Map<String, Object> payload = Map.of(
+            "@type", "cash",
+            "id", account.getId(),
+            "name", "a2",
+            "type", account.getType(),
+            "issuer", account.getIssuer(),
+            "owner", account.getOwner().getId()
+        );
+
+        mvc.perform(request(PUT, "/api/account", payload))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("a2"));
         accountService.delete(account);

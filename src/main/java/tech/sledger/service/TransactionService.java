@@ -8,6 +8,8 @@ import tech.sledger.model.tx.Transaction;
 import tech.sledger.repo.TransactionRepo;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,10 +36,15 @@ public class TransactionService {
         long id = (previous == null) ? 1 : previous.getId() + 1;
         transaction.setId(id);
 
-        Transaction sameDate = txRepo.findFirstByDate(transaction.getDate());
+        Instant targetDate = transaction.getDate().atZone(ZoneOffset.UTC)
+            .truncatedTo(ChronoUnit.DAYS).toInstant();
+        Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
+        Instant after = before.plus(1, ChronoUnit.DAYS);
+        Transaction sameDate = txRepo.findFirstByDateBetweenOrderByDateDesc(before, after);
         if (sameDate != null) {
-            transaction.setDate(transaction.getDate().plus(1L, ChronoUnit.SECONDS));
+            targetDate = sameDate.getDate().plus(1L, ChronoUnit.SECONDS);
         }
+        transaction.setDate(targetDate);
         return updateBalances(transaction, TxOperation.SAVE);
     }
 
