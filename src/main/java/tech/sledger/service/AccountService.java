@@ -2,8 +2,8 @@ package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tech.sledger.model.user.User;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
 import java.util.List;
@@ -40,6 +40,7 @@ public class AccountService {
     }
 
     public void delete(Account account) {
+        txRepo.deleteAll(txRepo.findAllByAccount(account));
         accountRepo.delete(account);
     }
 }
