@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
@@ -24,7 +25,7 @@ public class AccountEndpoints {
     private final AccountService accountService;
     private final UserService userService;
 
-    public record NewAccount(String name, AccountType type, long issuerId) {}
+    public record NewAccount(String name, AccountType type, long issuerId, long billingCycle) {}
 
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
@@ -34,13 +35,21 @@ public class AccountEndpoints {
         if (issuer == null) {
             throw new ResponseStatusException(BAD_REQUEST, "No such issuer");
         }
-
-        Account account = Account.builder()
-            .issuer(issuer)
-            .name(newAccount.name)
-            .type(newAccount.type)
-            .owner(user)
-            .build();
+        Account account = switch (newAccount.type) {
+            case Cash -> Account.builder()
+                .issuer(issuer)
+                .name(newAccount.name)
+                .type(newAccount.type)
+                .owner(user)
+                .build();
+            case Credit -> CreditAccount.builder()
+                .issuer(issuer)
+                .name(newAccount.name)
+                .type(newAccount.type)
+                .billingCycle(newAccount.billingCycle)
+                .owner(user)
+                .build();
+        };
         return accountService.add(account);
     }
 

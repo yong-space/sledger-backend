@@ -8,7 +8,6 @@ import tech.sledger.model.tx.Transaction;
 import tech.sledger.repo.TransactionRepo;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class TransactionService {
             .truncatedTo(ChronoUnit.DAYS).toInstant();
         Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
         Instant after = before.plus(1, ChronoUnit.DAYS);
-        Transaction sameDate = txRepo.findFirstByDateBetweenOrderByDateDesc(before, after);
+        Transaction sameDate = txRepo.findFirstByAccountAndDateBetweenOrderByDateDesc(transaction.getAccount(), before, after);
         if (sameDate != null) {
             targetDate = sameDate.getDate().plus(1L, ChronoUnit.SECONDS);
         }
@@ -62,7 +61,8 @@ public class TransactionService {
     @SuppressWarnings("unchecked")
     private <T extends Transaction> T updateBalances(T transaction, TxOperation op) {
         Instant date = transaction.getDate();
-        Transaction epoch = txRepo.findFirstByDateBeforeOrderByDateDesc(date);
+        Account account = transaction.getAccount();
+        Transaction epoch = txRepo.findFirstByAccountAndDateBeforeOrderByDateDesc(account, date);
 
         BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
 
@@ -70,7 +70,7 @@ public class TransactionService {
         if (op == TxOperation.SAVE) {
             affectedTx.add(transaction);
         }
-        affectedTx.addAll((Collection<? extends T>) txRepo.findAllByDateAfter(date));
+        affectedTx.addAll((Collection<? extends T>) txRepo.findAllByAccountAndDateAfter(account, date));
 
         for (T t : affectedTx) {
             balance = balance.add(t.getAmount());

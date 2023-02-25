@@ -29,7 +29,7 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addAccountBadIssuer() throws Exception {
-        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123);
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123, 0L);
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
@@ -38,7 +38,7 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addListDeleteAccount() throws Exception {
-        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, accountIssuer.getId());
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, accountIssuer.getId(), 0L);
         AtomicLong id1 = new AtomicLong();
         AtomicLong id2 = new AtomicLong();
         mvc.perform(request(POST, "/api/account", account))
@@ -76,7 +76,7 @@ public class AccountTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void updateAccount() throws Exception {
         AtomicLong id = new AtomicLong();
-        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId());
+        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId(), 0L);
         mvc.perform(request(POST, "/api/account", newAccount))
             .andExpect(status().isOk())
             .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
