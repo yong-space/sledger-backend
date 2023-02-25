@@ -5,12 +5,15 @@ import org.springframework.stereotype.Service;
 import tech.sledger.model.user.User;
 import tech.sledger.model.account.Account;
 import tech.sledger.repo.AccountRepo;
+import tech.sledger.repo.TransactionRepo;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepo accountRepo;
+    private final TransactionRepo txRepo;
 
     public Account add(Account account) {
         Account previous = accountRepo.findFirstByOrderByIdDesc();
@@ -28,7 +31,12 @@ public class AccountService {
     }
 
     public List<Account> list(User owner) {
-        return accountRepo.findAllByOwnerOrderByName(owner);
+        Map<Long, Long> counts = txRepo.countTransactionsByAccount(owner.getId());
+        List<Account> accounts = accountRepo.findAllByOwnerOrderByName(owner);
+        accounts.stream()
+            .filter(a -> counts.containsKey(a.getId()))
+            .forEach(a -> a.setTransactions(counts.get(a.getId())));
+        return accounts;
     }
 
     public void delete(Account account) {

@@ -83,6 +83,10 @@ public class TransactionTests extends BaseTest {
             .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(2)))
             .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
 
+        mvc.perform(get("/api/account"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.id == " + accountId + ")].transactions").value(2));
+
         mvc.perform(delete("/api/transaction/" + id1))
             .andExpect(status().isOk());
 
