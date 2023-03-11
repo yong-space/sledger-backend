@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import tech.sledger.model.account.Account;
-import tech.sledger.model.account.AccountIssuer;
-import tech.sledger.model.account.AccountType;
-import tech.sledger.model.account.CreditAccount;
+import tech.sledger.model.account.*;
 import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
@@ -66,7 +63,7 @@ public class AccountEndpoints {
     }
 
     @GetMapping
-    public List<Account> listAccounts(Authentication auth) {
+    public List<AccountDTO> listAccounts(Authentication auth) {
         return accountService.list((User) auth.getPrincipal());
     }
 }

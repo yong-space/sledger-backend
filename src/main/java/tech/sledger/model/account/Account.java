@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import tech.sledger.model.user.User;
 
@@ -27,6 +26,4 @@ public class Account {
     private AccountIssuer issuer;
     private AccountType type;
     private String name;
-    @Transient
-    private long transactions;
 }
