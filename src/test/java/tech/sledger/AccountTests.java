@@ -7,6 +7,7 @@ import tech.sledger.endpoints.AccountEndpoints;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -28,33 +29,34 @@ public class AccountTests extends BaseTest {
 
     @Test
     @WithUserDetails("basic-user@company.com")
-    public void addAccountBadIssuer() throws Exception {
+    public void addAccountBadInput() throws Exception {
         AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123, 0L);
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
+
+        var newAccount = new AccountEndpoints.NewAccount("bad", null, accountIssuer.getId(), 0L);
+        mvc.perform(request(POST, "/api/account", newAccount))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addListDeleteAccount() throws Exception {
-        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("abc", AccountType.Cash, accountIssuer.getId(), 0L);
-        AtomicLong id1 = new AtomicLong();
-        AtomicLong id2 = new AtomicLong();
-        mvc.perform(request(POST, "/api/account", account))
-            .andExpect(status().isOk())
-            .andDo(res -> id1.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
-        mvc.perform(request(POST, "/api/account", account))
-            .andExpect(status().isOk())
-            .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
-        mvc.perform(get("/api/account"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.id == " + id1.get() + ")]").exists())
-            .andExpect(jsonPath("$.[?(@.id == " + id2.get() + ")]").exists());
-        mvc.perform(delete("/api/account/" + id1.get()))
-            .andExpect(status().isOk());
-        mvc.perform(delete("/api/account/" + id2.get()))
-            .andExpect(status().isOk());
+        for (AccountEndpoints.NewAccount account : List.of(
+            new AccountEndpoints.NewAccount("cash", AccountType.Cash, accountIssuer.getId(), 0L),
+            new AccountEndpoints.NewAccount("credit", AccountType.Credit, accountIssuer.getId(), 1L)
+        )) {
+            AtomicLong id = new AtomicLong();
+            mvc.perform(request(POST, "/api/account", account))
+                .andExpect(status().isOk())
+                .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
+            mvc.perform(get("/api/account"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.[?(@.id == " + id.get() + ")]").exists());
+            mvc.perform(delete("/api/account/" + id.get()))
+                .andExpect(status().isOk());
+        }
     }
 
     @Test

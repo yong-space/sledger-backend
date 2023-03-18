@@ -31,7 +31,7 @@ public class EmailService {
     public CompletableFuture<Boolean> sendActivation(String toEmail, String displayName, String hash) throws MessagingException {
         Map<String, String> data = Map.of(
             "name", displayName,
-            "requestUrl", baseUri + "/api/public/activate/" + hash
+            "requestUrl", baseUri + "/api/activate/" + hash
         );
         String content = compileTemplate("activation", data);
         sendEmail(toEmail, displayName, "Sledger Activation", content);

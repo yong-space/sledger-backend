@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,8 +26,8 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/public")
-public class PublicEndpoints {
+@RequestMapping("/api/")
+public class UserEndpoints {
     private final UserService userService;
     private final EmailService emailService;
     private final AuthenticationManager authManager;
@@ -37,7 +36,7 @@ public class PublicEndpoints {
     public record Credentials(String username, String password) {}
     public record RegistrationResponse(String status) {}
 
-    @PostMapping("/register")
+    @PostMapping("register")
     public RegistrationResponse register(
         @RequestBody @Valid Registration registration,
         BindingResult binding
@@ -52,13 +51,13 @@ public class PublicEndpoints {
         return new RegistrationResponse("ok");
     }
 
-    @GetMapping("/activate/{code}")
+    @GetMapping("activate/{code}")
     public void activate(@PathVariable String code, HttpServletResponse response) throws IOException {
         userService.activate(code);
         response.sendRedirect("/login#activated");
     }
 
-    @PostMapping("/authenticate")
+    @PostMapping("authenticate")
     public TokenResponse authenticate(@RequestBody Credentials credentials) {
         if (credentials.username == null || credentials.password == null) {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid Credentials");
@@ -76,8 +75,11 @@ public class PublicEndpoints {
         }
     }
 
-    @GetMapping("/invalid")
-    public String invalid() {
-        throw new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT);
+    @GetMapping("refresh-token")
+    public TokenResponse refreshToken(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        String jwt = jwtService.generate(user);
+        log.info("User token refreshed: {}", user.getUsername());
+        return new TokenResponse(jwt);
     }
 }

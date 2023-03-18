@@ -34,7 +34,7 @@ public class UserBaseTest extends BaseTest {
         String username = "user@company.com";
         String password = "P4s5w0rdz!";
         Registration registration = new Registration("Display Name", username, password);
-        mvc.perform(request(POST, "/api/public/register", registration))
+        mvc.perform(request(POST, "/api/register", registration))
             .andExpect(status().isOk());
 
         assertEquals(1, userService.get("user@company.com").getId());
@@ -46,7 +46,7 @@ public class UserBaseTest extends BaseTest {
         assertNotNull(u1);
 
         String code = userService.getActivation(u1.getUsername()).getCode();
-        mvc.perform(get("/api/public/activate/" + code))
+        mvc.perform(get("/api/activate/" + code))
             .andExpect(status().is3xxRedirection());
     }
 }

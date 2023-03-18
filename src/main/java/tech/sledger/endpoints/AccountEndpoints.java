@@ -12,6 +12,7 @@ import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
 import java.util.List;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static tech.sledger.model.account.AccountType.Cash;
 
 @Slf4j
 @RestController
@@ -32,21 +33,26 @@ public class AccountEndpoints {
         if (issuer == null) {
             throw new ResponseStatusException(BAD_REQUEST, "No such issuer");
         }
-        Account account = switch (newAccount.type) {
-            case Cash -> Account.builder()
+        if (newAccount.type == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid account type");
+        }
+        Account account;
+        if (newAccount.type == Cash) {
+            account = Account.builder()
                 .issuer(issuer)
                 .name(newAccount.name)
                 .type(newAccount.type)
                 .owner(user)
                 .build();
-            case Credit -> CreditAccount.builder()
+        } else {
+            account = CreditAccount.builder()
                 .issuer(issuer)
                 .name(newAccount.name)
                 .type(newAccount.type)
                 .billingCycle(newAccount.billingCycle)
                 .owner(user)
                 .build();
-        };
+        }
         return accountService.add(account);
     }
 

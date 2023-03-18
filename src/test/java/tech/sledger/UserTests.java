@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.TokenResponse;
@@ -32,7 +33,7 @@ public class UserTests extends BaseTest {
 
     @Test
     public void activateFail() throws Exception {
-        mvc.perform(get("/api/public/activate/abc"))
+        mvc.perform(get("/api/activate/abc"))
             .andExpect(status().isBadRequest());
     }
 
@@ -52,16 +53,16 @@ public class UserTests extends BaseTest {
             .thenReturn(CompletableFuture.completedFuture(true));
 
         Registration registration = new Registration("Duplicate", "duplicate@company.com", "M3hm3h!z%");
-        mvc.perform(request(POST, "/api/public/register", registration))
+        mvc.perform(request(POST, "/api/register", registration))
             .andExpect(status().isOk());
-        mvc.perform(request(POST, "/api/public/register", registration))
+        mvc.perform(request(POST, "/api/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Account pending activation"));
 
         User user = userService.get("duplicate@company.com");
         userService.activate(user);
 
-        mvc.perform(request(POST, "/api/public/register", registration))
+        mvc.perform(request(POST, "/api/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Email already in use"));
     }
@@ -76,22 +77,22 @@ public class UserTests extends BaseTest {
     @Test
     public void registerBadPassword() throws Exception {
         Registration registration = new Registration("Validate", "validate@company.com", "A1a@!");
-        mvc.perform(request(POST, "/api/public/register", registration))
+        mvc.perform(request(POST, "/api/register", registration))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Password should be between 8 and 100 characters"));
     }
 
     @Test
     public void loginNoCredentials() throws Exception {
-        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", "u")))
+        mvc.perform(request(POST, "/api/authenticate", Map.of("username", "u")))
             .andExpect(status().isBadRequest());
-        mvc.perform(request(POST, "/api/public/authenticate", Map.of("password", "p")))
+        mvc.perform(request(POST, "/api/authenticate", Map.of("password", "p")))
             .andExpect(status().isBadRequest());
     }
 
     @Test
     public void loginBadCredentials() throws Exception {
-        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", "a", "password", "b")))
+        mvc.perform(request(POST, "/api/authenticate", Map.of("username", "a", "password", "b")))
             .andExpect(status().isUnauthorized());
     }
 
@@ -100,12 +101,22 @@ public class UserTests extends BaseTest {
         String username = "basic-user@company.com";
         String password = "B4SicUs3r!";
         AtomicReference<String> jwt = new AtomicReference<>();
-        mvc.perform(request(POST, "/api/public/authenticate", Map.of("username", username, "password", password)))
+        mvc.perform(request(POST, "/api/authenticate", Map.of("username", username, "password", password)))
             .andExpect(status().isOk())
             .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), TokenResponse.class).token()));
 
         mvc.perform(get("/api/account").header("Authorization", "Bearer " + jwt.get()))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void refreshSuccess() throws Exception {
+        AtomicReference<String> jwt = new AtomicReference<>();
+        mvc.perform(get("/api/refresh-token"))
+            .andExpect(status().isOk())
+            .andDo(res -> jwt.set(objectMapper.readValue(res.getResponse().getContentAsString(), TokenResponse.class).token()));
+        jwtService.validate(jwt.get());
     }
 
     @Test

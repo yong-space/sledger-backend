@@ -18,7 +18,7 @@ public class DevCorsTests {
 
     @Test
     public void cors() throws Exception {
-        var request = options("/api/public/authenticate")
+        var request = options("/api/authenticate")
             .header("Access-Control-Request-Method", "POST")
             .header("Origin", "http://localhost:5173");
         mvc.perform(request)

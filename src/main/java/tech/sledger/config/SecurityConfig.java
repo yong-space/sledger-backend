@@ -27,13 +27,16 @@ public class SecurityConfig {
     private final AuthEntryPoint entryPoint;
     private final JwtRequestFilter jwtRequestFilter;
     private final DaoAuthenticationProvider authenticationProvider;
+    private final String[] publicEndpoints = {
+        "/actuator/**", "/api/register", "/api/activate/**", "/api/authenticate"
+    };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable()
             .exceptionHandling().authenticationEntryPoint(entryPoint)
             .and().authorizeHttpRequests()
-            .requestMatchers("/actuator/**", "/api/public/**").permitAll()
+            .requestMatchers(publicEndpoints).permitAll()
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/**").authenticated()
             .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)

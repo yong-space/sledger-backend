@@ -31,7 +31,7 @@ public class JwtService {
         boolean isAdmin = user.getAuthorities() != null && user.getAuthorities().contains(adminRole);
         return JWT.create()
             .withIssuedAt(Date.from(now))
-            .withExpiresAt(Date.from(now.plus(1L, ChronoUnit.DAYS)))
+            .withExpiresAt(Date.from(now.plus(7L, ChronoUnit.DAYS)))
             .withSubject(user.getUsername())
             .withClaim("name", user.getDisplayName())
             .withClaim("admin", isAdmin)
