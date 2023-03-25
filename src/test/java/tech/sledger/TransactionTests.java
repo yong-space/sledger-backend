@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,7 +67,7 @@ public class TransactionTests extends BaseTest {
             "category", "Shopping Test",
             "account", Map.of("id", accountId),
             "amount", 1,
-            "remarks", "Cash"
+            "remarks", "Super cali fragile"
         );
 
         AtomicLong id1 = new AtomicLong();
@@ -74,7 +75,7 @@ public class TransactionTests extends BaseTest {
 
         mvc.perform(request(POST, "/api/transaction", payload))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.remarks").value("Cash"))
+            .andExpect(jsonPath("$.remarks").value("Super cali fragile"))
             .andDo(res -> id1.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
 
         mvc.perform(request(POST, "/api/transaction", payload))
@@ -86,6 +87,10 @@ public class TransactionTests extends BaseTest {
         mvc.perform(get("/api/account"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.id == " + accountId + ")].transactions").value(2));
+
+        mvc.perform(get("/api/data/suggest-remarks?q=agile"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasItem("Super cali fragile")));
 
         mvc.perform(delete("/api/transaction/" + id1))
             .andExpect(status().isOk());

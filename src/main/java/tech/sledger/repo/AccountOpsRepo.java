@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface AccountOpsRepo {
     List<AccountDTO> getAccountsWithMetrics(long ownerId);
+    List<String> getTopRemarks(long ownerId, String q);
 }

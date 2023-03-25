@@ -1,14 +1,16 @@
 package tech.sledger.repo;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountDTO;
 import java.util.List;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.stage;
+import java.util.Map;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @RequiredArgsConstructor
 public class AccountOpsRepoImpl implements AccountOpsRepo {
@@ -50,5 +52,21 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
         AggregationOperation project = stage("{ $project: { lookup: 0 } }");
         Aggregation aggregate = newAggregation(matchOwner, lookup, replaceRoot, project);
         return mongoOps.aggregate(aggregate, Account.class, AccountDTO.class).getMappedResults();
+    }
+
+    @Override
+    public List<String> getTopRemarks(long ownerId, String q) {
+        return mongoOps.aggregate(newAggregation(
+            match(new Criteria("owner.$id").is(ownerId)),
+            lookup("transaction", "_id", "account.$id", "lookup"),
+            unwind("$lookup"),
+            replaceRoot("$lookup"),
+            match(new Criteria("remarks").regex(q, "i")),
+            group("$remarks").count().as("count"),
+            sort(Sort.Direction.DESC, "count").and(Sort.Direction.ASC, "_id"),
+            limit(5),
+            project("_id")
+        ), Account.class, Map.class).getMappedResults()
+        .stream().map(m -> (String) m.get("_id")).toList();
     }
 }
