@@ -23,4 +23,10 @@ public class DataEndpoints {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopRemarks(user.getId(), q);
     }
+
+    @GetMapping("/suggest-category")
+    public List<String> suggestCategory(Authentication auth, @RequestParam String q) {
+        User user = (User) auth.getPrincipal();
+        return accountRepo.getTopCategories(user.getId(), q);
+    }
 }

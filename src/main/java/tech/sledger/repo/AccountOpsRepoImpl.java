@@ -69,4 +69,20 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
         ), Account.class, Map.class).getMappedResults()
         .stream().map(m -> (String) m.get("_id")).toList();
     }
+
+    @Override
+    public List<String> getTopCategories(long ownerId, String q) {
+        return mongoOps.aggregate(newAggregation(
+                match(new Criteria("owner.$id").is(ownerId)),
+                lookup("transaction", "_id", "account.$id", "lookup"),
+                unwind("$lookup"),
+                replaceRoot("$lookup"),
+                match(new Criteria("category").regex(q, "i")),
+                group("category").count().as("count"),
+                sort(Sort.Direction.DESC, "count").and(Sort.Direction.ASC, "_id"),
+                limit(5),
+                project("_id")
+            ), Account.class, Map.class).getMappedResults()
+            .stream().map(m -> (String) m.get("_id")).toList();
+    }
 }

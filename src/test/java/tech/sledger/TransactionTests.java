@@ -92,6 +92,10 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("Super cali fragile")));
 
+        mvc.perform(get("/api/data/suggest-category?q=hopping"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasItem("Shopping Test")));
+
         mvc.perform(delete("/api/transaction/" + id1))
             .andExpect(status().isOk());
 
