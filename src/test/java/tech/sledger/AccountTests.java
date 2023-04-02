@@ -30,22 +30,28 @@ public class AccountTests extends BaseTest {
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addAccountBadInput() throws Exception {
-        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123, 0L);
+        AccountEndpoints.NewAccount account = new AccountEndpoints.NewAccount("a", AccountType.Cash, 123, 0L, false);
         mvc.perform(request(POST, "/api/account", account))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
 
-        var newAccount = new AccountEndpoints.NewAccount("bad", null, accountIssuer.getId(), 0L);
+        var newAccount = new AccountEndpoints.NewAccount("bad", null, accountIssuer.getId(), 0L, false);
         mvc.perform(request(POST, "/api/account", newAccount))
             .andExpect(status().isBadRequest());
+
+        var badAccount = new AccountEndpoints.NewAccount("bad", AccountType.Other, accountIssuer.getId(), 0L, false);
+        mvc.perform(request(POST, "/api/account", badAccount))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid new account type"));
     }
 
     @Test
     @WithUserDetails("basic-user@company.com")
     public void addListDeleteAccount() throws Exception {
         for (AccountEndpoints.NewAccount account : List.of(
-            new AccountEndpoints.NewAccount("cash", AccountType.Cash, accountIssuer.getId(), 0L),
-            new AccountEndpoints.NewAccount("credit", AccountType.Credit, accountIssuer.getId(), 1L)
+            new AccountEndpoints.NewAccount("cash", AccountType.Cash, accountIssuer.getId(), 0L, false),
+            new AccountEndpoints.NewAccount("credit", AccountType.Credit, accountIssuer.getId(), 1L, false),
+            new AccountEndpoints.NewAccount("wallet", AccountType.Wallet, accountIssuer.getId(), 0L, true)
         )) {
             AtomicLong id = new AtomicLong();
             mvc.perform(request(POST, "/api/account", account))
@@ -78,7 +84,7 @@ public class AccountTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void updateAccount() throws Exception {
         AtomicLong id = new AtomicLong();
-        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId(), 0L);
+        AccountEndpoints.NewAccount newAccount = new AccountEndpoints.NewAccount("a", AccountType.Cash, accountIssuer.getId(), 0L, false);
         mvc.perform(request(POST, "/api/account", newAccount))
             .andExpect(status().isOk())
             .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));

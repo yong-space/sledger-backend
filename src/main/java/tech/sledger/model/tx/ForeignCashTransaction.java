@@ -4,15 +4,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.mongodb.core.index.Indexed;
+import java.math.BigDecimal;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper=true)
-public class CashTransaction extends Transaction {
-    @Indexed
-    private String category;
-    @Indexed
-    private String remarks;
+public class ForeignCashTransaction extends CashTransaction {
+    private String currency;
+    private BigDecimal originalAmount;
 }

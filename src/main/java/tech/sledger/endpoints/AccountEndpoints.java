@@ -23,7 +23,7 @@ public class AccountEndpoints {
     private final AccountService accountService;
     private final UserService userService;
 
-    public record NewAccount(String name, AccountType type, long issuerId, long billingCycle) {}
+    public record NewAccount(String name, AccountType type, long issuerId, long billingCycle, boolean multiCurrency) {}
 
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
@@ -36,22 +36,31 @@ public class AccountEndpoints {
         if (newAccount.type == null) {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid account type");
         }
-        Account account;
-        if (newAccount.type == Cash) {
-            account = Account.builder()
+        Account account = switch(newAccount.type) {
+            case Cash -> Account.builder()
                 .issuer(issuer)
                 .name(newAccount.name)
                 .type(newAccount.type)
                 .owner(user)
                 .build();
-        } else {
-            account = CreditAccount.builder()
+            case Credit -> CreditAccount.builder()
                 .issuer(issuer)
                 .name(newAccount.name)
                 .type(newAccount.type)
                 .billingCycle(newAccount.billingCycle)
                 .owner(user)
                 .build();
+            case Wallet -> WalletAccount.builder()
+                .issuer(issuer)
+                .name(issuer.getName())
+                .type(newAccount.type)
+                .owner(user)
+                .multiCurrency(newAccount.multiCurrency)
+                .build();
+            default -> null;
+        };
+        if (account == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid new account type");
         }
         return accountService.add(account);
     }

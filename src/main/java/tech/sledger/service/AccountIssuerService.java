@@ -20,6 +20,7 @@ public class AccountIssuerService {
         AccountIssuer previous = accountIssuerRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
         accountIssuer.setId(id);
+        accountIssuer.setName(accountIssuer.getName().trim());
         return accountIssuerRepo.save(accountIssuer);
     }
 

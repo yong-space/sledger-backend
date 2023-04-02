@@ -18,9 +18,7 @@ public class AdminEndpoints {
     public record NewAccountIssuer(String name) {}
 
     @PostMapping("/account-issuer")
-    public AccountIssuer addAccountIssuer(@RequestBody NewAccountIssuer newAccountIssuer) {
-        AccountIssuer accountIssuer = new AccountIssuer();
-        accountIssuer.setName(newAccountIssuer.name.trim());
+    public AccountIssuer addAccountIssuer(@RequestBody AccountIssuer accountIssuer) {
         return accountIssuerService.add(accountIssuer);
     }
 
