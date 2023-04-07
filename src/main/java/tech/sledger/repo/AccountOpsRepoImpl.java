@@ -18,7 +18,6 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
 
     @Override
     public List<AccountDTO> getAccountsWithMetrics(long ownerId) {
-        AggregationOperation matchOwner = stage("{ $match: { \"owner.$id\": " + ownerId + " } }");
         AggregationOperation lookup = stage("""
             {
                 $lookup: {
@@ -48,37 +47,34 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                 }
             }
             """);
-        AggregationOperation replaceRoot = stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$lookup\", 0 ] }, \"$$ROOT\" ] } } }");
-        AggregationOperation project = stage("{ $project: { lookup: 0 } }");
-        Aggregation aggregate = newAggregation(matchOwner, lookup, replaceRoot, project);
+        Aggregation aggregate = newAggregation(
+            match(new Criteria("owner.$id").is(ownerId)),
+            lookup,
+            stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$lookup\", 0 ] }, \"$$ROOT\" ] } } }"),
+            stage("{ $project: { lookup: 0 } }"),
+            sort(Sort.Direction.ASC, "type").and(Sort.Direction.ASC, "name")
+        );
         return mongoOps.aggregate(aggregate, Account.class, AccountDTO.class).getMappedResults();
     }
 
     @Override
     public List<String> getTopRemarks(long ownerId, String q) {
-        return mongoOps.aggregate(newAggregation(
-            match(new Criteria("owner.$id").is(ownerId)),
-            lookup("transaction", "_id", "account.$id", "lookup"),
-            unwind("$lookup"),
-            replaceRoot("$lookup"),
-            match(new Criteria("remarks").regex(q, "i")),
-            group("$remarks").count().as("count"),
-            sort(Sort.Direction.DESC, "count").and(Sort.Direction.ASC, "_id"),
-            limit(5),
-            project("_id")
-        ), Account.class, Map.class).getMappedResults()
-        .stream().map(m -> (String) m.get("_id")).toList();
+        return getTopAttributes(ownerId, "remarks", q);
     }
 
     @Override
     public List<String> getTopCategories(long ownerId, String q) {
+        return getTopAttributes(ownerId, "category", q);
+    }
+
+    private List<String> getTopAttributes(long ownerId, String field, String q) {
         return mongoOps.aggregate(newAggregation(
                 match(new Criteria("owner.$id").is(ownerId)),
                 lookup("transaction", "_id", "account.$id", "lookup"),
                 unwind("$lookup"),
                 replaceRoot("$lookup"),
-                match(new Criteria("category").regex(q, "i")),
-                group("category").count().as("count"),
+                match(new Criteria(field).regex(q, "i")),
+                group("$" + field).count().as("count"),
                 sort(Sort.Direction.DESC, "count").and(Sort.Direction.ASC, "_id"),
                 limit(5),
                 project("_id")
