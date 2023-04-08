@@ -71,6 +71,14 @@ public class AccountEndpoints {
         return accountService.edit(account);
     }
 
+    @PutMapping("/{accountId}/{visible}")
+    public Account updateAccountVisibility(Authentication auth, @PathVariable long accountId, @PathVariable boolean visible) {
+        Account account = accountService.get(accountId);
+        userService.authorise(auth, account.getId());
+        account.setVisible(visible);
+        return accountService.edit(account);
+    }
+
     @DeleteMapping("/{accountId}")
     public void deleteAccount(Authentication auth, @PathVariable long accountId) {
         Account account = userService.authorise(auth, accountId);

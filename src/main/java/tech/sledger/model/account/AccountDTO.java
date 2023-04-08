@@ -13,4 +13,5 @@ public class AccountDTO {
     private String name;
     private long transactions;
     private BigDecimal balance = BigDecimal.ZERO;
+    private boolean visible;
 }

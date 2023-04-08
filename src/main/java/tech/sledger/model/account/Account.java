@@ -2,8 +2,10 @@ package tech.sledger.model.account;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -16,6 +18,7 @@ import tech.sledger.model.user.User;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Account {
     @Id
     private long id;
@@ -26,4 +29,6 @@ public class Account {
     private AccountIssuer issuer;
     private AccountType type;
     private String name;
+    @Builder.Default
+    private boolean visible = true;
 }
