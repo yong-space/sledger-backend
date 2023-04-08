@@ -16,5 +16,6 @@ public class AccountIssuer {
     private long id;
     @Indexed(unique = true)
     private String name;
+    private String colour;
     private List<AccountType> types;
 }
