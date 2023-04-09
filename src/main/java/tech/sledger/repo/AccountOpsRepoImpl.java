@@ -1,15 +1,17 @@
 package tech.sledger.repo;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountDTO;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @RequiredArgsConstructor
@@ -50,11 +52,13 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
         Aggregation aggregate = newAggregation(
             match(new Criteria("owner.$id").is(ownerId)),
             lookup,
-            stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$lookup\", 0 ] }, \"$$ROOT\" ] } } }"),
-            stage("{ $project: { lookup: 0 } }"),
-            sort(Sort.Direction.ASC, "type").and(Sort.Direction.ASC, "name")
+            stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$lookup\", 0 ] }, \"$$ROOT\" ] } } }")
         );
-        return mongoOps.aggregate(aggregate, Account.class, AccountDTO.class).getMappedResults();
+        return mongoOps.aggregate(aggregate, Account.class, AccountDTO.class).getMappedResults()
+            .stream().sorted(Comparator.comparing(AccountDTO::getType)
+                .thenComparing(a -> a.getIssuer().getName())
+                .thenComparing(AccountDTO::getName))
+            .toList();
     }
 
     @Override
@@ -75,7 +79,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                 replaceRoot("$lookup"),
                 match(new Criteria(field).regex(q, "i")),
                 group("$" + field).count().as("count"),
-                sort(Sort.Direction.DESC, "count").and(Sort.Direction.ASC, "_id"),
+                sort(DESC, "count").and(ASC, "_id"),
                 limit(5),
                 project("_id")
             ), Account.class, Map.class).getMappedResults()

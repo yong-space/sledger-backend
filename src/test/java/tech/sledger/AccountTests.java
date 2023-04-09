@@ -10,8 +10,7 @@ import tech.sledger.model.account.CashAccount;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
@@ -65,12 +64,6 @@ public class AccountTests extends BaseTest {
                 "multiCurrency", false
             ),
             Map.of(
-                "name", "walletAccount",
-                "type", "Cash",
-                "issuerId", accountIssuer.getId(),
-                "multiCurrency", true
-            ),
-            Map.of(
                 "name", "creditAccount",
                 "type", "Credit",
                 "issuerId", accountIssuer.getId(),
@@ -91,6 +84,9 @@ public class AccountTests extends BaseTest {
             mvc.perform(get("/api/account"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.[?(@.id == " + id.get() + ")]").exists());
+            mvc.perform(put("/api/account/" + id.get() + "/false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visible").value(false));
             mvc.perform(delete("/api/account/" + id.get()))
                 .andExpect(status().isOk());
         }
