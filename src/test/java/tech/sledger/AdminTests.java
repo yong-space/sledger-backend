@@ -4,9 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.endpoints.AdminEndpoints;
-import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CashAccount;
 import static com.mongodb.assertions.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +35,7 @@ public class AdminTests extends BaseTest {
         AccountIssuer accountIssuer = accountIssuerService.get("a");
         assertNotNull(accountIssuer);
 
-        Account account = accountService.add(Account.builder()
+        accountService.add(CashAccount.builder()
             .issuer(accountIssuer)
             .name("Hello")
             .type(AccountType.Cash)

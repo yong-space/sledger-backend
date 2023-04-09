@@ -10,9 +10,9 @@ import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
+import java.math.BigDecimal;
 import java.util.List;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static tech.sledger.model.account.AccountType.Cash;
 
 @Slf4j
 @RestController
@@ -23,7 +23,16 @@ public class AccountEndpoints {
     private final AccountService accountService;
     private final UserService userService;
 
-    public record NewAccount(String name, AccountType type, long issuerId, long billingCycle, boolean multiCurrency) {}
+    public record NewAccount(
+        String name,
+        AccountType type,
+        long issuerId,
+        long billingCycle,
+        boolean multiCurrency,
+        BigDecimal ordinaryRatio,
+        BigDecimal specialRatio,
+        BigDecimal medisaveRatio
+    ) {}
 
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
@@ -37,11 +46,12 @@ public class AccountEndpoints {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid account type");
         }
         Account account = switch(newAccount.type) {
-            case Cash -> Account.builder()
+            case Cash -> CashAccount.builder()
                 .issuer(issuer)
                 .name(newAccount.name)
                 .type(newAccount.type)
                 .owner(user)
+                .multiCurrency(newAccount.multiCurrency)
                 .build();
             case Credit -> CreditAccount.builder()
                 .issuer(issuer)
@@ -50,12 +60,14 @@ public class AccountEndpoints {
                 .billingCycle(newAccount.billingCycle)
                 .owner(user)
                 .build();
-            case Wallet -> WalletAccount.builder()
+            case Retirement -> CPFAccount.builder()
                 .issuer(issuer)
-                .name(issuer.getName())
+                .name("CPF")
                 .type(newAccount.type)
                 .owner(user)
-                .multiCurrency(newAccount.multiCurrency)
+                .ordinaryRatio(newAccount.ordinaryRatio)
+                .specialRatio(newAccount.specialRatio)
+                .medisaveRatio(newAccount.medisaveRatio)
                 .build();
             default -> null;
         };

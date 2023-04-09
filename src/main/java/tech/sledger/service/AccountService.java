@@ -27,7 +27,7 @@ public class AccountService {
     }
 
     public Account get(long id) {
-        return accountRepo.findById(id).orElse(null);
+        return accountRepo.findFirstById(id);
     }
 
     public List<AccountDTO> list(User owner) {

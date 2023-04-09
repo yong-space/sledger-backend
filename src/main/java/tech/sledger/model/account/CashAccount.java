@@ -11,6 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @SuperBuilder
 @NoArgsConstructor
 @Document("account")
-public class WalletAccount extends Account {
+public class CashAccount extends Account {
     private boolean multiCurrency;
 }

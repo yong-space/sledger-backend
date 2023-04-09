@@ -7,6 +7,7 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CashAccount;
 import tech.sledger.service.UserService;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,7 +33,7 @@ public class TransactionTests extends BaseTest {
         accountIssuerA.setName("a");
         accountIssuerA = accountIssuerService.add(accountIssuerA);
 
-        Account cashAccount = Account.builder()
+        Account cashAccount = CashAccount.builder()
             .issuer(accountIssuerA)
             .name("My Cash Account")
             .owner(userService.get("basic-user@company.com"))
