@@ -10,7 +10,6 @@ import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
-import java.math.BigDecimal;
 import java.util.List;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
@@ -23,51 +22,37 @@ public class AccountEndpoints {
     private final AccountService accountService;
     private final UserService userService;
 
-    public record NewAccount(
-        String name,
-        AccountType type,
-        long issuerId,
-        long billingCycle,
-        boolean multiCurrency,
-        BigDecimal ordinaryRatio,
-        BigDecimal specialRatio,
-        BigDecimal medisaveRatio
-    ) {}
-
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
         User user = (User) auth.getPrincipal();
 
-        AccountIssuer issuer = accountIssuerService.get(newAccount.issuerId);
+        AccountIssuer issuer = accountIssuerService.get(newAccount.getIssuerId());
         if (issuer == null) {
             throw new ResponseStatusException(BAD_REQUEST, "No such issuer");
         }
-        if (newAccount.type == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid account type");
-        }
-        Account account = switch(newAccount.type) {
+        Account account = switch(newAccount.getType()) {
             case Cash -> CashAccount.builder()
                 .issuer(issuer)
-                .name(newAccount.name)
-                .type(newAccount.type)
+                .name(newAccount.getName())
+                .type(newAccount.getType())
                 .owner(user)
-                .multiCurrency(newAccount.multiCurrency)
+                .multiCurrency(newAccount.isMultiCurrency())
                 .build();
             case Credit -> CreditAccount.builder()
                 .issuer(issuer)
-                .name(newAccount.name)
-                .type(newAccount.type)
-                .billingCycle(newAccount.billingCycle)
+                .name(newAccount.getName())
+                .type(newAccount.getType())
+                .billingCycle(newAccount.getBillingCycle())
                 .owner(user)
                 .build();
             case Retirement -> CPFAccount.builder()
                 .issuer(issuer)
                 .name("CPF")
-                .type(newAccount.type)
+                .type(newAccount.getType())
                 .owner(user)
-                .ordinaryRatio(newAccount.ordinaryRatio)
-                .specialRatio(newAccount.specialRatio)
-                .medisaveRatio(newAccount.medisaveRatio)
+                .ordinaryRatio(newAccount.getOrdinaryRatio())
+                .specialRatio(newAccount.getSpecialRatio())
+                .medisaveRatio(newAccount.getMedisaveRatio())
                 .build();
             default -> null;
         };
