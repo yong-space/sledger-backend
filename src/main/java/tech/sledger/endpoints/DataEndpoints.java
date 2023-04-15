@@ -21,12 +21,24 @@ public class DataEndpoints {
     @GetMapping("/suggest-remarks")
     public List<String> suggestRemarks(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
-        return accountRepo.getTopRemarks(user.getId(), q);
+        return accountRepo.getTopStrings(user.getId(), "remarks", q);
     }
 
     @GetMapping("/suggest-category")
     public List<String> suggestCategory(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
-        return accountRepo.getTopCategories(user.getId(), q);
+        return accountRepo.getTopStrings(user.getId(), "category", q);
+    }
+
+    @GetMapping("/suggest-code")
+    public List<String> suggestCode(Authentication auth, @RequestParam String q) {
+        User user = (User) auth.getPrincipal();
+        return accountRepo.getTopStrings(user.getId(), "code", q);
+    }
+
+    @GetMapping("/suggest-company")
+    public List<String> suggestCompany(Authentication auth, @RequestParam String q) {
+        User user = (User) auth.getPrincipal();
+        return accountRepo.getTopStrings(user.getId(), "company", q);
     }
 }

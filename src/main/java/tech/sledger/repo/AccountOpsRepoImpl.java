@@ -61,16 +61,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     }
 
     @Override
-    public List<String> getTopRemarks(long ownerId, String q) {
-        return getTopAttributes(ownerId, "remarks", q);
-    }
-
-    @Override
-    public List<String> getTopCategories(long ownerId, String q) {
-        return getTopAttributes(ownerId, "category", q);
-    }
-
-    private List<String> getTopAttributes(long ownerId, String field, String q) {
+    public List<String> getTopStrings(long ownerId, String field, String q) {
         return mongoOps.aggregate(newAggregation(
                 match(new Criteria("owner.$id").is(ownerId)),
                 lookup("transaction", "_id", "account.$id", "lookup"),
