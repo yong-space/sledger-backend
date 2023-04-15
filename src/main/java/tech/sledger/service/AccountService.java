@@ -3,11 +3,11 @@ package tech.sledger.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tech.sledger.model.account.Account;
-import tech.sledger.model.account.AccountDTO;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +30,7 @@ public class AccountService {
         return accountRepo.findFirstById(id);
     }
 
-    public List<AccountDTO> list(User owner) {
+    public List<Map> list(User owner) {
         return accountRepo.getAccountsWithMetrics(owner.getId());
     }
 

@@ -20,7 +20,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = CashTransaction.class, name = "cash"),
-    @JsonSubTypes.Type(value = CreditTransaction.class, name = "credit")
+    @JsonSubTypes.Type(value = CreditTransaction.class, name = "credit"),
+    @JsonSubTypes.Type(value = ForeignCashTransaction.class, name = "fx")
 })
 public class Transaction {
     @Id

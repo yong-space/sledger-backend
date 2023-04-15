@@ -11,6 +11,7 @@ import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
 import java.util.List;
+import java.util.Map;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
@@ -83,7 +84,7 @@ public class AccountEndpoints {
     }
 
     @GetMapping
-    public List<AccountDTO> listAccounts(Authentication auth) {
+    public List<Map> listAccounts(Authentication auth) {
         return accountService.list((User) auth.getPrincipal());
     }
 }
