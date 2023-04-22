@@ -25,7 +25,16 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                   let: { accountId: "$_id" },
                   pipeline: [
                     { $match: { $expr: { $eq: [ "$$accountId", "$account.$id" ] } } },
-                    { $group: { _id: "$account.$id", transactions: { $sum: 1 }, maxDate: { $max: "$date" } } },
+                    {
+                        $group: {
+                            _id: "$account.$id",
+                            maxDate: { $max: "$date" },
+                            transactions: { $sum: 1 },
+                            ordinaryBalance: { $sum: { $toDouble: "$ordinaryAmount" } },
+                            specialBalance: { $sum: { $toDouble: "$specialAmount" } },
+                            medisaveBalance: { $sum: { $toDouble: "$medisaveAmount" } }
+                        }
+                    },
                     {
                       $lookup: {
                         from: "transaction",
@@ -41,7 +50,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                       }
                     },
                     { $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$balanceLookup", 0 ] }, "$$ROOT" ] } } },
-                    { $project: { balance: 1, transactions: 1 } }
+                    { $project: { balance: 1, transactions: 1, ordinaryBalance: 1, specialBalance: 1, medisaveBalance: 1  } }
                   ],
                   as: "transactionLookup"
                 }
