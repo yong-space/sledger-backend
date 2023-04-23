@@ -44,6 +44,8 @@ public class AccountEndpoints {
                 .name(newAccount.getName())
                 .type(newAccount.getType())
                 .billingCycle(newAccount.getBillingCycle())
+                .paymentAccountId(newAccount.getPaymentAccount())
+                .paymentRemarks(newAccount.getPaymentRemarks())
                 .owner(user)
                 .build();
             case Retirement -> CPFAccount.builder()

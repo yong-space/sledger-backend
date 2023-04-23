@@ -1,8 +1,11 @@
 package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
@@ -19,6 +22,13 @@ public class AccountService {
         Account previous = accountRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
         account.setId(id);
+
+        if (account instanceof CreditAccount creditAccount && creditAccount.getPaymentAccountId() > 0) {
+            Account paymentAccount = get(creditAccount.getPaymentAccountId());
+            if (paymentAccount == null || !account.getOwner().equals(paymentAccount.getOwner())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payment account id");
+            }
+        }
         return accountRepo.save(account);
     }
 
@@ -27,7 +37,7 @@ public class AccountService {
     }
 
     public Account get(long id) {
-        return accountRepo.findFirstById(id);
+        return accountRepo.findById(id).orElse(null);
     }
 
     public List<Map> list(User owner) {

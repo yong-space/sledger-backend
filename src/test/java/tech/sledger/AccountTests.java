@@ -18,12 +18,28 @@ import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class AccountTests extends BaseTest {
     private AccountIssuer accountIssuer;
+    private Account myAccount;
+    private Account someoneElsesAccount;
 
     @PostConstruct
     public void init() {
         accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
         accountIssuer = accountIssuerService.add(accountIssuer);
+
+        myAccount = accountService.add(CashAccount.builder()
+            .issuer(accountIssuer)
+            .name("My Account")
+            .type(AccountType.Cash)
+            .owner(userService.get("basic-user@company.com"))
+            .build());
+
+        someoneElsesAccount = accountService.add(CashAccount.builder()
+            .issuer(accountIssuer)
+            .name("Someone Else's Account")
+            .type(AccountType.Cash)
+            .owner(userService.get("admin-user@company.com"))
+            .build());
     }
 
     @Test
@@ -38,6 +54,26 @@ public class AccountTests extends BaseTest {
         mvc.perform(request(POST, "/api/account", badIssuerAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
+
+        Map<String, ?> badPaymentAccount = Map.of(
+            "name", "creditAccount",
+            "type", "Credit",
+            "issuerId", accountIssuer.getId(),
+            "paymentAccount", 1234567
+        );
+        mvc.perform(request(POST, "/api/account", badPaymentAccount))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid payment account id"));
+
+        Map<String, ?> badPaymentAccount2 = Map.of(
+            "name", "creditAccount",
+            "type", "Credit",
+            "issuerId", accountIssuer.getId(),
+            "paymentAccount", someoneElsesAccount.getId()
+        );
+        mvc.perform(request(POST, "/api/account", badPaymentAccount2))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid payment account id"));
 
         Map<String, Object> noIssuerAccount = Map.of("name", "badAccount");
         mvc.perform(request(POST, "/api/account", noIssuerAccount))
@@ -67,7 +103,14 @@ public class AccountTests extends BaseTest {
                 "name", "creditAccount",
                 "type", "Credit",
                 "issuerId", accountIssuer.getId(),
-                "billingCycle", 15L
+                "billingCycle", 15L,
+                "paymentAccount", myAccount.getId()
+            ),
+            Map.of(
+                "name", "creditAccountNoPayment",
+                "type", "Credit",
+                "issuerId", accountIssuer.getId(),
+                "billingCycle", 1L
             ),
             Map.of(
                 "type", "Retirement",

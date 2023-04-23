@@ -13,4 +13,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("account")
 public class CreditAccount extends Account {
     private long billingCycle;
+    private long paymentAccountId;
+    private String paymentRemarks;
 }
