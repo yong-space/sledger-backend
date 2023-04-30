@@ -1,12 +1,12 @@
 package tech.sledger;
 
-import jakarta.annotation.PostConstruct;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.account.CashAccount;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,18 +16,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AccountTests extends BaseTest {
-    private AccountIssuer accountIssuer;
-    private Account myAccount;
-    private Account someoneElsesAccount;
+    private static AccountIssuer accountIssuer;
+    private static Account someoneElsesAccount;
+    private static List<Map<String, Object>> newAccounts;
 
-    @PostConstruct
-    public void init() {
+    @Test
+    @Order(1)
+    @WithUserDetails("basic-user@company.com")
+    public void setup() {
         accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
         accountIssuer = accountIssuerService.add(accountIssuer);
 
-        myAccount = accountService.add(CashAccount.builder()
+        Account myAccount = accountService.add(CashAccount.builder()
             .issuer(accountIssuer)
             .name("My Account")
             .type(AccountType.Cash)
@@ -40,11 +43,77 @@ public class AccountTests extends BaseTest {
             .type(AccountType.Cash)
             .owner(userService.get("admin-user@company.com"))
             .build());
+
+        newAccounts = List.of(
+            new HashMap<>(Map.of(
+                "name", "cashAccount",
+                "type", "Cash",
+                "issuerId", accountIssuer.getId(),
+                "multiCurrency", false
+            )),
+            new HashMap<>(Map.of(
+                "name", "creditAccount",
+                "type", "Credit",
+                "issuerId", accountIssuer.getId(),
+                "billingCycle", 15L,
+                "paymentAccount", myAccount.getId()
+            )),
+            new HashMap<>(Map.of(
+                "name", "creditAccountNoPayment",
+                "type", "Credit",
+                "issuerId", accountIssuer.getId(),
+                "billingCycle", 1L
+            )),
+            new HashMap<>(Map.of(
+                "type", "Retirement",
+                "issuerId", accountIssuer.getId(),
+                "ordinaryRatio", 0.5677,
+                "specialRatio", 0.1891,
+                "medisaveRatio", 0.2432
+            ))
+        );
     }
 
     @Test
+    @Order(2)
     @WithUserDetails("basic-user@company.com")
-    public void addAccountBadInput() throws Exception {
+    public void addAccounts() throws Exception {
+        for (Map<String, Object> account : newAccounts) {
+            AtomicLong id = new AtomicLong();
+            mvc.perform(request(POST, "/api/account", account))
+                .andExpect(status().isOk())
+                .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
+            account.put("id", id.get());
+        }
+
+        mvc.perform(get("/api/account"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(0).get("id") + ")]").exists())
+            .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(1).get("id") + ")]").exists())
+            .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(2).get("id") + ")]").exists())
+            .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(3).get("id") + ")]").exists());
+
+        System.out.println("hello");
+    }
+
+    @Test
+    @Order(3)
+    @WithUserDetails("basic-user@company.com")
+    public void updateAccounts() throws Exception {
+        for (Map<String, Object> account : newAccounts) {
+            mvc.perform(put("/api/account/" + account.get("id") + "/false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.visible").value(false));
+
+            mvc.perform(request(PUT, "/api/account/" + account.get("id"), account))
+                .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @Order(4)
+    @WithUserDetails("basic-user@company.com")
+    public void badInput() throws Exception {
         Map<String, ?> badIssuerAccount = Map.of(
             "name", "cashAccount",
             "type", "Cash",
@@ -52,6 +121,12 @@ public class AccountTests extends BaseTest {
             "multiCurrency", false
         );
         mvc.perform(request(POST, "/api/account", badIssuerAccount))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("No such issuer"));
+
+        var badEditAccount = newAccounts.get(0);
+        badEditAccount.put("issuerId", 123);
+        mvc.perform(request(PUT, "/api/account/" + badEditAccount.get("id"), badEditAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
 
@@ -87,50 +162,20 @@ public class AccountTests extends BaseTest {
         mvc.perform(request(POST, "/api/account", otherTypeAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Invalid new account type"));
+
+        var badEditAccountType = newAccounts.get(1);
+        badEditAccountType.put("type", "Other");
+        mvc.perform(request(PUT, "/api/account/" + badEditAccountType.get("id"), badEditAccountType))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid account type"));
     }
 
     @Test
+    @Order(5)
     @WithUserDetails("basic-user@company.com")
-    public void addListDeleteAccount() throws Exception {
-        for (Map<String, ?> account : List.of(
-            Map.of(
-                "name", "cashAccount",
-                "type", "Cash",
-                "issuerId", accountIssuer.getId(),
-                "multiCurrency", false
-            ),
-            Map.of(
-                "name", "creditAccount",
-                "type", "Credit",
-                "issuerId", accountIssuer.getId(),
-                "billingCycle", 15L,
-                "paymentAccount", myAccount.getId()
-            ),
-            Map.of(
-                "name", "creditAccountNoPayment",
-                "type", "Credit",
-                "issuerId", accountIssuer.getId(),
-                "billingCycle", 1L
-            ),
-            Map.of(
-                "type", "Retirement",
-                "issuerId", accountIssuer.getId(),
-                "ordinaryRatio", 0.5677,
-                "specialRatio", 0.1891,
-                "medisaveRatio", 0.2432
-            )
-        )) {
-            AtomicLong id = new AtomicLong();
-            mvc.perform(request(POST, "/api/account", account))
-                .andExpect(status().isOk())
-                .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
-            mvc.perform(get("/api/account"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.[?(@.id == " + id.get() + ")]").exists());
-            mvc.perform(put("/api/account/" + id.get() + "/false"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.visible").value(false));
-            mvc.perform(delete("/api/account/" + id.get()))
+    public void deleteAccounts() throws Exception {
+        for (Map<String, Object> account : newAccounts) {
+            mvc.perform(delete("/api/account/" + account.get("id")))
                 .andExpect(status().isOk());
         }
     }
@@ -148,37 +193,6 @@ public class AccountTests extends BaseTest {
         mvc.perform(delete("/api/account/" + account.getId()))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.detail").value("You are not the owner of this account"));
-    }
-
-    @Test
-    @WithUserDetails("basic-user@company.com")
-    public void updateAccount() throws Exception {
-        AtomicLong id = new AtomicLong();
-        Map<String, ?> newAccount = Map.of(
-            "name", "cashAccount",
-            "type", "Cash",
-            "issuerId", accountIssuer.getId(),
-            "multiCurrency", false
-        );
-        mvc.perform(request(POST, "/api/account", newAccount))
-            .andExpect(status().isOk())
-            .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
-
-        Account account = accountService.get(id.get());
-
-        Map<String, Object> payload = Map.of(
-            "@type", "cash",
-            "id", account.getId(),
-            "name", "a2",
-            "type", account.getType(),
-            "issuer", account.getIssuer(),
-            "owner", account.getOwner().getId()
-        );
-
-        mvc.perform(request(PUT, "/api/account", payload))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("a2"));
-        accountService.delete(account);
     }
 
     @Test
