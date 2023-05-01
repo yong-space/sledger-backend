@@ -39,6 +39,20 @@ public class TemplateTests extends BaseTest {
 
     @Test
     @Order(2)
+    @WithUserDetails("admin-user@company.com")
+    public void addOtherTemplate() throws Exception {
+        Map<String, ?> template = Map.of(
+            "reference", "my reference",
+            "remarks", "my remarks",
+            "category", "my category"
+        );
+        mvc.perform(request(POST, "/api/template", List.of(template)))
+            .andExpect(status().isOk())
+            .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), new TypeReference<List<Map>>(){}).get(0).get("id")));
+    }
+
+    @Test
+    @Order(3)
     @WithUserDetails("basic-user@company.com")
     public void editTemplate() throws Exception {
         Map<String, ?> template = Map.of(
@@ -53,7 +67,7 @@ public class TemplateTests extends BaseTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     @WithUserDetails("basic-user@company.com")
     public void listTemplates() throws Exception {
         mvc.perform(get("/api/template"))
@@ -62,25 +76,11 @@ public class TemplateTests extends BaseTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     @WithUserDetails("basic-user@company.com")
     public void deleteTemplate() throws Exception {
         mvc.perform(delete("/api/template/" + id1.get()))
             .andExpect(status().isOk());
-    }
-
-    @Test
-    @Order(5)
-    @WithUserDetails("admin-user@company.com")
-    public void addOtherTemplate() throws Exception {
-        Map<String, ?> template = Map.of(
-            "reference", "my reference",
-            "remarks", "my remarks",
-            "category", "my category"
-        );
-        mvc.perform(request(POST, "/api/template", List.of(template)))
-            .andExpect(status().isOk())
-            .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), new TypeReference<List<Map>>(){}).get(0).get("id")));
     }
 
     @Test
