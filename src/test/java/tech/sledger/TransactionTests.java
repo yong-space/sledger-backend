@@ -2,13 +2,16 @@ package tech.sledger;
 
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
-import tech.sledger.model.account.*;
-import tech.sledger.service.UserService;
+import tech.sledger.model.account.AccountIssuer;
+import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CPFAccount;
+import tech.sledger.model.account.CashAccount;
+import tech.sledger.model.user.User;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.hamcrest.Matchers.hasItem;
@@ -20,8 +23,6 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class TransactionTests extends BaseTest {
-    @Autowired
-    private UserService userService;
     private long cashAccountId;
     private long cpfAccountId;
 
@@ -31,17 +32,19 @@ public class TransactionTests extends BaseTest {
         accountIssuerA.setName("a");
         accountIssuerA = accountIssuerService.add(accountIssuerA);
 
+        User user = userService.get("basic-user@company.com");
+
         cashAccountId = accountService.add(CashAccount.builder()
             .issuer(accountIssuerA)
             .name("My Cash Account")
-            .owner(userService.get("basic-user@company.com"))
+            .owner(user)
             .type(AccountType.Cash)
             .build()).getId();
 
         cpfAccountId = accountService.add(CPFAccount.builder()
             .issuer(accountIssuerA)
             .name("CPF")
-            .owner(userService.get("basic-user@company.com"))
+            .owner(user)
             .type(AccountType.Retirement)
             .ordinaryRatio(BigDecimal.valueOf(0.4))
             .specialRatio(BigDecimal.valueOf(0.3))
@@ -69,14 +72,14 @@ public class TransactionTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void addDeleteCashTx() throws Exception {
         Instant date = Instant.ofEpochMilli(1640995200000L);
-        Map<String, Object> payload = Map.of(
+        Map<String, Object> payload = new HashMap<>(Map.of(
             "@type", "cash",
             "date", date,
             "category", "Shopping Test",
             "account", Map.of("id", cashAccountId),
             "amount", 1,
             "remarks", "Super cali fragile"
-        );
+        ));
 
         AtomicLong id1 = new AtomicLong();
         AtomicLong id2 = new AtomicLong();
@@ -92,9 +95,17 @@ public class TransactionTests extends BaseTest {
             .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(2)))
             .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
 
+        payload.remove("account");
+        Map<String, Object> payload2 = new HashMap<>(payload);
+        payload2.put("date", Instant.ofEpochMilli(1684770153000L));
+        mvc.perform(request(POST, "/api/transaction/" + cashAccountId, List.of(payload, payload2)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))
+            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(4)));
+
         mvc.perform(get("/api/account"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(2));
+            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(4));
 
         mvc.perform(get("/api/data/suggest-remarks?q=agile"))
             .andExpect(status().isOk())

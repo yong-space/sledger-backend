@@ -13,4 +13,5 @@ public interface TransactionRepo extends MongoRepository<Transaction, Long> {
     Transaction findFirstByAccountAndDateBeforeOrderByDateDesc(Account account, Instant date);
     Transaction findFirstByAccountAndDateBetweenOrderByDateDesc(Account account, Instant before, Instant after);
     List<Transaction> findAllByAccountAndDateAfter(Account account, Instant date);
+    List<Transaction> findAllByAccountAndDateBetween(Account account, Instant after, Instant before);
 }

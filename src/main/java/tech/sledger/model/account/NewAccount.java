@@ -10,7 +10,7 @@ public class NewAccount {
     private String name;
     private AccountType type;
     private long issuerId;
-    private long billingCycle;
+    private int billingCycle;
     private boolean multiCurrency;
     private long paymentAccount;
     private String paymentRemarks;
