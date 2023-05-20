@@ -28,21 +28,22 @@ public class SecurityConfig {
     private final JwtRequestFilter jwtRequestFilter;
     private final DaoAuthenticationProvider authenticationProvider;
     private final String[] publicEndpoints = {
-        "/actuator/**", "/api/register", "/api/activate/**", "/api/authenticate"
+        "/actuator/**", "/api/register", "/api/activate/**", "/api/authenticate", "/error"
     };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-            .exceptionHandling().authenticationEntryPoint(entryPoint)
-            .and().authorizeHttpRequests()
-            .requestMatchers(publicEndpoints).permitAll()
-            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-            .requestMatchers("/api/**").authenticated()
-            .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().authenticationProvider(authenticationProvider)
-            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
+        return http.cors().and().csrf().disable()
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(publicEndpoints).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/**").authenticated()
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint))
+            .build();
     }
 
     @Configuration

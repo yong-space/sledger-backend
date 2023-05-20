@@ -1,4 +1,5 @@
 spring:
+  web.resources.add-mappings: false
   jmx.enabled: false
   main:
     banner-mode: off
