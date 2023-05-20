@@ -23,7 +23,17 @@ public class TransactionEndpoints {
     @PostMapping
     public Transaction addTransaction(Authentication auth, @RequestBody Transaction transaction) {
         userService.authorise(auth, transaction.getAccount().getId());
-        return txService.add(transaction);
+        return txService.add(List.of(transaction)).get(0);
+    }
+
+    @PostMapping("/{accountId}")
+    public List<Transaction> addTransactions(
+        Authentication auth,
+        @PathVariable long accountId,
+        @RequestBody List<Transaction> transactions
+    ) {
+        Account account = userService.authorise(auth, accountId);
+        return txService.add(transactions.stream().peek(t -> t.setAccount(account)).toList());
     }
 
     @PutMapping

@@ -18,10 +18,7 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.UserRepo;
-import tech.sledger.service.AccountIssuerService;
-import tech.sledger.service.AccountService;
-import tech.sledger.service.TransactionService;
-import tech.sledger.service.UserService;
+import tech.sledger.service.*;
 import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -48,6 +45,8 @@ public class BaseTest {
     public PasswordEncoder passwordEncoder;
     @Autowired
     public UserDetailsService userDetailsService;
+    @Autowired
+    public TemplateService templateService;
 
     enum SubmitMethod { PUT, POST }
 

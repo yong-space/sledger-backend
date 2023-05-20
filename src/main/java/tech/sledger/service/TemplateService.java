@@ -31,6 +31,7 @@ public class TemplateService {
             .peek(template -> {
                 template.setOwner(owner);
                 template.setId(id.get());
+                template.setReference(template.getReference().toLowerCase());
                 id.set(id.get() + 1);
             })
             .toList();

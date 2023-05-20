@@ -18,4 +18,5 @@ public class AccountIssuer {
     private String name;
     private String colour;
     private List<AccountType> types;
+    private boolean canImport;
 }

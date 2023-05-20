@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @Document("account")
 public class CreditAccount extends Account {
-    private long billingCycle;
+    private int billingCycle;
     private long paymentAccountId;
     private String paymentRemarks;
 }
