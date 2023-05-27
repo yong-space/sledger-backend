@@ -30,7 +30,7 @@ public class ImportEndpoints {
         Authentication auth,
         @RequestParam("file") MultipartFile file,
         @RequestParam("accountId") long accountId
-    ) throws IOException, CsvException {
+    ) throws Exception {
         Account account = userService.authorise(auth, accountId);
         try (InputStream inputStream = file.getInputStream()) {
             return importService.process(account, inputStream);
