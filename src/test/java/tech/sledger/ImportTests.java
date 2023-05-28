@@ -2,6 +2,7 @@ package tech.sledger;
 
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
@@ -11,7 +12,10 @@ import tech.sledger.model.account.*;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.user.User;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +25,9 @@ public class ImportTests extends BaseTest {
     private long ocbcCashAccountId;
     private long ocbcCreditAccountId;
     private long ocbcCreditAccountId2;
+    private long uobCashAccountId;
+    private long uobCreditAccountId;
+    private long uobCreditAccountId2;
     private long cpfAccountId;
     byte[] ocbcCashCsv = """
 Account details for:,360 Account 111-111111-001
@@ -45,41 +52,70 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
 04/05/2023,SHOPPING,30.41,
 01/05/2023,Household Stuff,0.12,
             """.getBytes(UTF_8);
+    Map<String, byte[]> ocbcCsv = Map.of(
+        "ocbc-cash.csv", ocbcCashCsv,
+        "ocbc-credit.csv", ocbcCreditCsv
+    );
 
     @PostConstruct
     public void init() {
-        AccountIssuer accountIssuerA = new AccountIssuer();
-        accountIssuerA.setName("OCBC");
-        accountIssuerA = accountIssuerService.add(accountIssuerA);
+        AccountIssuer ocbcIssuer = new AccountIssuer();
+        ocbcIssuer.setName("OCBC");
+        ocbcIssuer = accountIssuerService.add(ocbcIssuer);
 
-        AccountIssuer accountIssuerB = new AccountIssuer();
-        accountIssuerB.setName("CPF");
-        accountIssuerB = accountIssuerService.add(accountIssuerB);
+        AccountIssuer uobIssuer = new AccountIssuer();
+        uobIssuer.setName("UOB");
+        uobIssuer = accountIssuerService.add(uobIssuer);
+
+        AccountIssuer cpfIssuer = new AccountIssuer();
+        cpfIssuer.setName("CPF");
+        cpfIssuer = accountIssuerService.add(cpfIssuer);
 
         User user = userService.get("basic-user@company.com");
 
         ocbcCashAccountId = accountService.add(CashAccount.builder()
-            .issuer(accountIssuerA)
+            .issuer(ocbcIssuer)
             .name("My Cash Account")
             .owner(user)
             .type(AccountType.Cash)
             .build()).getId();
         ocbcCreditAccountId = accountService.add(CreditAccount.builder()
-            .issuer(accountIssuerA)
+            .issuer(ocbcIssuer)
             .name("My Credit Account")
             .owner(user)
             .type(AccountType.Credit)
             .billingCycle(1)
             .build()).getId();
         ocbcCreditAccountId2 = accountService.add(CreditAccount.builder()
-            .issuer(accountIssuerA)
+            .issuer(ocbcIssuer)
             .name("My Credit Account 2")
             .owner(user)
             .type(AccountType.Credit)
             .billingCycle(25)
             .build()).getId();
+        uobCashAccountId = accountService.add(CashAccount.builder()
+            .issuer(uobIssuer)
+            .name("My Cash Account")
+            .owner(user)
+            .type(AccountType.Cash)
+            .build()).getId();
+        uobCreditAccountId = accountService.add(CreditAccount.builder()
+            .issuer(uobIssuer)
+            .name("My Credit Account")
+            .owner(user)
+            .type(AccountType.Credit)
+            .billingCycle(1)
+            .build()).getId();
+        uobCreditAccountId2 = accountService.add(CreditAccount.builder()
+            .issuer(uobIssuer)
+            .name("My Credit Account 2")
+            .owner(user)
+            .type(AccountType.Credit)
+            .billingCycle(25)
+            .build()).getId();
+
         cpfAccountId = accountService.add(CPFAccount.builder()
-            .issuer(accountIssuerB)
+            .issuer(cpfIssuer)
             .name("CPF")
             .owner(user)
             .type(AccountType.Retirement)
@@ -90,20 +126,25 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
         templateService.add(user, List.of(template));
     }
 
+    private MockMultipartFile mockFile(String filename) throws IOException {
+        InputStream inputStream = filename.endsWith(".csv") ?
+            new ByteArrayInputStream(ocbcCsv.get(filename)) :
+            new ClassPathResource(filename).getInputStream();
+        return new MockMultipartFile(
+            "file",
+            filename,
+            MediaType.MULTIPART_FORM_DATA_VALUE,
+            inputStream
+        );
+    }
+
     @Test
     @WithUserDetails("basic-user@company.com")
     public void unsupportedIssuer() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "a.csv",
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            new ByteArrayInputStream(ocbcCashCsv)
-        );
-
         var request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(cpfAccountId).getBytes()))
-            .file(file);
+            .file(mockFile("ocbc-cash.csv"));
         mvc.perform(request)
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Unsupported issuer"));
@@ -112,32 +153,50 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
     @Test
     @WithUserDetails("basic-user@company.com")
     public void wrongFile() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "a.csv",
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            new ByteArrayInputStream(ocbcCashCsv)
-        );
-
         var request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(ocbcCreditAccountId).getBytes()))
-            .file(file);
+            .file(mockFile("uob-cash.xls"));
         mvc.perform(request)
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Invalid import file"));
 
-        file = new MockMultipartFile(
-            "file",
-            "a.csv",
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            new ByteArrayInputStream(ocbcCreditCsv)
-        );
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(ocbcCreditAccountId).getBytes()))
+            .file(mockFile("ocbc-cash.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
 
         request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(ocbcCashAccountId).getBytes()))
-            .file(file);
+            .file(mockFile("ocbc-credit.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCashAccountId).getBytes()))
+            .file(mockFile("ocbc-credit.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCreditAccountId).getBytes()))
+            .file(mockFile("uob-cash.xls"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCashAccountId).getBytes()))
+            .file(mockFile("uob-credit.xls"));
         mvc.perform(request)
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Invalid import file"));
@@ -146,17 +205,10 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
     @Test
     @WithUserDetails("basic-user@company.com")
     public void ocbcCash() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "a.csv",
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            new ByteArrayInputStream(ocbcCashCsv)
-        );
-
         var request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(ocbcCashAccountId).getBytes()))
-            .file(file);
+            .file(mockFile("ocbc-cash.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", iterableWithSize(2)))
@@ -167,17 +219,10 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
     @Test
     @WithUserDetails("basic-user@company.com")
     public void ocbcCredit() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "a.csv",
-            MediaType.MULTIPART_FORM_DATA_VALUE,
-            new ByteArrayInputStream(ocbcCreditCsv)
-        );
-
         var request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(ocbcCreditAccountId).getBytes()))
-            .file(file);
+            .file(mockFile("ocbc-credit.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", iterableWithSize(2)))
@@ -186,7 +231,42 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
         request = MockMvcRequestBuilders
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(ocbcCreditAccountId2).getBytes()))
-            .file(file);
+            .file(mockFile("ocbc-credit.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].billingMonth").value("2023-04-01T00:00:00Z"));
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void uobCash() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCashAccountId).getBytes()))
+            .file(mockFile("uob-cash.xls"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(2)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Stuff')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Shopping')]").exists());
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void uobCredit() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCreditAccountId).getBytes()))
+            .file(mockFile("uob-credit.xls"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(2)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Household Stuff')]").exists());
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(uobCreditAccountId2).getBytes()))
+            .file(mockFile("uob-credit.xls"));
         mvc.perform(request)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].billingMonth").value("2023-04-01T00:00:00Z"));

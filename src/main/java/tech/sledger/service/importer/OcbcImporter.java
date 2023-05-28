@@ -1,7 +1,9 @@
 package tech.sledger.service.importer;
 
+import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.CreditAccount;
@@ -9,6 +11,7 @@ import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.tx.Transaction;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -16,8 +19,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -32,24 +33,29 @@ public class OcbcImporter implements Importer {
     @Override
     public List<Transaction> process(
         Account account, InputStream inputStream, List<Template> templates
-    ) throws Exception {
-        String rawContent = new String(inputStream.readAllBytes(), UTF_8).trim();
-        String secondLine = rawContent.split("\n")[1];
-        if (
-            (account.getType() == Cash && !secondLine.startsWith("Available Balance")) ||
-            (account.getType() == Credit && !secondLine.startsWith("Credit limit"))
-        ) {
-            throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
-        }
+    ) {
+        try {
+            String rawContent = new String(inputStream.readAllBytes(), UTF_8).trim();
+            StringReader stringReader = new StringReader(rawContent);
+            int skipLines = account.getType() == Cash ? 6 : 7;
+            CSVReader reader = new CSVReaderBuilder(stringReader)
+                .withSkipLines(skipLines).build();
 
-        StringReader stringReader = new StringReader(rawContent);
-        int skipLines = account.getType() == Cash ? 6 : 7;
-        try (CSVReader reader = new CSVReaderBuilder(stringReader).withSkipLines(skipLines).build()) {
+            String secondLine = rawContent.split("\n")[1];
+            if (
+                (account.getType() == Cash && !secondLine.startsWith("Available Balance")) ||
+                (account.getType() == Credit && !secondLine.startsWith("Credit limit"))
+            ) {
+                throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
+            }
+
             if (account.getType() == Cash) {
                 return processCash(reader.readAll(), templates);
             } else {
                 return processCredit(reader.readAll(), account, templates);
             }
+        } catch (Exception e) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
     }
 

@@ -33,11 +33,14 @@ public class TransactionService {
         Transaction previous = txRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
 
+        // Get minimum date in new transactions - 1 ms
         Instant rangeAfter = transactions.stream().min(comparing(Transaction::getDate))
             .map(t -> t.getDate().minus(1, ChronoUnit.MILLIS)).orElseThrow();
+        // Get maximum date in new transactions + 1 day
         Instant rangeBefore = transactions.stream().max(comparing(Transaction::getDate))
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
         Account account = transactions.get(0).getAccount();
+        // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountAndDateBetween(account, rangeAfter, rangeBefore);
 
         transactions = new ArrayList<>(transactions);
@@ -49,6 +52,7 @@ public class TransactionService {
             Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
             Instant after = before.plus(1, ChronoUnit.DAYS);
 
+            // Filter existing transactions to find same day transaction
             Instant existingDate = existing.stream()
                 .filter(t -> t.getDate().isAfter(before) && t.getDate().isBefore(after))
                 .max(Comparator.comparing(Transaction::getDate))

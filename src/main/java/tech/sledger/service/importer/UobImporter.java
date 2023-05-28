@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.util.StringUtils.hasText;
 import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 
@@ -28,17 +29,21 @@ public class UobImporter implements Importer {
     @Override
     public List<Transaction> process(
         Account account, InputStream inputStream, List<Template> templates
-    ) throws Exception {
-        Sheet sheet = Workbook.getWorkbook(inputStream).getSheet(0);
-        long accountNumberLength = sheet.getCell(1, 4).getContents().length();
-        if (
-            (account.getType() == Cash && accountNumberLength != 10) ||
-            (account.getType() == Credit && accountNumberLength != 16)
-        ) {
+    ) {
+        try {
+            Sheet sheet = Workbook.getWorkbook(inputStream).getSheet(0);
+            long accountNumberLength = sheet.getCell(1, 4).getContents().length();
+            if (
+                (account.getType() == Cash && accountNumberLength != 10) ||
+                (account.getType() == Credit && accountNumberLength != 16)
+            ) {
+                throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
+            }
+            return account.getType() == AccountType.Cash ?
+                processCash(sheet, templates) : processCredit(sheet, account, templates);
+        } catch (Exception e) {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
-        return account.getType() == AccountType.Cash ?
-            processCash(sheet, templates) : processCredit(sheet, account, templates);
     }
 
     private List<Transaction> processCash(Sheet sheet, List<Template> templates) {
@@ -46,7 +51,11 @@ public class UobImporter implements Importer {
         List<Transaction> output = new ArrayList<>();
 
         for (int i = 8; i < sheet.getRows(); i++) {
-            Instant date = LocalDate.parse(sheet.getCell(0, i).getContents(), dateFormat)
+            String dateContents = sheet.getCell(0, i).getContents();
+            if (!hasText(dateContents)) {
+                continue;
+            }
+            Instant date = LocalDate.parse(dateContents, dateFormat)
                 .atStartOfDay(ZoneOffset.UTC).toInstant();
             String remarks = sheet.getCell(1, i).getContents().trim();
             BigDecimal debit = parseDecimal(sheet.getCell(2, i).getContents());

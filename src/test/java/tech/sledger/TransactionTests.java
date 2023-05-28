@@ -95,17 +95,26 @@ public class TransactionTests extends BaseTest {
             .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(2)))
             .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
 
-        payload.remove("account");
         Map<String, Object> payload2 = new HashMap<>(payload);
+        payload2.put("date", Instant.ofEpochMilli(1622195095000L));
+        mvc.perform(request(POST, "/api/transaction", payload2)).andExpect(status().isOk());
+        Map<String, Object> payload3 = new HashMap<>(payload);
+        payload3.put("date", Instant.ofEpochMilli(1685266523000L));
+        mvc.perform(request(POST, "/api/transaction", payload3)).andExpect(status().isOk());
+
+        payload.remove("account");
+        payload2.remove("account");
+        payload3.remove("account");
+
         payload2.put("date", Instant.ofEpochMilli(1684770153000L));
-        mvc.perform(request(POST, "/api/transaction/" + cashAccountId, List.of(payload, payload2)))
+        mvc.perform(request(POST, "/api/transaction/" + cashAccountId, List.of(payload, payload2, payload3)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))
-            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(4)));
+            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(5)));
 
         mvc.perform(get("/api/account"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(4));
+            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(7));
 
         mvc.perform(get("/api/data/suggest-remarks?q=agile"))
             .andExpect(status().isOk())
