@@ -1,7 +1,7 @@
 plugins {
-    id 'org.springframework.boot' version '3.0.2'
+    id 'org.springframework.boot' version '3.1.0'
     id 'io.spring.dependency-management' version '1.1.0'
-    id 'io.freefair.lombok' version '6.6.1'
+    id 'io.freefair.lombok' version '8.0.1'
     id 'java'
     id 'jacoco'
 }
@@ -14,7 +14,7 @@ java {
 
 repositories { mavenCentral() }
 
-def testContainersVersion = '1.17.6'
+def testContainersVersion = '1.18.1'
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
@@ -23,8 +23,8 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "org.bouncycastle:bcprov-jdk18on:1.72"
-    implementation "com.auth0:java-jwt:4.2.1"
+    implementation "org.bouncycastle:bcprov-jdk18on:1.73"
+    implementation "com.auth0:java-jwt:4.4.0"
     implementation "com.opencsv:opencsv:5.7.1"
     implementation "org.jxls:jxls-jexcel:1.0.9"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
@@ -33,7 +33,7 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
-    testImplementation "com.icegreen:greenmail-junit5:2.0.0-alpha-3"
+    testImplementation "com.icegreen:greenmail-junit5:2.0.0"
 }
 
 tasks.named("jar") {enabled = false }
