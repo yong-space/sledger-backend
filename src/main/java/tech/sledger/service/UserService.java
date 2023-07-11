@@ -1,6 +1,7 @@
 package tech.sledger.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -111,6 +112,7 @@ public class UserService {
         }
     }
 
+    @Cacheable("authorise")
     public Account authorise(Authentication auth, long accountId) {
         Account account = accountService.get(accountId);
         if (account == null) {

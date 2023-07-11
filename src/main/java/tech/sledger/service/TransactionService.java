@@ -1,6 +1,8 @@
 package tech.sledger.service;
 
+import static java.util.Comparator.comparing;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.sledger.model.account.Account;
@@ -10,13 +12,16 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import static java.util.Comparator.comparing;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
     private final TransactionRepo txRepo;
+    private final CacheService cache;
 
     enum TxOperation { SAVE, REMOVE }
 
@@ -24,6 +29,7 @@ public class TransactionService {
         return txRepo.findById(id).orElse(null);
     }
 
+    @Cacheable("tx")
     public List<Transaction> list(Account account) {
         return txRepo.findAllByAccountOrderByDate(account);
     }
@@ -97,7 +103,7 @@ public class TransactionService {
             t.setBalance(balance);
         }
         txRepo.saveAll(affectedTx);
-
+        cache.clearTxCache(account);
         return transactions;
     }
 }
