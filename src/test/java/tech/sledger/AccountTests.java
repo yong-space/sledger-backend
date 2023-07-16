@@ -162,12 +162,6 @@ public class AccountTests extends BaseTest {
         mvc.perform(request(POST, "/api/account", otherTypeAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Invalid new account type"));
-
-        var badEditAccountType = newAccounts.get(1);
-        badEditAccountType.put("type", "Other");
-        mvc.perform(request(PUT, "/api/account/" + badEditAccountType.get("id"), badEditAccountType))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Invalid account type"));
     }
 
     @Test

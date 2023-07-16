@@ -1,5 +1,13 @@
 package tech.sledger;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static tech.sledger.BaseTest.SubmitMethod.POST;
+import static tech.sledger.BaseTest.SubmitMethod.PUT;
+import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithUserDetails;
@@ -13,14 +21,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import static org.hamcrest.Matchers.hasItem;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static tech.sledger.BaseTest.SubmitMethod.POST;
-import static tech.sledger.BaseTest.SubmitMethod.PUT;
 
 public class TransactionTests extends BaseTest {
     private long cashAccountId;
@@ -63,7 +63,7 @@ public class TransactionTests extends BaseTest {
             "remarks", "Hello"
         );
 
-        mvc.perform(request(POST, "/api/transaction", payload))
+        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.detail").value("No such account id"));
     }
@@ -81,33 +81,30 @@ public class TransactionTests extends BaseTest {
             "remarks", "Super cali fragile"
         ));
 
-        AtomicLong id1 = new AtomicLong();
-        AtomicLong id2 = new AtomicLong();
-
-        mvc.perform(request(POST, "/api/transaction", payload))
+        String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.remarks").value("Super cali fragile"))
-            .andDo(res -> id1.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
+            .andExpect(jsonPath("$.[0].remarks").value("Super cali fragile"))
+            .andReturn().getResponse().getContentAsString();
+        Integer id1 = JsonPath.parse(result1).read("$.[0].id");
 
-        mvc.perform(request(POST, "/api/transaction", payload))
+        String result2 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.date").value("2022-01-01T00:00:01Z"))
-            .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(2)))
-            .andDo(res -> id2.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
+            .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:01Z"))
+            .andExpect(jsonPath("$.[0].balance").value(BigDecimal.valueOf(2)))
+            .andReturn().getResponse().getContentAsString();
+        Integer id2 = JsonPath.parse(result2).read("$.[0].id");
 
         Map<String, Object> payload2 = new HashMap<>(payload);
         payload2.put("date", Instant.ofEpochMilli(1622195095000L));
-        mvc.perform(request(POST, "/api/transaction", payload2)).andExpect(status().isOk());
+        mvc.perform(request(POST, "/api/transaction", List.of(payload2))).andExpect(status().isOk());
         Map<String, Object> payload3 = new HashMap<>(payload);
         payload3.put("date", Instant.ofEpochMilli(1685266523000L));
-        mvc.perform(request(POST, "/api/transaction", payload3)).andExpect(status().isOk());
+        mvc.perform(request(POST, "/api/transaction", List.of(payload3))).andExpect(status().isOk());
 
-        payload.remove("account");
-        payload2.remove("account");
-        payload3.remove("account");
-
+        payload.put("account", Map.of("id", cashAccountId));
+        List.of(payload2, payload3).forEach(p -> p.put("account", cashAccountId));
         payload2.put("date", Instant.ofEpochMilli(1684770153000L));
-        mvc.perform(request(POST, "/api/transaction/" + cashAccountId, List.of(payload, payload2, payload3)))
+        mvc.perform(request(POST, "/api/transaction", List.of(payload, payload2, payload3)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))
             .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(5)));
@@ -151,9 +148,9 @@ public class TransactionTests extends BaseTest {
         payload.put("specialAmount", 300);
         payload.put("medisaveAmount", 300);
 
-        mvc.perform(request(POST, "/api/transaction", payload))
+        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.ordinaryAmount").value(400));
+            .andExpect(jsonPath("$.[0].ordinaryAmount").value(400));
 
         mvc.perform(get("/api/data/suggest-code?q=co"))
             .andExpect(status().isOk())
@@ -177,9 +174,9 @@ public class TransactionTests extends BaseTest {
             "remarks", "Credit"
         );
 
-        mvc.perform(request(POST, "/api/transaction", payload))
+        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.category").value("Shopping Test"));
+            .andExpect(jsonPath("$.[0].category").value("Shopping Test"));
 
         mvc.perform(get("/api/transaction/" + cashAccountId))
             .andExpect(status().isOk())
@@ -197,16 +194,18 @@ public class TransactionTests extends BaseTest {
             "amount", 1,
             "remarks", "Cash"
         );
-
-        mvc.perform(request(POST, "/api/transaction", payload))
+        String result = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.remarks").value("Cash"));
+            .andExpect(jsonPath("$.[0].remarks").value("Cash"))
+            .andReturn().getResponse().getContentAsString();
+        Integer id = JsonPath.parse(result).read("$.[0].id");
 
         Map<String, Object> payload2 = new HashMap<>(payload);
         payload2.put("remarks", "Edited");
+        payload2.put("id", id);
 
-        mvc.perform(request(PUT, "/api/transaction", payload2))
+        mvc.perform(request(PUT, "/api/transaction", List.of(payload2)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.remarks").value("Edited"));
+            .andExpect(jsonPath("$.[0].remarks").value("Edited"));
     }
 }

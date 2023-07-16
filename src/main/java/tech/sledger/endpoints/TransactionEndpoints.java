@@ -10,6 +10,7 @@ import tech.sledger.model.tx.Transaction;
 import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
 import java.util.List;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
@@ -21,40 +22,48 @@ public class TransactionEndpoints {
     private final TransactionService txService;
 
     @PostMapping
-    public Transaction addTransaction(Authentication auth, @RequestBody Transaction transaction) {
-        userService.authorise(auth, transaction.getAccount().getId());
-        return txService.add(List.of(transaction)).get(0);
-    }
-
-    @PostMapping("/{accountId}")
-    public List<Transaction> addTransactions(
+    public <T extends Transaction> List<T> addTransactions(
         Authentication auth,
-        @PathVariable long accountId,
-        @RequestBody List<Transaction> transactions
+        @RequestBody List<T> transactions
     ) {
-        Account account = userService.authorise(auth, accountId);
-        return txService.add(transactions.stream().peek(t -> t.setAccount(account)).toList());
+        bulkAuthorise(auth, transactions);
+        return txService.add(transactions);
     }
 
     @PutMapping
-    public Transaction updateTransaction(Authentication auth, @RequestBody Transaction transaction) {
-        userService.authorise(auth, transaction.getAccount().getId());
-        return txService.edit(transaction);
+    public List<Transaction> updateTransactions(
+        Authentication auth,
+        @RequestBody List<Transaction> transactions
+    ) {
+        bulkValidateAndAuthorise(auth, transactions.stream().map(Transaction::getId).toList());
+        return txService.edit(transactions);
     }
 
-    @DeleteMapping("/{transactionId}")
-    public void deleteTransaction(Authentication auth, @PathVariable long transactionId) {
-        Transaction transaction = txService.get(transactionId);
-        if (transaction == null) {
-            throw new ResponseStatusException(NOT_FOUND, "No such transaction id");
-        }
-        userService.authorise(auth, transaction.getAccount().getId());
-        txService.delete(transaction);
+    @DeleteMapping("/{transactionIds}")
+    public void deleteTransactions(Authentication auth, @PathVariable List<Long> transactionIds) {
+        txService.delete(bulkValidateAndAuthorise(auth, transactionIds));
     }
 
     @GetMapping("/{accountId}")
     public List<Transaction> listTransactions(Authentication auth, @PathVariable long accountId) {
         Account account = userService.authorise(auth, accountId);
         return txService.list(account);
+    }
+
+    private List<Transaction> bulkValidateAndAuthorise(Authentication auth, List<Long> transactionIds) {
+        List<Transaction> transactions = txService.get(transactionIds);
+        if (transactionIds.size() != transactions.size()) {
+            throw new ResponseStatusException(NOT_FOUND, "Some transaction ids are not valid");
+        }
+        return bulkAuthorise(auth, transactions);
+    }
+
+    private <T extends Transaction> List<T> bulkAuthorise(Authentication auth, List<T> transactions) {
+        List<Account> accounts = transactions.stream().map(Transaction::getAccount).distinct().toList();
+        if (accounts.size() > 1) {
+            throw new ResponseStatusException(BAD_REQUEST, "Bulk operations can only be performed on transactions under the same account");
+        }
+        userService.authorise(auth, accounts.get(0).getId());
+        return transactions;
     }
 }

@@ -47,6 +47,7 @@ public class AccountEndpoints {
                 .paymentAccountId(newAccount.getPaymentAccount())
                 .paymentRemarks(newAccount.getPaymentRemarks())
                 .owner(user)
+                .multiCurrency(newAccount.isMultiCurrency())
                 .build();
             case Retirement -> CPFAccount.builder()
                 .issuer(issuer)
@@ -73,29 +74,22 @@ public class AccountEndpoints {
             throw new ResponseStatusException(BAD_REQUEST, "No such issuer");
         }
 
-        switch (editAccount.getType()) {
-            case Cash -> {
-                var cashAccount = (CashAccount) account;
-                cashAccount.setIssuer(issuer);
-                cashAccount.setName(editAccount.getName());
-                cashAccount.setMultiCurrency(editAccount.isMultiCurrency());
-            }
-            case Credit -> {
-                var creditAccount = (CreditAccount) account;
-                creditAccount.setIssuer(issuer);
-                creditAccount.setName(editAccount.getName());
-                creditAccount.setBillingCycle(editAccount.getBillingCycle());
-                creditAccount.setPaymentAccountId(editAccount.getPaymentAccount());
-                creditAccount.setPaymentRemarks(editAccount.getPaymentRemarks());
-            }
-            case Retirement -> {
-                var cpfAccount = (CPFAccount) account;
-                cpfAccount.setOrdinaryRatio(editAccount.getOrdinaryRatio());
-                cpfAccount.setSpecialRatio(editAccount.getSpecialRatio());
-                cpfAccount.setMedisaveRatio(editAccount.getMedisaveRatio());
-            }
-            default -> throw new ResponseStatusException(BAD_REQUEST, "Invalid account type");
-        };
+        if (account instanceof CreditAccount creditAccount) {
+            creditAccount.setIssuer(issuer);
+            creditAccount.setName(editAccount.getName());
+            creditAccount.setMultiCurrency(editAccount.isMultiCurrency());
+            creditAccount.setBillingCycle(editAccount.getBillingCycle());
+            creditAccount.setPaymentAccountId(editAccount.getPaymentAccount());
+            creditAccount.setPaymentRemarks(editAccount.getPaymentRemarks());
+        } else if (account instanceof CashAccount cashAccount) {
+            cashAccount.setIssuer(issuer);
+            cashAccount.setName(editAccount.getName());
+            cashAccount.setMultiCurrency(editAccount.isMultiCurrency());
+        } else if (account instanceof CPFAccount cpfAccount) {
+            cpfAccount.setOrdinaryRatio(editAccount.getOrdinaryRatio());
+            cpfAccount.setSpecialRatio(editAccount.getSpecialRatio());
+            cpfAccount.setMedisaveRatio(editAccount.getMedisaveRatio());
+        }
         return accountService.edit(account);
     }
 

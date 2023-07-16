@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @SuperBuilder
 @NoArgsConstructor
 @Document("account")
-public class CreditAccount extends Account {
+public class CreditAccount extends CashAccount {
     private int billingCycle;
     private long paymentAccountId;
     private String paymentRemarks;

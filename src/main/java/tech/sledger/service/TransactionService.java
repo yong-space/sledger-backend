@@ -25,8 +25,8 @@ public class TransactionService {
 
     enum TxOperation { SAVE, REMOVE }
 
-    public Transaction get(long id) {
-        return txRepo.findById(id).orElse(null);
+    public List<Transaction> get(List<Long> ids) {
+        return txRepo.findAllById(ids);
     }
 
     @Cacheable("tx")
@@ -73,14 +73,14 @@ public class TransactionService {
     }
 
     @Transactional
-    public <T extends Transaction> T edit(T transaction) {
-        return updateBalances(List.of(transaction), TxOperation.SAVE).get(0);
+    public <T extends Transaction> List<T> edit(List<T> transactions) {
+        return updateBalances(transactions, TxOperation.SAVE);
     }
 
     @Transactional
-    public void delete(Transaction transaction) {
-        txRepo.delete(transaction);
-        updateBalances(List.of(transaction), TxOperation.REMOVE);
+    public void delete(List<Transaction> transactions) {
+        txRepo.deleteAll(transactions);
+        updateBalances(transactions, TxOperation.REMOVE);
     }
 
     @SuppressWarnings("unchecked")
