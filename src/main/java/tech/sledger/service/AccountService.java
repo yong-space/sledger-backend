@@ -17,6 +17,7 @@ import java.util.Map;
 public class AccountService {
     private final AccountRepo accountRepo;
     private final TransactionRepo txRepo;
+    private final CacheService cache;
 
     public Account add(Account account) {
         Account previous = accountRepo.findFirstByOrderByIdDesc();
@@ -46,6 +47,7 @@ public class AccountService {
 
     public void delete(Account account) {
         txRepo.deleteAll(txRepo.findAllByAccount(account));
+        cache.clearTxCache(account);
         accountRepo.delete(account);
     }
 }

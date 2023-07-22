@@ -29,7 +29,7 @@ public class TransactionService {
         return txRepo.findAllById(ids);
     }
 
-    @Cacheable("tx")
+    @Cacheable(value="tx", key="#account.id")
     public List<Transaction> list(Account account) {
         return txRepo.findAllByAccountOrderByDate(account);
     }

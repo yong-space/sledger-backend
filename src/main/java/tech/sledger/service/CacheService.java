@@ -8,6 +8,6 @@ import tech.sledger.model.account.Account;
 @Service
 @Slf4j
 public class CacheService {
-  @CacheEvict(value = "tx", key = "#account")
+  @CacheEvict(value="tx", key="#account.id")
   public void clearTxCache(Account account) {}
 }
