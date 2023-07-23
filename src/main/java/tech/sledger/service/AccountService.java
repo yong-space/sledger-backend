@@ -46,8 +46,8 @@ public class AccountService {
     }
 
     public void delete(Account account) {
-        txRepo.deleteAll(txRepo.findAllByAccount(account));
-        cache.clearTxCache(account);
+        txRepo.deleteAll(txRepo.findAllByAccountId(account.getId()));
+        cache.clearTxCache(account.getId());
         accountRepo.delete(account);
     }
 }

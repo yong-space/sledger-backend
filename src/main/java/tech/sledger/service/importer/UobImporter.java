@@ -40,13 +40,13 @@ public class UobImporter implements Importer {
                 throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
             }
             return account.getType() == AccountType.Cash ?
-                processCash(sheet, templates) : processCredit(sheet, account, templates);
+                processCash(sheet, account, templates) : processCredit(sheet, account, templates);
         } catch (Exception e) {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
     }
 
-    private List<Transaction> processCash(Sheet sheet, List<Template> templates) {
+    private List<Transaction> processCash(Sheet sheet, Account account, List<Template> templates) {
         int index = 1;
         List<Transaction> output = new ArrayList<>();
 
@@ -74,6 +74,7 @@ public class UobImporter implements Importer {
                 .remarks(remarks)
                 .category(category)
                 .amount(credit.subtract(debit))
+                .accountId(account.getId())
                 .build());
         }
         return output;
@@ -106,6 +107,7 @@ public class UobImporter implements Importer {
                 .remarks(remarks)
                 .category(category)
                 .amount(amount)
+                .accountId(account.getId())
                 .build());
         }
         return output;

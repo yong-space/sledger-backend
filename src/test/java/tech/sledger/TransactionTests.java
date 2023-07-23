@@ -76,7 +76,7 @@ public class TransactionTests extends BaseTest {
             "@type", "cash",
             "date", date,
             "category", "Shopping Test",
-            "account", Map.of("id", cashAccountId),
+            "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Super cali fragile"
         ));
@@ -138,7 +138,7 @@ public class TransactionTests extends BaseTest {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("@type", "retirement");
-        payload.put("account", Map.of("id", cpfAccountId));
+        payload.put("accountId", cpfAccountId);
         payload.put("code", "CON");
         payload.put("company", "ABC Pte Ltd");
         payload.put("date", date);
@@ -169,7 +169,7 @@ public class TransactionTests extends BaseTest {
             "date", Instant.now(),
             "category", "Shopping Test",
             "billingMonth", Instant.now(),
-            "account", Map.of("id", cashAccountId),
+            "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Credit"
         );
@@ -190,7 +190,7 @@ public class TransactionTests extends BaseTest {
             "@type", "cash",
             "date", Instant.now(),
             "category", "Shopping Test",
-            "account", Map.of("id", cashAccountId),
+            "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Cash"
         );

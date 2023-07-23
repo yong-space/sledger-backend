@@ -25,8 +25,12 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.bouncycastle:bcprov-jdk18on:1.75"
     implementation "com.auth0:java-jwt:4.4.0"
-    implementation "com.opencsv:opencsv:5.7.1"
-    implementation "org.jxls:jxls-jexcel:1.0.9"
+    implementation ("com.opencsv:opencsv:5.7.1") {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
+    implementation ("org.jxls:jxls-jexcel:1.0.9") {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
     developmentOnly "org.springframework.boot:spring-boot-devtools"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"

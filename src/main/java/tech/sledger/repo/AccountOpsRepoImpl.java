@@ -24,10 +24,10 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                   from: "transaction",
                   let: { accountId: "$_id" },
                   pipeline: [
-                    { $match: { $expr: { $eq: [ "$$accountId", "$account.$id" ] } } },
+                    { $match: { $expr: { $eq: [ "$$accountId", "$accountId" ] } } },
                     {
                         $group: {
-                            _id: "$account.$id",
+                            _id: "$accountId",
                             maxDate: { $max: "$date" },
                             transactions: { $sum: 1 },
                             ordinaryBalance: { $sum: { $toDouble: "$ordinaryAmount" } },
@@ -41,7 +41,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                         let: { accountId: "$_id", maxDate: "$maxDate" },
                         pipeline: [
                           { $match: { $expr: { $and: [
-                            { $eq: [ "$account.$id", "$$accountId" ] },
+                            { $eq: [ "$accountId", "$$accountId" ] },
                             { $eq: [ "$date", "$$maxDate" ] }
                           ] } } },
                           { $project: { _id: 0, balance: 1 } }
@@ -73,7 +73,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     public List<String> getTopStrings(long ownerId, String field, String q) {
         return mongoOps.aggregate(newAggregation(
                 match(new Criteria("owner.$id").is(ownerId)),
-                lookup("transaction", "_id", "account.$id", "lookup"),
+                lookup("transaction", "_id", "accountId", "lookup"),
                 unwind("$lookup"),
                 replaceRoot("$lookup"),
                 match(new Criteria(field).regex(q, "i")),

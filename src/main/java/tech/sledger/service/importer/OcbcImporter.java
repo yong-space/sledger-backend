@@ -1,9 +1,12 @@
 package tech.sledger.service.importer;
 
-import com.opencsv.CSVParser;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.util.StringUtils.hasText;
+import static tech.sledger.model.account.AccountType.Cash;
+import static tech.sledger.model.account.AccountType.Credit;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.opencsv.exceptions.CsvException;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.CreditAccount;
@@ -11,7 +14,6 @@ import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.tx.Transaction;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -21,11 +23,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.util.StringUtils.hasText;
-import static tech.sledger.model.account.AccountType.Cash;
-import static tech.sledger.model.account.AccountType.Credit;
 
 public class OcbcImporter implements Importer {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -50,7 +47,7 @@ public class OcbcImporter implements Importer {
             }
 
             if (account.getType() == Cash) {
-                return processCash(reader.readAll(), templates);
+                return processCash(reader.readAll(), account, templates);
             } else {
                 return processCredit(reader.readAll(), account, templates);
             }
@@ -59,7 +56,7 @@ public class OcbcImporter implements Importer {
         }
     }
 
-    private List<Transaction> processCash(List<String[]> data, List<Template> templates) {
+    private List<Transaction> processCash(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
         CashTransaction tx = new CashTransaction();
         int index = 1;
@@ -74,6 +71,7 @@ public class OcbcImporter implements Importer {
                     .date(date)
                     .remarks(row[2])
                     .amount(credit.subtract(debit))
+                    .accountId(account.getId())
                     .build();
             } else {
                 tx.setRemarks(tx.getRemarks() + " " + row[2]);
@@ -114,6 +112,7 @@ public class OcbcImporter implements Importer {
                 .remarks(remarks)
                 .category(category)
                 .amount(credit.subtract(debit))
+                .accountId(account.getId())
                 .build());
         }
         return output;

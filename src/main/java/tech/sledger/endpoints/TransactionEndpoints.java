@@ -59,11 +59,11 @@ public class TransactionEndpoints {
     }
 
     private <T extends Transaction> List<T> bulkAuthorise(Authentication auth, List<T> transactions) {
-        List<Account> accounts = transactions.stream().map(Transaction::getAccount).distinct().toList();
+        List<Long> accounts = transactions.stream().map(Transaction::getAccountId).distinct().toList();
         if (accounts.size() > 1) {
             throw new ResponseStatusException(BAD_REQUEST, "Bulk operations can only be performed on transactions under the same account");
         }
-        userService.authorise(auth, accounts.get(0).getId());
+        userService.authorise(auth, accounts.get(0));
         return transactions;
     }
 }

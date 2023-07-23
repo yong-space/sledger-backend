@@ -31,7 +31,7 @@ public class TransactionService {
 
     @Cacheable(value="tx", key="#account.id")
     public List<Transaction> list(Account account) {
-        return txRepo.findAllByAccountOrderByDate(account);
+        return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
 
     @Transactional
@@ -45,9 +45,9 @@ public class TransactionService {
         // Get maximum date in new transactions + 1 day
         Instant rangeBefore = transactions.stream().max(comparing(Transaction::getDate))
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
-        Account account = transactions.get(0).getAccount();
+        long accountId = transactions.get(0).getAccountId();
         // Get existing transactions in range
-        List<Transaction> existing = txRepo.findAllByAccountAndDateBetween(account, rangeAfter, rangeBefore);
+        List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
         transactions = new ArrayList<>(transactions);
         transactions.sort(Comparator.comparing(Transaction::getDate));
@@ -87,8 +87,8 @@ public class TransactionService {
     private <T extends Transaction> List<T> updateBalances(List<T> transactions, TxOperation op) {
         Instant minDate = transactions.stream().min(comparing(Transaction::getDate))
             .map(Transaction::getDate).orElseThrow();
-        Account account = transactions.get(0).getAccount();
-        Transaction epoch = txRepo.findFirstByAccountAndDateBeforeOrderByDateDesc(account, minDate);
+        long accountId = transactions.get(0).getAccountId();
+        Transaction epoch = txRepo.findFirstByAccountIdAndDateBeforeOrderByDateDesc(accountId, minDate);
 
         BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
 
@@ -96,14 +96,14 @@ public class TransactionService {
         if (op == TxOperation.SAVE) {
             affectedTx.addAll(transactions);
         }
-        affectedTx.addAll((Collection<? extends T>) txRepo.findAllByAccountAndDateAfter(account, minDate));
+        affectedTx.addAll((Collection<? extends T>) txRepo.findAllByAccountIdAndDateAfter(accountId, minDate));
 
         for (T t : affectedTx) {
             balance = balance.add(t.getAmount());
             t.setBalance(balance);
         }
         txRepo.saveAll(affectedTx);
-        cache.clearTxCache(account);
+        cache.clearTxCache(accountId);
         return transactions;
     }
 }
