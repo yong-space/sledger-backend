@@ -18,7 +18,7 @@ public class TemplateService {
     private final TemplateRepo templateRepo;
 
     public List<Template> list(User owner) {
-        return templateRepo.findByOwnerOrderByReference(owner);
+        return templateRepo.findByOwnerIdOrderByReference(owner.getId());
     }
 
     @Transactional
@@ -29,7 +29,7 @@ public class TemplateService {
 
         List<Template> processed = templates.stream()
             .peek(template -> {
-                template.setOwner(owner);
+                template.setOwnerId(owner.getId());
                 template.setId(id.get());
                 template.setReference(template.getReference().toLowerCase());
                 id.set(id.get() + 1);
@@ -41,7 +41,7 @@ public class TemplateService {
     @Transactional
     public List<Template> edit(User owner, List<Template> templates) {
         authorise(owner, templates.stream().map(Template::getId).toList());
-        return templateRepo.saveAll(templates.stream().peek(t -> t.setOwner(owner)).toList());
+        return templateRepo.saveAll(templates.stream().peek(t -> t.setOwnerId(owner.getId())).toList());
     }
 
     @Transactional
@@ -54,7 +54,7 @@ public class TemplateService {
         if (templates.size() != templateIds.size()) {
             throw new ResponseStatusException(BAD_REQUEST, "Unable to find all templates requested");
         }
-        if (templates.parallelStream().anyMatch(t -> t.getOwner().getId() != owner.getId())) {
+        if (templates.parallelStream().anyMatch(t -> t.getOwnerId() != owner.getId())) {
             throw new ResponseStatusException(UNAUTHORIZED, "You are not the owner of all templates requested");
         }
         return templates;
