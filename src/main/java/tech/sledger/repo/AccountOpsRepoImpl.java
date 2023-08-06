@@ -1,16 +1,27 @@
 package tech.sledger.repo;
 
+import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.springframework.data.domain.Sort.Direction.DESC;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.limit;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.lookup;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.replaceRoot;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.stage;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwind;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.dto.Insight;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import static org.springframework.data.domain.Sort.Direction.ASC;
-import static org.springframework.data.domain.Sort.Direction.DESC;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @RequiredArgsConstructor
 public class AccountOpsRepoImpl implements AccountOpsRepo {
@@ -57,7 +68,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
             }
             """);
         Aggregation aggregate = newAggregation(
-            match(new Criteria("owner.$id").is(ownerId)),
+            match(Criteria.where("owner.$id").is(ownerId)),
             lookup,
             stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$transactionLookup\", 0 ] }, \"$$ROOT\" ] } } }"),
             lookup("accountIssuer", "issuer.$id", "_id", "issuerLookup"),
@@ -72,16 +83,36 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     @Override
     public List<String> getTopStrings(long ownerId, String field, String q) {
         return mongoOps.aggregate(newAggregation(
-                match(new Criteria("owner.$id").is(ownerId)),
-                lookup("transaction", "_id", "accountId", "lookup"),
-                unwind("$lookup"),
-                replaceRoot("$lookup"),
-                match(new Criteria(field).regex(q, "i")),
+                match(Criteria.where("owner.$id").is(ownerId)),
+                lookup("transaction", "_id", "accountId", "transactions"),
+                unwind("$transactions"),
+                replaceRoot("$transactions"),
+                match(Criteria.where(field).regex(q, "i")),
                 group("$" + field).count().as("count"),
                 sort(DESC, "count").and(ASC, "_id"),
                 limit(5),
                 project("_id")
             ), Account.class, Map.class).getMappedResults()
             .stream().map(m -> (String) m.get("_id")).toList();
+    }
+
+    @Override
+    public List<Insight> getInsights(long ownerId, Instant from) {
+        return mongoOps.aggregate(newAggregation(
+            match(Criteria.where("owner.$id").is(ownerId)),
+            lookup("transaction", "_id", "accountId", "transactions"),
+            unwind("$transactions"),
+            replaceRoot("$transactions"),
+            match(Criteria.where("date").gte(from)),
+            stage("""
+                { $group: {
+                    _id: { category: "$category", year: { $year: "$date" }, month: { $month: "$date" } },
+                    total: { $sum: { $toDouble: "$amount" } },
+                    transactions: { $sum: 1 }
+                }}
+            """),
+            stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ \"$_id\", \"$$ROOT\" ] } } }"),
+            sort(ASC, "year", "month", "category")
+        ), Account.class, Insight.class).getMappedResults();
     }
 }
