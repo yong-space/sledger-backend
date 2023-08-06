@@ -113,11 +113,11 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(7));
 
-        mvc.perform(get("/api/data/suggest-remarks?q=agile"))
+        mvc.perform(get("/api/suggest/remarks?q=agile"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("Super cali fragile")));
 
-        mvc.perform(get("/api/data/suggest-category?q=hopping"))
+        mvc.perform(get("/api/suggest/category?q=hopping"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("Shopping Test")));
 
@@ -152,11 +152,11 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].ordinaryAmount").value(400));
 
-        mvc.perform(get("/api/data/suggest-code?q=co"))
+        mvc.perform(get("/api/suggest/code?q=co"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("CON")));
 
-        mvc.perform(get("/api/data/suggest-company?q=abc"))
+        mvc.perform(get("/api/suggest/company?q=abc"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("ABC Pte Ltd")));
     }

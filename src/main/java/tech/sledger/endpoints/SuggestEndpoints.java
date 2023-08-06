@@ -14,29 +14,29 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/data")
-public class DataEndpoints {
+@RequestMapping("/api/suggest")
+public class SuggestEndpoints {
     private final AccountRepo accountRepo;
 
-    @GetMapping("/suggest-remarks")
+    @GetMapping("/remarks")
     public List<String> suggestRemarks(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "remarks", q);
     }
 
-    @GetMapping("/suggest-category")
+    @GetMapping("/category")
     public List<String> suggestCategory(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "category", q);
     }
 
-    @GetMapping("/suggest-code")
+    @GetMapping("/code")
     public List<String> suggestCode(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "code", q);
     }
 
-    @GetMapping("/suggest-company")
+    @GetMapping("/company")
     public List<String> suggestCompany(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "company", q);
