@@ -9,5 +9,5 @@ import java.util.Map;
 public interface AccountOpsRepo {
     List<Map> getAccountsWithMetrics(long ownerId);
     List<String> getTopStrings(long ownerId, String field, String query);
-    List<Insight> getInsights(long ownerId, Instant from);
+    List<Insight> getInsights(long ownerId, Instant from, Instant to);
 }

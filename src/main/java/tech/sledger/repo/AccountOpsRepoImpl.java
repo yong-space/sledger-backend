@@ -97,13 +97,17 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     }
 
     @Override
-    public List<Insight> getInsights(long ownerId, Instant from) {
+    public List<Insight> getInsights(long ownerId, Instant from, Instant to) {
+        Criteria hasCategory = Criteria.where("category").exists(true);
+        Criteria dateRange = Criteria.where("date").gte(from)
+            .andOperator(Criteria.where("date").lte(to));
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("owner.$id").is(ownerId)),
             lookup("transaction", "_id", "accountId", "transactions"),
             unwind("$transactions"),
             replaceRoot("$transactions"),
-            match(Criteria.where("date").gte(from)),
+            match(hasCategory),
+            match(dateRange),
             stage("""
                 { $group: {
                     _id: { category: "$category", year: { $year: "$date" }, month: { $month: "$date" } },
