@@ -13,6 +13,7 @@ import tech.sledger.model.dto.InsightsResponse;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -40,14 +41,21 @@ public class DashEndpoints {
 
         List<CategoryInsight> summary = data.parallelStream()
             .collect(Collectors.groupingBy(Insight::getCategory))
-            .entrySet().parallelStream().map(entry ->
-                CategoryInsight.builder()
+            .entrySet().parallelStream().map(entry -> {
+                int transactions = entry.getValue().stream()
+                    .map(Insight::getTransactions)
+                    .reduce(0, Integer::sum);
+                BigDecimal average = entry.getValue().stream()
+                    .map(Insight::getTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(12L), 2, RoundingMode.HALF_EVEN);
+                return CategoryInsight.builder()
                     .category(entry.getKey())
-                    .transactions(entry.getValue().size())
-                    .total(entry.getValue().stream().map(Insight::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add))
-                    .build()
-            )
-            .sorted(comparing(CategoryInsight::getTotal))
+                    .transactions(transactions)
+                    .average(average)
+                    .build();
+            })
+            .sorted(comparing(CategoryInsight::getAverage))
             .toList();
 
         return InsightsResponse.builder()

@@ -10,5 +10,5 @@ import java.math.BigDecimal;
 public class CategoryInsight {
     private String category;
     private int transactions;
-    private BigDecimal total;
+    private BigDecimal average;
 }
