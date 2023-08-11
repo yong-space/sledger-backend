@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.dto.Insight;
@@ -98,25 +99,28 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
 
     @Override
     public List<Insight> getInsights(long ownerId, Instant from, Instant to) {
-        Criteria hasCategory = Criteria.where("category").exists(true);
-        Criteria dateRange = Criteria.where("date").gte(from)
-            .andOperator(Criteria.where("date").lte(to));
+        Criteria criteria = new Criteria().andOperator(
+            Criteria.where("category").exists(true),
+            Criteria.where("category").ne(""),
+            Criteria.where("category").regex("^(?!Transient|Credit Card Bill$).*$", "i"),
+            Criteria.where("date").gte(from),
+            Criteria.where("date").lte(to)
+        );
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("owner.$id").is(ownerId)),
             lookup("transaction", "_id", "accountId", "transactions"),
             unwind("$transactions"),
             replaceRoot("$transactions"),
-            match(hasCategory),
-            match(dateRange),
+            match(criteria),
             stage("""
                 { $group: {
-                    _id: { category: "$category", year: { $year: "$date" }, month: { $month: "$date" } },
+                    _id: { category: "$category", month: { $dateToString: { format: "%Y-%m", date: "$date" } } },
                     total: { $sum: { $toDouble: "$amount" } },
                     transactions: { $sum: 1 }
                 }}
             """),
             stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ \"$_id\", \"$$ROOT\" ] } } }"),
-            sort(ASC, "year", "month", "category")
+            sort(ASC, "month", "category")
         ), Account.class, Insight.class).getMappedResults();
     }
 }
