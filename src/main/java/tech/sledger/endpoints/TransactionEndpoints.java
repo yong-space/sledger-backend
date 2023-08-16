@@ -6,6 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.dto.BulkTransactionUpdate;
+import tech.sledger.model.tx.CashTransaction;
+import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.Transaction;
 import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
@@ -37,6 +40,31 @@ public class TransactionEndpoints {
     ) {
         bulkValidateAndAuthorise(auth, transactions.stream().map(Transaction::getId).toList());
         return txService.edit(transactions);
+    }
+
+    @PutMapping("/bulk")
+    public List<Transaction> bulkUpdateTransactions(
+        Authentication auth,
+        @RequestBody BulkTransactionUpdate update
+    ) {
+        bulkValidateAndAuthorise(auth, update.ids());
+        List<Transaction> transactions = txService.get(update.ids());
+        for (Transaction t : transactions) {
+            if (t instanceof CashTransaction cashTx) {
+                if (update.category() != null) {
+                    cashTx.setCategory(update.category());
+                }
+                if (update.remarks() != null) {
+                    cashTx.setRemarks(update.remarks());
+                }
+            }
+            if (t instanceof CreditTransaction creditTx) {
+                if (update.billingMonth() != null) {
+                    creditTx.setBillingMonth(update.billingMonth());
+                }
+            }
+        }
+        return txService.editAsIs(transactions);
     }
 
     @DeleteMapping("/{transactionIds}")

@@ -78,6 +78,12 @@ public class TransactionService {
     }
 
     @Transactional
+    public <T extends Transaction> List<T> editAsIs(List<T> transactions) {
+        cache.clearTxCache(transactions.get(0).getAccountId());
+        return txRepo.saveAll(transactions);
+    }
+
+    @Transactional
     public void delete(List<Transaction> transactions) {
         txRepo.deleteAll(transactions);
         updateBalances(transactions, TxOperation.REMOVE);
