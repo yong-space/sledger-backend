@@ -5,19 +5,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.model.dto.CategoryInsight;
+import tech.sledger.model.dto.CreditCardStatement;
 import tech.sledger.model.dto.Insight;
 import tech.sledger.model.dto.InsightChartSeries;
 import tech.sledger.model.dto.InsightsResponse;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
+import tech.sledger.repo.TransactionRepo;
+import tech.sledger.service.UserService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,7 +36,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/api/dash")
 public class DashEndpoints {
+    private final UserService userService;
     private final AccountRepo accountRepo;
+    private final TransactionRepo txRepo;
 
     @GetMapping("insights")
     public InsightsResponse getInsights(Authentication auth) {
@@ -103,5 +108,13 @@ public class DashEndpoints {
             .series(series)
             .summary(summary)
             .build();
+    }
+
+    @GetMapping("credit-card-statement/{accountId}")
+    public List<CreditCardStatement> getCreditCardStatement(
+        Authentication auth, @PathVariable long accountId
+    ) {
+        userService.authorise(auth, accountId);
+        return txRepo.getCreditCardStatement(accountId);
     }
 }

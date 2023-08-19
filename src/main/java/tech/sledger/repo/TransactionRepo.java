@@ -6,7 +6,7 @@ import tech.sledger.model.tx.Transaction;
 import java.time.Instant;
 import java.util.List;
 
-public interface TransactionRepo extends MongoRepository<Transaction, Long> {
+public interface TransactionRepo extends MongoRepository<Transaction, Long>, TransactionOpsRepo {
     Transaction findFirstByOrderByIdDesc();
     List<Transaction> findAllByAccountId(long accountId);
     List<Transaction> findAllByAccountIdOrderByDate(long accountId);
