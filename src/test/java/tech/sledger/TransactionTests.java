@@ -78,7 +78,7 @@ public class TransactionTests extends BaseTest {
 
         cashPayload = new HashMap<>(Map.of(
             "@type", "cash",
-            "date", Instant.ofEpochMilli(1640995200000L),
+            "date", date("2022-01-01"),
             "category", "Cash Test",
             "accountId", cashAccountId,
             "amount", 1,
@@ -152,15 +152,13 @@ public class TransactionTests extends BaseTest {
     @Order(5)
     @WithUserDetails("basic-user@company.com")
     public void addCpfTx() throws Exception {
-        Instant date = Instant.ofEpochMilli(1640995200000L);
-
         Map<String, Object> payload = new HashMap<>();
         payload.put("@type", "retirement");
         payload.put("accountId", cpfAccountId);
         payload.put("code", "CON");
         payload.put("company", "ABC Pte Ltd");
-        payload.put("date", date);
-        payload.put("forMonth", date);
+        payload.put("date", date("2022-01-01"));
+        payload.put("forMonth", date("2022-01-01"));
         payload.put("amount", 1000);
         payload.put("ordinaryAmount", 400);
         payload.put("specialAmount", 300);
@@ -191,16 +189,16 @@ public class TransactionTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void calculateCashBalanceAndDates() throws Exception {
         Map<String, Object> payload2 = new HashMap<>(cashPayload);
-        payload2.put("date", Instant.ofEpochMilli(1622195095000L));
+        payload2.put("date", date("2021-05-28"));
         mvc.perform(request(POST, "/api/transaction", List.of(payload2)))
             .andExpect(status().isOk());
 
         Map<String, Object> payload3 = new HashMap<>(cashPayload);
-        payload3.put("date", Instant.ofEpochMilli(1685266523000L));
+        payload3.put("date", date("2023-05-28"));
         mvc.perform(request(POST, "/api/transaction", List.of(payload3)))
             .andExpect(status().isOk());
 
-        payload2.put("date", Instant.ofEpochMilli(1684770153000L));
+        payload2.put("date", date("2023-05-22"));
         mvc.perform(request(POST, "/api/transaction", List.of(cashPayload, payload2, payload3)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))

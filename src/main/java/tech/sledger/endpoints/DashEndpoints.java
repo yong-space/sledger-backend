@@ -46,8 +46,8 @@ public class DashEndpoints {
         ZonedDateTime reference = LocalDate.now()
             .atStartOfDay(ZoneOffset.UTC)
             .withDayOfMonth(1);
-        Instant to = reference.minus(1, ChronoUnit.SECONDS).toInstant();
-        Instant from = reference.minus(12, ChronoUnit.MONTHS).toInstant();
+        Instant to = reference.minusSeconds(1).toInstant();
+        Instant from = reference.minusMonths(12).toInstant();
         List<Insight> raw = accountRepo.getInsights(user.getId(), from, to);
 
         Map<String, String> stackMap = new HashMap<>();
@@ -78,7 +78,7 @@ public class DashEndpoints {
         ZonedDateTime toMonth = ZonedDateTime.ofInstant(to, ZoneOffset.UTC);
         while (month.isBefore(toMonth)) {
             months.add(formatter.format(month));
-            month = month.plus(1, ChronoUnit.MONTHS);
+            month = month.plusMonths(1);
         }
 
         List<InsightChartSeries> series = raw.parallelStream()

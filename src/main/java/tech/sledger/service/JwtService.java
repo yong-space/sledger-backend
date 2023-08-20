@@ -18,7 +18,7 @@ import java.util.Date;
 public class JwtService {
     @Value("${sledger.secret-key}")
     private String secretKey;
-    private GrantedAuthority adminRole = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private final GrantedAuthority adminRole = new SimpleGrantedAuthority("ROLE_ADMIN");
 
     public DecodedJWT validate(String token) {
         return JWT.require(Algorithm.HMAC512(secretKey))

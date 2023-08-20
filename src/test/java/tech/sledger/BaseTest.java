@@ -19,6 +19,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.UserRepo;
 import tech.sledger.service.*;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -101,5 +103,9 @@ public class BaseTest {
         } catch (JsonProcessingException e) {
             return null;
         }
+    }
+
+    public Instant date(String date) {
+        return ZonedDateTime.parse(date + "T00:00:00.000Z").toInstant();
     }
 }
