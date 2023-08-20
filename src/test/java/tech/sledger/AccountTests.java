@@ -92,8 +92,6 @@ public class AccountTests extends BaseTest {
             .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(1).get("id") + ")]").exists())
             .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(2).get("id") + ")]").exists())
             .andExpect(jsonPath("$.[?(@.id == " + newAccounts.get(3).get("id") + ")]").exists());
-
-        System.out.println("hello");
     }
 
     @Test

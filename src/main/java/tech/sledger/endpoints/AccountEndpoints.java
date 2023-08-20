@@ -85,7 +85,8 @@ public class AccountEndpoints {
             cashAccount.setIssuer(issuer);
             cashAccount.setName(editAccount.getName());
             cashAccount.setMultiCurrency(editAccount.isMultiCurrency());
-        } else if (account instanceof CPFAccount cpfAccount) {
+        } else {
+            CPFAccount cpfAccount = (CPFAccount) account;
             cpfAccount.setOrdinaryRatio(editAccount.getOrdinaryRatio());
             cpfAccount.setSpecialRatio(editAccount.getSpecialRatio());
             cpfAccount.setMedisaveRatio(editAccount.getMedisaveRatio());

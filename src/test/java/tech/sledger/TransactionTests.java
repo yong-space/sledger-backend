@@ -1,6 +1,7 @@
 package tech.sledger;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,13 +9,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 import com.jayway.jsonpath.JsonPath;
-import jakarta.annotation.PostConstruct;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.account.CPFAccount;
 import tech.sledger.model.account.CashAccount;
+import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.user.User;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -22,12 +26,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TransactionTests extends BaseTest {
-    private long cashAccountId;
-    private long cpfAccountId;
+    private static long cashAccountId;
+    private static long creditAccountId;
+    private static long cpfAccountId;
+    private static Integer cashId1;
+    private static Integer cashId2;
+    private static Integer creditId1;
+    private static Integer creditId2;
+    private static Integer cpfId;
+    private static Map<String, Object> cashPayload;
 
-    @PostConstruct
-    public void init() {
+    @Test
+    @Order(1)
+    public void setup() {
         AccountIssuer accountIssuerA = new AccountIssuer();
         accountIssuerA.setName("a");
         accountIssuerA = accountIssuerService.add(accountIssuerA);
@@ -38,7 +51,19 @@ public class TransactionTests extends BaseTest {
             .issuer(accountIssuerA)
             .name("My Cash Account")
             .owner(user)
+            .multiCurrency(false)
             .type(AccountType.Cash)
+            .build()).getId();
+
+        creditAccountId = accountService.add(CreditAccount.builder()
+            .issuer(accountIssuerA)
+            .name("My Credit Account")
+            .owner(user)
+            .type(AccountType.Credit)
+            .billingCycle(1)
+            .paymentAccountId(cashAccountId)
+            .multiCurrency(false)
+            .paymentRemarks("Credit Card Bill")
             .build()).getId();
 
         cpfAccountId = accountService.add(CPFAccount.builder()
@@ -50,9 +75,19 @@ public class TransactionTests extends BaseTest {
             .specialRatio(BigDecimal.valueOf(0.3))
             .medisaveRatio(BigDecimal.valueOf(0.3))
             .build()).getId();
+
+        cashPayload = new HashMap<>(Map.of(
+            "@type", "cash",
+            "date", Instant.ofEpochMilli(1640995200000L),
+            "category", "Cash Test",
+            "accountId", cashAccountId,
+            "amount", 1,
+            "remarks", "Super cali fragile"
+        ));
     }
 
     @Test
+    @Order(2)
     @WithUserDetails("basic-user@company.com")
     public void addTxBadAccount() throws Exception {
         Map<String, Object> payload = Map.of(
@@ -69,69 +104,52 @@ public class TransactionTests extends BaseTest {
     }
 
     @Test
+    @Order(3)
     @WithUserDetails("basic-user@company.com")
-    public void addDeleteCashTx() throws Exception {
-        Instant date = Instant.ofEpochMilli(1640995200000L);
-        Map<String, Object> payload = new HashMap<>(Map.of(
-            "@type", "cash",
-            "date", date,
-            "category", "Shopping Test",
-            "accountId", cashAccountId,
-            "amount", 1,
-            "remarks", "Super cali fragile"
-        ));
-
-        String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+    public void addCashTx() throws Exception {
+        String result1 = mvc.perform(request(POST, "/api/transaction", List.of(cashPayload)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Super cali fragile"))
             .andReturn().getResponse().getContentAsString();
-        Integer id1 = JsonPath.parse(result1).read("$.[0].id");
+        cashId1 = JsonPath.parse(result1).read("$.[0].id");
 
-        String result2 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+        String result2 = mvc.perform(request(POST, "/api/transaction", List.of(cashPayload)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:01Z"))
             .andExpect(jsonPath("$.[0].balance").value(BigDecimal.valueOf(2)))
             .andReturn().getResponse().getContentAsString();
-        Integer id2 = JsonPath.parse(result2).read("$.[0].id");
-
-        Map<String, Object> payload2 = new HashMap<>(payload);
-        payload2.put("date", Instant.ofEpochMilli(1622195095000L));
-        mvc.perform(request(POST, "/api/transaction", List.of(payload2))).andExpect(status().isOk());
-        Map<String, Object> payload3 = new HashMap<>(payload);
-        payload3.put("date", Instant.ofEpochMilli(1685266523000L));
-        mvc.perform(request(POST, "/api/transaction", List.of(payload3))).andExpect(status().isOk());
-
-        payload.put("account", Map.of("id", cashAccountId));
-        List.of(payload2, payload3).forEach(p -> p.put("account", cashAccountId));
-        payload2.put("date", Instant.ofEpochMilli(1684770153000L));
-        mvc.perform(request(POST, "/api/transaction", List.of(payload, payload2, payload3)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))
-            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(5)));
-
-        mvc.perform(get("/api/account"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(7));
-
-        mvc.perform(get("/api/suggest/remarks?q=agile"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasItem("Super cali fragile")));
-
-        mvc.perform(get("/api/suggest/category?q=hopping"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasItem("Shopping Test")));
-
-        mvc.perform(delete("/api/transaction/" + id1))
-            .andExpect(status().isOk());
-
-        mvc.perform(delete("/api/transaction/" + id2))
-            .andExpect(status().isOk());
-
-        mvc.perform(delete("/api/transaction/" + id1))
-            .andExpect(status().isNotFound());
+        cashId2 = JsonPath.parse(result2).read("$.[0].id");
     }
 
     @Test
+    @Order(4)
+    @WithUserDetails("basic-user@company.com")
+    public void addCreditTx() throws Exception {
+        Map<String, Object> payload = Map.of(
+            "@type", "credit",
+            "date", Instant.now(),
+            "category", "Credit Test",
+            "billingMonth", Instant.now(),
+            "accountId", creditAccountId,
+            "amount", 1,
+            "remarks", "Credit"
+        );
+
+        String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].category").value("Credit Test"))
+            .andReturn().getResponse().getContentAsString();
+        creditId1 = JsonPath.parse(result1).read("$.[0].id");
+
+        String result2 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].category").value("Credit Test"))
+            .andReturn().getResponse().getContentAsString();
+        creditId2 = JsonPath.parse(result2).read("$.[0].id");
+    }
+
+    @Test
+    @Order(5)
     @WithUserDetails("basic-user@company.com")
     public void addCpfTx() throws Exception {
         Instant date = Instant.ofEpochMilli(1640995200000L);
@@ -148,9 +166,62 @@ public class TransactionTests extends BaseTest {
         payload.put("specialAmount", 300);
         payload.put("medisaveAmount", 300);
 
-        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+        String result = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].ordinaryAmount").value(400));
+            .andExpect(jsonPath("$.[0].ordinaryAmount").value(400))
+            .andReturn().getResponse().getContentAsString();
+        cpfId = JsonPath.parse(result).read("$.[0].id");
+    }
+
+    @Test
+    @Order(6)
+    @WithUserDetails("basic-user@company.com")
+    public void listTx() throws Exception {
+        mvc.perform(get("/api/transaction/" + cashAccountId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.category == 'Cash Test')]").exists());
+
+        mvc.perform(get("/api/transaction/" + creditAccountId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.category == 'Credit Test')]").exists());
+    }
+
+    @Test
+    @Order(7)
+    @WithUserDetails("basic-user@company.com")
+    public void calculateCashBalanceAndDates() throws Exception {
+        Map<String, Object> payload2 = new HashMap<>(cashPayload);
+        payload2.put("date", Instant.ofEpochMilli(1622195095000L));
+        mvc.perform(request(POST, "/api/transaction", List.of(payload2)))
+            .andExpect(status().isOk());
+
+        Map<String, Object> payload3 = new HashMap<>(cashPayload);
+        payload3.put("date", Instant.ofEpochMilli(1685266523000L));
+        mvc.perform(request(POST, "/api/transaction", List.of(payload3)))
+            .andExpect(status().isOk());
+
+        payload2.put("date", Instant.ofEpochMilli(1684770153000L));
+        mvc.perform(request(POST, "/api/transaction", List.of(cashPayload, payload2, payload3)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].date").value("2022-01-01T00:00:02Z"))
+            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(5)));
+    }
+
+    @Test
+    @Order(8)
+    @WithUserDetails("basic-user@company.com")
+    public void suggest() throws Exception {
+        mvc.perform(get("/api/account"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.id == " + cashAccountId + ")].transactions").value(7));
+
+        mvc.perform(get("/api/suggest/remarks?q=agile"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasItem("Super cali fragile")));
+
+        mvc.perform(get("/api/suggest/category?q=red"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasItem("Credit Test")));
 
         mvc.perform(get("/api/suggest/code?q=co"))
             .andExpect(status().isOk())
@@ -162,34 +233,13 @@ public class TransactionTests extends BaseTest {
     }
 
     @Test
-    @WithUserDetails("basic-user@company.com")
-    public void addCreditAndListTx() throws Exception {
-        Map<String, Object> payload = Map.of(
-            "@type", "credit",
-            "date", Instant.now(),
-            "category", "Shopping Test",
-            "billingMonth", Instant.now(),
-            "accountId", cashAccountId,
-            "amount", 1,
-            "remarks", "Credit"
-        );
-
-        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].category").value("Shopping Test"));
-
-        mvc.perform(get("/api/transaction/" + cashAccountId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.category == 'Shopping Test')]").exists());
-    }
-
-    @Test
+    @Order(9)
     @WithUserDetails("basic-user@company.com")
     public void updateTx() throws Exception {
         Map<String, Object> payload = Map.of(
             "@type", "cash",
             "date", Instant.now(),
-            "category", "Shopping Test",
+            "category", "Edit Test",
             "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Cash"
@@ -207,5 +257,67 @@ public class TransactionTests extends BaseTest {
         mvc.perform(request(PUT, "/api/transaction", List.of(payload2)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Edited"));
+    }
+
+    @Test
+    @Order(10)
+    @WithUserDetails("basic-user@company.com")
+    public void bulkUpdateTx() throws Exception {
+        Map<String, Object> payload1 = Map.of(
+            "ids", List.of(cashId1, cashId2),
+            "remarks", "Bulk Remarks",
+            "category", "Bulk Category"
+        );
+        mvc.perform(request(PUT, "/api/transaction/bulk", payload1))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].remarks").value("Bulk Remarks"));
+
+        mvc.perform(get("/api/transaction/" + cashAccountId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.category == 'Bulk Category')]", hasSize(2)));
+
+        mvc.perform(request(PUT, "/api/transaction/bulk", Map.of("ids", List.of(cashId1, cashId2))))
+            .andExpect(status().isOk());
+
+        Map<String, Object> payload2 = Map.of(
+            "ids", List.of(creditId1, creditId2),
+            "remarks", "Bulk Remarks",
+            "category", "Bulk Category",
+            "billingMonth", "2023-01-01T00:00:00.000Z"
+        );
+        mvc.perform(request(PUT, "/api/transaction/bulk", payload2))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].remarks").value("Bulk Remarks"));
+
+        mvc.perform(request(PUT, "/api/transaction/bulk", Map.of("ids", List.of(creditId1, creditId2))))
+            .andExpect(status().isOk());
+
+        Map<String, Object> payload3 = Map.of(
+            "ids", List.of(cashId1, creditId2),
+            "remarks", "Bulk Remarks",
+            "category", "Bulk Category",
+            "billingMonth", "2023-01-01T00:00:00.000Z"
+        );
+        mvc.perform(request(PUT, "/api/transaction/bulk", payload3))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Bulk operations can only be performed on transactions under the same account"));
+
+        Map<String, Object> payload4 = Map.of("ids", List.of(cpfId));
+        mvc.perform(request(PUT, "/api/transaction/bulk", payload4))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @Order(11)
+    @WithUserDetails("basic-user@company.com")
+    public void deleteCashTx() throws Exception {
+        mvc.perform(delete("/api/transaction/" + cashId1))
+            .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/transaction/" + cashId2))
+            .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/transaction/" + cashId1))
+            .andExpect(status().isNotFound());
     }
 }
