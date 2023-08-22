@@ -19,6 +19,7 @@ spring:
         timeout: 25000
         writeTimeout: 25000
         starttls.enable: true
+  jackson.default-property-inclusion: non_null
 
 sledger:
   uri: http://localhost:8080

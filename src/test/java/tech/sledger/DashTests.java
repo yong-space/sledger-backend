@@ -95,6 +95,7 @@ public class DashTests extends BaseTest {
             "date", date,
             "billingMonth", date,
             "category", category,
+            "subCategory", category,
             "accountId", creditAccountId,
             "amount", amount,
             "remarks", "x"

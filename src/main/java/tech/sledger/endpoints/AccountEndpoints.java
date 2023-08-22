@@ -1,18 +1,30 @@
 package tech.sledger.endpoints;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import tech.sledger.model.account.*;
+import tech.sledger.model.account.Account;
+import tech.sledger.model.account.AccountIssuer;
+import tech.sledger.model.account.CPFAccount;
+import tech.sledger.model.account.CashAccount;
+import tech.sledger.model.account.CreditAccount;
+import tech.sledger.model.account.NewAccount;
+import tech.sledger.model.dto.AccountDTO;
 import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
 import java.util.List;
-import java.util.Map;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Slf4j
 @RestController
@@ -109,7 +121,7 @@ public class AccountEndpoints {
     }
 
     @GetMapping
-    public List<Map> listAccounts(Authentication auth) {
+    public List<AccountDTO> listAccounts(Authentication auth) {
         return accountService.list((User) auth.getPrincipal());
     }
 }

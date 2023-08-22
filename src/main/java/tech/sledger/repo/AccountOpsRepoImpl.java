@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.dto.AccountDTO;
 import tech.sledger.model.dto.Insight;
 import java.time.Instant;
 import java.util.List;
@@ -28,7 +29,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     private final MongoOperations mongoOps;
 
     @Override
-    public List<Map> getAccountsWithMetrics(long ownerId) {
+    public List<AccountDTO> getAccountsWithMetrics(long ownerId) {
         AggregationOperation lookup = stage("""
             {
                 $lookup: {
@@ -61,7 +62,15 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
                       }
                     },
                     { $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$balanceLookup", 0 ] }, "$$ROOT" ] } } },
-                    { $project: { balance: 1, transactions: 1, ordinaryBalance: 1, specialBalance: 1, medisaveBalance: 1  } }
+                    {
+                        $project: {
+                            balance: 1,
+                            transactions: 1,
+                            ordinaryBalance: { $cond: { if: { $eq: [ "$ordinaryBalance", 0 ] }, then: null, else: "$ordinaryBalance" }},
+                            specialBalance: { $cond: { if: { $eq: [ "$specialBalance", 0 ] }, then: null, else: "$specialBalance" }},
+                            medisaveBalance: { $cond: { if: { $eq: [ "$medisaveBalance", 0 ] }, then: null, else: "$medisaveBalance" }}
+                        }
+                    }
                   ],
                   as: "transactionLookup"
                 }
@@ -74,10 +83,10 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
             lookup("accountIssuer", "issuer.$id", "_id", "issuerLookup"),
             unwind("$issuerLookup"),
             sort(ASC, "type", "issuerLookup.name", "name"),
-            stage("{ $addFields: { id: \"$_id\", issuerId: \"$issuerLookup._id\" } }"),
-            stage("{ $project: { transactionLookup: 0, issuerLookup: 0, owner: 0, issuer: 0, _id: 0 } }")
+            stage("{ $addFields: { issuerId: \"$issuerLookup._id\" } }"),
+            stage("{ $project: { transactionLookup: 0, issuerLookup: 0, owner: 0, issuer: 0 } }")
         );
-        return mongoOps.aggregate(aggregate, Account.class, Map.class).getMappedResults();
+        return mongoOps.aggregate(aggregate, Account.class, AccountDTO.class).getMappedResults();
     }
 
     @Override
@@ -113,7 +122,13 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
             match(criteria),
             stage("""
                 { $group: {
-                    _id: { category: "$category", month: { $dateToString: { format: "%Y-%m", date: "$date" } } },
+                    _id: {
+                        category: "$category",
+                        subCategory: "$subCategory",
+                        month: {
+                            $dateToString: { format: "%Y-%m-01T00:00:00.000Z", date: "$date" }
+                        }
+                    },
                     total: { $sum: { $toDouble: "$amount" } },
                     transactions: { $sum: 1 }
                 }}

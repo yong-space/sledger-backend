@@ -1,6 +1,6 @@
 package tech.sledger.endpoints;
 
-import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -23,13 +23,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -51,41 +48,40 @@ public class DashEndpoints {
         List<Insight> raw = accountRepo.getInsights(user.getId(), from, to);
 
         Map<String, String> stackMap = new HashMap<>();
-        List<CategoryInsight> summary = raw.parallelStream()
-            .collect(Collectors.groupingBy(Insight::getCategory))
-            .entrySet().parallelStream().map(entry -> {
-                int transactions = entry.getValue().stream()
+        List<CategoryInsight> summary = new ArrayList<>();
+
+        raw.stream()
+            .collect(groupingBy(Insight::getCategory, groupingBy(Insight::getSubCategory)))
+            .forEach((category, value) -> value.forEach((subCategory, txList) -> {
+                int transactions = txList.stream()
                     .map(Insight::getTransactions)
                     .reduce(0, Integer::sum);
-                BigDecimal average = entry.getValue().stream()
+                BigDecimal average = txList.stream()
                     .map(Insight::getTotal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(12L), 2, RoundingMode.HALF_EVEN);
-                stackMap.put(entry.getKey(), average.compareTo(BigDecimal.ZERO) < 0 ? "debit" : "credit");
-                return CategoryInsight.builder()
-                    .category(entry.getKey())
+                stackMap.put(category, average.compareTo(BigDecimal.ZERO) < 0 ? "debit" : "credit");
+                summary.add(CategoryInsight.builder()
+                    .category(category)
+                    .subCategory(subCategory)
                     .transactions(transactions)
                     .average(average)
-                    .build();
-            })
-            .sorted(comparing(CategoryInsight::getAverage))
-            .toList();
+                    .build());
+            }));
 
-        List<String> months = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM")
-            .withZone(ZoneOffset.UTC);
+        List<Instant> months = new ArrayList<>();
         ZonedDateTime month = ZonedDateTime.ofInstant(from, ZoneOffset.UTC);
         ZonedDateTime toMonth = ZonedDateTime.ofInstant(to, ZoneOffset.UTC);
         while (month.isBefore(toMonth)) {
-            months.add(formatter.format(month));
+            months.add(month.toInstant());
             month = month.plusMonths(1);
         }
 
         List<InsightChartSeries> series = raw.parallelStream()
-            .collect(Collectors.groupingBy(Insight::getCategory))
+            .collect(groupingBy(Insight::getCategory))
             .entrySet().parallelStream().map(entry -> {
                 List<BigDecimal> data = new ArrayList<>();
-                for (String m : months) {
+                for (Instant m : months) {
                     data.add(
                         entry.getValue().stream()
                             .filter(e -> e.getMonth().equals(m))

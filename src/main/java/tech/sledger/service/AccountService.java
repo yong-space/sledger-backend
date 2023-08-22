@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.CreditAccount;
+import tech.sledger.model.dto.AccountDTO;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +41,7 @@ public class AccountService {
         return accountRepo.findById(id).orElse(null);
     }
 
-    public List<Map> list(User owner) {
+    public List<AccountDTO> list(User owner) {
         return accountRepo.getAccountsWithMetrics(owner.getId());
     }
 

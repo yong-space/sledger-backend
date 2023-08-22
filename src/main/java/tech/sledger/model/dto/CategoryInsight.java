@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 @Builder
 public class CategoryInsight {
     private String category;
+    private String subCategory;
     private int transactions;
     private BigDecimal average;
 }
