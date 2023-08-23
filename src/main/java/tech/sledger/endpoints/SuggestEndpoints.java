@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tech.sledger.model.dto.CategorySuggestion;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import java.util.List;
@@ -40,5 +41,11 @@ public class SuggestEndpoints {
     public List<String> suggestCompany(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "company", q);
+    }
+
+    @GetMapping("/categories")
+    public List<CategorySuggestion> getCategories(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        return accountRepo.getCategories(user.getId());
     }
 }

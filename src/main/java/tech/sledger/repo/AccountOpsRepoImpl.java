@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.dto.AccountDTO;
+import tech.sledger.model.dto.CategorySuggestion;
 import tech.sledger.model.dto.Insight;
 import java.time.Instant;
 import java.util.List;
@@ -136,5 +137,23 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
             stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ \"$_id\", \"$$ROOT\" ] } } }"),
             sort(ASC, "month", "category")
         ), Account.class, Insight.class).getMappedResults();
+    }
+
+    @Override
+    public List<CategorySuggestion> getCategories(long ownerId) {
+        Criteria criteria = new Criteria().andOperator(
+            Criteria.where("category").exists(true),
+            Criteria.where("category").ne("")
+        );
+        return mongoOps.aggregate(newAggregation(
+            match(Criteria.where("owner.$id").is(ownerId)),
+            lookup("transaction", "_id", "accountId", "transactions"),
+            unwind("$transactions"),
+            replaceRoot("$transactions"),
+            match(criteria),
+            group("category", "subCategory").count().as("count"),
+            sort(DESC, "count").and(ASC, "_id"),
+            stage("{ $replaceRoot: { newRoot: \"$_id\" } }")
+        ), Account.class, CategorySuggestion.class).getMappedResults();
     }
 }
