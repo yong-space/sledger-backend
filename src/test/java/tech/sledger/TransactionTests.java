@@ -79,7 +79,8 @@ public class TransactionTests extends BaseTest {
         cashPayload = new HashMap<>(Map.of(
             "@type", "cash",
             "date", date("2022-01-01"),
-            "category", "Cash Test",
+            "category", "Cash Category",
+            "subCategory", "Cash Sub-category",
             "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Super cali fragile"
@@ -128,7 +129,7 @@ public class TransactionTests extends BaseTest {
         Map<String, Object> payload = Map.of(
             "@type", "credit",
             "date", Instant.now(),
-            "category", "Credit Test",
+            "category", "Credit Category",
             "billingMonth", Instant.now(),
             "accountId", creditAccountId,
             "amount", 1,
@@ -137,13 +138,13 @@ public class TransactionTests extends BaseTest {
 
         String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].category").value("Credit Test"))
+            .andExpect(jsonPath("$.[0].category").value("Credit Category"))
             .andReturn().getResponse().getContentAsString();
         creditId1 = JsonPath.parse(result1).read("$.[0].id");
 
         String result2 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[0].category").value("Credit Test"))
+            .andExpect(jsonPath("$.[0].category").value("Credit Category"))
             .andReturn().getResponse().getContentAsString();
         creditId2 = JsonPath.parse(result2).read("$.[0].id");
     }
@@ -177,11 +178,11 @@ public class TransactionTests extends BaseTest {
     public void listTx() throws Exception {
         mvc.perform(get("/api/transaction/" + cashAccountId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.category == 'Cash Test')]").exists());
+            .andExpect(jsonPath("$.[?(@.category == 'Cash Category')]").exists());
 
         mvc.perform(get("/api/transaction/" + creditAccountId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.category == 'Credit Test')]").exists());
+            .andExpect(jsonPath("$.[?(@.category == 'Credit Category')]").exists());
     }
 
     @Test
@@ -219,7 +220,7 @@ public class TransactionTests extends BaseTest {
 
         mvc.perform(get("/api/suggest/category?q=red"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasItem("Credit Test")));
+            .andExpect(jsonPath("$", hasItem("Credit Category")));
 
         mvc.perform(get("/api/suggest/code?q=co"))
             .andExpect(status().isOk())
@@ -228,6 +229,10 @@ public class TransactionTests extends BaseTest {
         mvc.perform(get("/api/suggest/company?q=abc"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("ABC Pte Ltd")));
+
+        mvc.perform(get("/api/suggest/categories"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.category == \"Cash Category\")].subCategory").value("Cash Sub-category"));
     }
 
     @Test
@@ -264,7 +269,8 @@ public class TransactionTests extends BaseTest {
         Map<String, Object> payload1 = Map.of(
             "ids", List.of(cashId1, cashId2),
             "remarks", "Bulk Remarks",
-            "category", "Bulk Category"
+            "category", "Bulk Category",
+            "subCategory", "Bulk Sub-category"
         );
         mvc.perform(request(PUT, "/api/transaction/bulk", payload1))
             .andExpect(status().isOk())
@@ -281,6 +287,7 @@ public class TransactionTests extends BaseTest {
             "ids", List.of(creditId1, creditId2),
             "remarks", "Bulk Remarks",
             "category", "Bulk Category",
+            "subCategory", "Bulk Sub-category",
             "billingMonth", "2023-01-01T00:00:00.000Z"
         );
         mvc.perform(request(PUT, "/api/transaction/bulk", payload2))
@@ -294,6 +301,7 @@ public class TransactionTests extends BaseTest {
             "ids", List.of(cashId1, creditId2),
             "remarks", "Bulk Remarks",
             "category", "Bulk Category",
+            "subCategory", "Bulk Sub-category",
             "billingMonth", "2023-01-01T00:00:00.000Z"
         );
         mvc.perform(request(PUT, "/api/transaction/bulk", payload3))
