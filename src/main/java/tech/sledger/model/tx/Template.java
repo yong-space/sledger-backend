@@ -17,4 +17,5 @@ public class Template {
     private String reference;
     private String remarks;
     private String category;
+    private String subCategory;
 }

@@ -79,6 +79,7 @@ public class OcbcImporter implements Importer {
                 if (template != null) {
                     tx.setRemarks(template.getRemarks());
                     tx.setCategory(template.getCategory());
+                    tx.setSubCategory(template.getSubCategory());
                 }
                 output.add(tx);
             }
@@ -96,10 +97,12 @@ public class OcbcImporter implements Importer {
 
             String remarks = row[1];
             String category = null;
+            String subCategory = null;
             Template template = matchTemplate(remarks, templates);
             if (template != null) {
                 remarks = template.getRemarks();
                 category = template.getCategory();
+                subCategory = template.getSubCategory();
             }
 
             BigDecimal debit = parseDecimal(row[2]);
@@ -111,6 +114,7 @@ public class OcbcImporter implements Importer {
                 .billingMonth(billingMonth)
                 .remarks(remarks)
                 .category(category)
+                .subCategory(subCategory)
                 .amount(credit.subtract(debit))
                 .accountId(account.getId())
                 .build());

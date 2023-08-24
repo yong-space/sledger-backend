@@ -61,11 +61,13 @@ public class UobImporter implements Importer {
             BigDecimal debit = parseDecimal(sheet.getCell(2, i).getContents());
             BigDecimal credit = parseDecimal(sheet.getCell(3, i).getContents());
             String category = "";
+            String subCategory = "";
 
             Template template = matchTemplate(remarks, templates);
             if (template != null) {
                 remarks = template.getRemarks();
                 category = template.getCategory();
+                subCategory = template.getSubCategory();
             }
 
             output.add(CashTransaction.builder()
@@ -73,6 +75,7 @@ public class UobImporter implements Importer {
                 .date(date)
                 .remarks(remarks)
                 .category(category)
+                .subCategory(subCategory)
                 .amount(credit.subtract(debit))
                 .accountId(account.getId())
                 .build());
@@ -93,11 +96,13 @@ public class UobImporter implements Importer {
             String remarks = sheet.getCell(2, i).getContents().trim();
             BigDecimal amount = parseDecimal(sheet.getCell(6, i).getContents());
             String category = "";
+            String subCategory = "";
 
             Template template = matchTemplate(remarks, templates);
             if (template != null) {
                 remarks = template.getRemarks();
                 category = template.getCategory();
+                subCategory = template.getSubCategory();
             }
 
             output.add(CreditTransaction.builder()
@@ -106,6 +111,7 @@ public class UobImporter implements Importer {
                 .billingMonth(billingMonth)
                 .remarks(remarks)
                 .category(category)
+                .subCategory(subCategory)
                 .amount(amount)
                 .accountId(account.getId())
                 .build());
