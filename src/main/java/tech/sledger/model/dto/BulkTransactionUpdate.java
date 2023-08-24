@@ -7,5 +7,6 @@ public record BulkTransactionUpdate(
     List<Long> ids,
     Instant billingMonth,
     String remarks,
-    String category
+    String category,
+    String subCategory
 ) {}

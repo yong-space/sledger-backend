@@ -54,6 +54,9 @@ public class TransactionEndpoints {
                 if (update.category() != null) {
                     cashTx.setCategory(update.category());
                 }
+                if (update.subCategory() != null) {
+                    cashTx.setSubCategory(update.subCategory());
+                }
                 if (update.remarks() != null) {
                     cashTx.setRemarks(update.remarks());
                 }
