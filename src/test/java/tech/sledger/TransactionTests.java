@@ -218,10 +218,6 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("Super cali fragile")));
 
-        mvc.perform(get("/api/suggest/category?q=red"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasItem("Credit Category")));
-
         mvc.perform(get("/api/suggest/code?q=co"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("CON")));

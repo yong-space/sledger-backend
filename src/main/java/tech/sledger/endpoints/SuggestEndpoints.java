@@ -25,12 +25,6 @@ public class SuggestEndpoints {
         return accountRepo.getTopStrings(user.getId(), "remarks", q);
     }
 
-    @GetMapping("/category")
-    public List<String> suggestCategory(Authentication auth, @RequestParam String q) {
-        User user = (User) auth.getPrincipal();
-        return accountRepo.getTopStrings(user.getId(), "category", q);
-    }
-
     @GetMapping("/code")
     public List<String> suggestCode(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
