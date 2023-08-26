@@ -22,24 +22,28 @@ public class SuggestEndpoints {
     @GetMapping("/remarks")
     public List<String> suggestRemarks(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
-        return accountRepo.getTopStrings(user.getId(), "remarks", q);
+        return accountRepo.getTopStrings(user.getId(), "remarks", cleanQuery(q));
     }
 
     @GetMapping("/code")
     public List<String> suggestCode(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
-        return accountRepo.getTopStrings(user.getId(), "code", q);
+        return accountRepo.getTopStrings(user.getId(), "code", cleanQuery(q));
     }
 
     @GetMapping("/company")
     public List<String> suggestCompany(Authentication auth, @RequestParam String q) {
         User user = (User) auth.getPrincipal();
-        return accountRepo.getTopStrings(user.getId(), "company", q);
+        return accountRepo.getTopStrings(user.getId(), "company", cleanQuery(q));
     }
 
     @GetMapping("/categories")
     public List<CategorySuggestion> getCategories(Authentication auth) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getCategories(user.getId());
+    }
+
+    private String cleanQuery(String raw) {
+        return raw.replaceAll("[^A-Za-z0-9:' ]", "");
     }
 }
