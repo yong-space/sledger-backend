@@ -251,7 +251,8 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", iterableWithSize(2)))
             .andExpect(jsonPath("$.[?(@.remarks == 'Stuff')]").exists())
-            .andExpect(jsonPath("$.[?(@.category == 'Shopping')]").exists());
+            .andExpect(jsonPath("$.[?(@.category == 'Gifts')]").exists())
+            .andExpect(jsonPath("$.[?(@.subCategory == 'Shopping')]").exists());
     }
 
     @Test

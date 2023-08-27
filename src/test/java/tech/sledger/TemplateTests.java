@@ -22,7 +22,7 @@ public class TemplateTests extends BaseTest {
     private static int id2;
 
     Map<String, Object> template = new HashMap<>(Map.of(
-        "reference", "my reference",
+        "reference", "MY REFERENCE",
         "remarks", "my remarks",
         "category", "my category",
         "subCategory", "my sub-category"
@@ -54,10 +54,12 @@ public class TemplateTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void editTemplate() throws Exception {
         template.put("id", id1);
-        template.put("remarks", "modified remarks");
+        template.put("reference", "MODIFIED reference");
+        template.put("remarks", "MODIFIED remarks");
         mvc.perform(request(PUT, "/api/template", List.of(template)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.remarks == 'modified remarks')]").exists());
+            .andExpect(jsonPath("$.[?(@.reference == 'modified reference')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'MODIFIED remarks')]").exists());
     }
 
     @Test
@@ -66,7 +68,8 @@ public class TemplateTests extends BaseTest {
     public void listTemplates() throws Exception {
         mvc.perform(get("/api/template"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.[?(@.remarks == 'modified remarks')]").exists());
+            .andExpect(jsonPath("$.[?(@.reference == 'modified reference')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'MODIFIED remarks')]").exists());
     }
 
     @Test

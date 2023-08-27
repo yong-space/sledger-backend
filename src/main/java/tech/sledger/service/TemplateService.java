@@ -28,10 +28,10 @@ public class TemplateService {
         id.set((previous == null) ? 1 : previous.getId() + 1);
 
         List<Template> processed = templates.stream()
-            .peek(template -> {
-                template.setOwnerId(owner.getId());
-                template.setId(id.get());
-                template.setReference(template.getReference().toLowerCase());
+            .peek(t -> {
+                t.setOwnerId(owner.getId());
+                t.setId(id.get());
+                t.setReference(t.getReference().toLowerCase());
                 id.set(id.get() + 1);
             })
             .toList();
@@ -41,7 +41,10 @@ public class TemplateService {
     @Transactional
     public List<Template> edit(User owner, List<Template> templates) {
         authorise(owner, templates.stream().map(Template::getId).toList());
-        return templateRepo.saveAll(templates.stream().peek(t -> t.setOwnerId(owner.getId())).toList());
+        return templateRepo.saveAll(templates.stream().peek(t -> {
+            t.setOwnerId(owner.getId());
+            t.setReference(t.getReference().toLowerCase());
+        }).toList());
     }
 
     @Transactional
