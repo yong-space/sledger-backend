@@ -11,6 +11,7 @@ import tech.sledger.model.dto.CategorySuggestion;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @RestController
@@ -44,6 +45,6 @@ public class SuggestEndpoints {
     }
 
     private String cleanQuery(String raw) {
-        return raw.replaceAll("[^A-Za-z0-9:' ]", "");
+        return Pattern.quote(raw);
     }
 }
