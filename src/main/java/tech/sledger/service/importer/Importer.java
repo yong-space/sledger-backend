@@ -22,7 +22,7 @@ public interface Importer {
     default Template matchTemplate(String input, List<Template> templates) {
         String lowerInput = input.toLowerCase();
         return templates.stream()
-            .filter(t ->lowerInput.contains(t.getReference()))
+            .filter(t -> lowerInput.contains(t.getReference()))
             .findFirst().orElse(null);
     }
 

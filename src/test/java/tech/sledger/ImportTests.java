@@ -36,6 +36,8 @@ Ledger Balance,"1,234.56"
 
 Transaction History
 Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
+17/05/2023,16/05/2023,SAMPLE,12.34,
+,,CASE TEST
 16/05/2023,16/05/2023,COLLECTION,110.39,
 ,,SHOPPING ITEM
 13/05/2023,13/05/2023,FAST PAYMENT,379.50,
@@ -122,7 +124,7 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .build()).getId();
 
         Template template = Template.builder()
-            .id(1).reference("shop").remarks("Stuff").category("Shopping").build();
+            .id(1).reference("shop").remarks("Stuff").category("Gifts").subCategory("Shopping").build();
         templateService.add(user, List.of(template));
     }
 
@@ -211,9 +213,10 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .file(mockFile("ocbc-cash.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(2)))
-            .andExpect(jsonPath("$.[?(@.remarks == 'Stuff')]").exists())
-            .andExpect(jsonPath("$.[?(@.category == 'Shopping')]").exists());
+            .andExpect(jsonPath("$", iterableWithSize(3)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Sample Case Test')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Gifts')]").exists())
+            .andExpect(jsonPath("$.[?(@.subCategory == 'Shopping')]").exists());
     }
 
     @Test
