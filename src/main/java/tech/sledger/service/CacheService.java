@@ -9,4 +9,7 @@ import org.springframework.stereotype.Service;
 public class CacheService {
   @CacheEvict(value="tx", key="#accountId")
   public void clearTxCache(long accountId) {}
+
+  @CacheEvict(value="authorise", key="#accountId")
+  public void clearAuthCache(long accountId) {}
 }

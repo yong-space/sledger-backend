@@ -23,6 +23,7 @@ import tech.sledger.model.dto.AccountDTO;
 import tech.sledger.model.user.User;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
+import tech.sledger.service.CacheService;
 import tech.sledger.service.UserService;
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class AccountEndpoints {
     private final AccountIssuerService accountIssuerService;
     private final AccountService accountService;
     private final UserService userService;
+    private final CacheService cacheService;
 
     @PostMapping
     public Account addAccount(Authentication auth, @RequestBody NewAccount newAccount) {
@@ -79,7 +81,9 @@ public class AccountEndpoints {
     }
 
     @PutMapping("/{accountId}")
-    public Account updateAccount(Authentication auth, @PathVariable long accountId, @RequestBody NewAccount editAccount) {
+    public Account updateAccount(
+        Authentication auth, @PathVariable long accountId, @RequestBody NewAccount editAccount
+    ) {
         Account account = userService.authorise(auth, accountId);
         AccountIssuer issuer = accountIssuerService.get(editAccount.getIssuerId());
         if (issuer == null) {
@@ -103,6 +107,7 @@ public class AccountEndpoints {
             cpfAccount.setSpecialRatio(editAccount.getSpecialRatio());
             cpfAccount.setMedisaveRatio(editAccount.getMedisaveRatio());
         }
+        cacheService.clearAuthCache(accountId);
         return accountService.edit(account);
     }
 
@@ -118,6 +123,7 @@ public class AccountEndpoints {
     public void deleteAccount(Authentication auth, @PathVariable long accountId) {
         Account account = userService.authorise(auth, accountId);
         accountService.delete(account);
+        cacheService.clearAuthCache(accountId);
     }
 
     @GetMapping

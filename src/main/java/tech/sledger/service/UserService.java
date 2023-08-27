@@ -112,7 +112,7 @@ public class UserService {
         }
     }
 
-    @Cacheable("authorise")
+    @Cacheable(value="authorise", key="#accountId")
     public Account authorise(Authentication auth, long accountId) {
         Account account = accountService.get(accountId);
         if (account == null) {
