@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
-import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.tx.Transaction;
 import tech.sledger.service.importer.Importer;
@@ -36,28 +35,8 @@ public class ImportService {
         }
         return importerMap.get(account.getIssuer().getName())
             .getConstructor().newInstance().process(account, inputStream, templates)
-            .stream().map((t) -> {
-                if (t instanceof CashTransaction ct) {
-                    ct.setRemarks(toProperCase(ct.getRemarks()));
-                    return ct;
-                }
-                return t;
-            })
+            .stream()
             .sorted(comparing(Transaction::getDate))
             .toList();
-    }
-
-    private String toProperCase(String s) {
-        final String ACTIONABLE_DELIMITERS = " '-/";
-
-        StringBuilder sb = new StringBuilder();
-        boolean capNext = true;
-
-        for (char c : s.toCharArray()) {
-            c = (capNext) ? Character.toUpperCase(c) : Character.toLowerCase(c);
-            sb.append(c);
-            capNext = ACTIONABLE_DELIMITERS.indexOf(c) >= 0;
-        }
-        return sb.toString();
     }
 }

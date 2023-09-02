@@ -60,22 +60,14 @@ public class UobImporter implements Importer {
             String remarks = sheet.getCell(1, i).getContents().trim();
             BigDecimal debit = parseDecimal(sheet.getCell(2, i).getContents());
             BigDecimal credit = parseDecimal(sheet.getCell(3, i).getContents());
-            String category = "";
-            String subCategory = "";
-
             Template template = matchTemplate(remarks, templates);
-            if (template != null) {
-                remarks = template.getRemarks();
-                category = template.getCategory();
-                subCategory = template.getSubCategory();
-            }
 
             output.add(CashTransaction.builder()
                 .id(index++)
                 .date(date)
-                .remarks(remarks)
-                .category(category)
-                .subCategory(subCategory)
+                .remarks(template.getRemarks())
+                .category(template.getCategory())
+                .subCategory(template.getSubCategory())
                 .amount(credit.subtract(debit))
                 .accountId(account.getId())
                 .build());
@@ -95,23 +87,15 @@ public class UobImporter implements Importer {
             Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
             String remarks = sheet.getCell(2, i).getContents().trim();
             BigDecimal amount = parseDecimal(sheet.getCell(6, i).getContents());
-            String category = "";
-            String subCategory = "";
-
             Template template = matchTemplate(remarks, templates);
-            if (template != null) {
-                remarks = template.getRemarks();
-                category = template.getCategory();
-                subCategory = template.getSubCategory();
-            }
 
             output.add(CreditTransaction.builder()
                 .id(index++)
                 .date(date)
                 .billingMonth(billingMonth)
-                .remarks(remarks)
-                .category(category)
-                .subCategory(subCategory)
+                .remarks(template.getRemarks())
+                .category(template.getCategory())
+                .subCategory(template.getSubCategory())
                 .amount(amount)
                 .accountId(account.getId())
                 .build());

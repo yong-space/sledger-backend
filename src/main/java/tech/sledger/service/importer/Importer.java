@@ -19,11 +19,17 @@ public interface Importer {
             new BigDecimal(cleanInput) : BigDecimal.ZERO;
     }
 
-    default Template matchTemplate(String input, List<Template> templates) {
-        String lowerInput = input.toLowerCase();
+    default Template matchTemplate(String remarks, List<Template> templates) {
+        String remarksLower = remarks.toLowerCase();
         return templates.stream()
-            .filter(t -> lowerInput.contains(t.getReference()))
-            .findFirst().orElse(null);
+            .filter(t -> remarksLower.contains(t.getReference()))
+            .findFirst().orElse(
+                Template.builder()
+                    .remarks(toProperCase(remarks))
+                    .category("")
+                    .subCategory("")
+                    .build()
+            );
     }
 
     default Instant getBillingMonth(LocalDate date, CreditAccount account) {
@@ -33,6 +39,20 @@ public interface Importer {
             localMonth = localMonth.minusMonths(1).withDayOfMonth(1);
         }
         return localMonth.atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
+    private String toProperCase(String s) {
+        final String ACTIONABLE_DELIMITERS = " '-/";
+
+        StringBuilder sb = new StringBuilder();
+        boolean capNext = true;
+
+        for (char c : s.toCharArray()) {
+            c = (capNext) ? Character.toUpperCase(c) : Character.toLowerCase(c);
+            sb.append(c);
+            capNext = ACTIONABLE_DELIMITERS.indexOf(c) >= 0;
+        }
+        return sb.toString();
     }
 
     List<Transaction> process(

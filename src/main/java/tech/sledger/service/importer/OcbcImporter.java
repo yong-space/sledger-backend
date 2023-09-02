@@ -74,13 +74,10 @@ public class OcbcImporter implements Importer {
                     .accountId(account.getId())
                     .build();
             } else {
-                tx.setRemarks(tx.getRemarks() + " " + row[2]);
-                Template template = matchTemplate(tx.getRemarks(), templates);
-                if (template != null) {
-                    tx.setRemarks(template.getRemarks());
-                    tx.setCategory(template.getCategory());
-                    tx.setSubCategory(template.getSubCategory());
-                }
+                Template template = matchTemplate(tx.getRemarks() + " " + row[2], templates);
+                tx.setRemarks(template.getRemarks());
+                tx.setCategory(template.getCategory());
+                tx.setSubCategory(template.getSubCategory());
                 output.add(tx);
             }
         }
@@ -94,17 +91,7 @@ public class OcbcImporter implements Importer {
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
-
-            String remarks = row[1];
-            String category = null;
-            String subCategory = null;
-            Template template = matchTemplate(remarks, templates);
-            if (template != null) {
-                remarks = template.getRemarks();
-                category = template.getCategory();
-                subCategory = template.getSubCategory();
-            }
-
+            Template template = matchTemplate(row[1], templates);
             BigDecimal debit = parseDecimal(row[2]);
             BigDecimal credit = parseDecimal(row[3]);
 
@@ -112,9 +99,9 @@ public class OcbcImporter implements Importer {
                 .id(index++)
                 .date(date)
                 .billingMonth(billingMonth)
-                .remarks(remarks)
-                .category(category)
-                .subCategory(subCategory)
+                .remarks(template.getRemarks())
+                .category(template.getCategory())
+                .subCategory(template.getSubCategory())
                 .amount(credit.subtract(debit))
                 .accountId(account.getId())
                 .build());
