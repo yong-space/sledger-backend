@@ -92,7 +92,7 @@ public class UobImporter implements Importer {
                 .remarks(template.getRemarks())
                 .category(template.getCategory())
                 .subCategory(template.getSubCategory())
-                .amount(amount)
+                .amount(amount.multiply(BigDecimal.valueOf(-1)))
                 .accountId(account.getId())
                 .build());
         }

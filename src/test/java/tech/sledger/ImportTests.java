@@ -273,6 +273,7 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .file(mockFile("uob-credit.xls"));
         mvc.perform(request)
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].amount").value("100.0"))
             .andExpect(jsonPath("$.[0].billingMonth").value("2023-04-01T00:00:00Z"));
     }
 }
