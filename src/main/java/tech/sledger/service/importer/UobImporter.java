@@ -47,7 +47,6 @@ public class UobImporter implements Importer {
     }
 
     private List<Transaction> processCash(Sheet sheet, Account account, List<Template> templates) {
-        int index = 1;
         List<Transaction> output = new ArrayList<>();
 
         for (int i = 8; i < sheet.getRows(); i++) {
@@ -63,7 +62,6 @@ public class UobImporter implements Importer {
             Template template = matchTemplate(remarks, templates);
 
             output.add(CashTransaction.builder()
-                .id(index++)
                 .date(date)
                 .remarks(template.getRemarks())
                 .category(template.getCategory())
@@ -78,7 +76,6 @@ public class UobImporter implements Importer {
     private List<Transaction> processCredit(
         Sheet sheet, Account account, List<Template> templates
     ) {
-        int index = 1;
         List<Transaction> output = new ArrayList<>();
 
         for (int i = 11; i < sheet.getRows(); i++) {
@@ -90,7 +87,6 @@ public class UobImporter implements Importer {
             Template template = matchTemplate(remarks, templates);
 
             output.add(CreditTransaction.builder()
-                .id(index++)
                 .date(date)
                 .billingMonth(billingMonth)
                 .remarks(template.getRemarks())

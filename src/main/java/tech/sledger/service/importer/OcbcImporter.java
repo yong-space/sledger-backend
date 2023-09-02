@@ -59,7 +59,7 @@ public class OcbcImporter implements Importer {
     private List<Transaction> processCash(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
         CashTransaction tx = new CashTransaction();
-        int index = 1;
+
         for (String[] row : data) {
             if (hasText(row[0])) {
                 Instant date = LocalDate.parse(row[0], dateFormat)
@@ -67,7 +67,6 @@ public class OcbcImporter implements Importer {
                 BigDecimal debit = parseDecimal(row[3]);
                 BigDecimal credit = parseDecimal(row[4]);
                 tx = CashTransaction.builder()
-                    .id(index++)
                     .date(date)
                     .remarks(row[2])
                     .amount(credit.subtract(debit))
@@ -86,7 +85,6 @@ public class OcbcImporter implements Importer {
 
     private List<Transaction> processCredit(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
-        int index = 1;
         for (String[] row : data) {
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
@@ -96,7 +94,6 @@ public class OcbcImporter implements Importer {
             BigDecimal credit = parseDecimal(row[3]);
 
             output.add(CreditTransaction.builder()
-                .id(index++)
                 .date(date)
                 .billingMonth(billingMonth)
                 .remarks(template.getRemarks())

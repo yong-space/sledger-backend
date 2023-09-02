@@ -15,6 +15,7 @@ import tech.sledger.service.importer.UobImporter;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -33,10 +34,12 @@ public class ImportService {
         if (!importerMap.containsKey(account.getIssuer().getName())) {
             throw new ResponseStatusException(BAD_REQUEST, "Unsupported issuer");
         }
+        AtomicInteger index = new AtomicInteger(1);
         return importerMap.get(account.getIssuer().getName())
             .getConstructor().newInstance().process(account, inputStream, templates)
             .stream()
             .sorted(comparing(Transaction::getDate))
+            .peek(t -> t.setId(index.getAndIncrement()))
             .toList();
     }
 }
