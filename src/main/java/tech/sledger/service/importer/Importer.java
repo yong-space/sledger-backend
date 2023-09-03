@@ -47,7 +47,7 @@ public interface Importer {
         StringBuilder sb = new StringBuilder();
         boolean capNext = true;
 
-        for (char c : s.toCharArray()) {
+        for (char c : s.trim().toCharArray()) {
             c = (capNext) ? Character.toUpperCase(c) : Character.toLowerCase(c);
             sb.append(c);
             capNext = ACTIONABLE_DELIMITERS.indexOf(c) >= 0;

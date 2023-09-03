@@ -89,7 +89,7 @@ public class OcbcImporter implements Importer {
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
-            Template template = matchTemplate(row[1], templates);
+            Template template = matchTemplate(cleanRemarks(row[1]), templates);
             BigDecimal debit = parseDecimal(row[2]);
             BigDecimal credit = parseDecimal(row[3]);
 
@@ -104,5 +104,10 @@ public class OcbcImporter implements Importer {
                 .build());
         }
         return output;
+    }
+
+    private String cleanRemarks(String raw) {
+        return raw.replaceFirst("^-[0-9]+\\s+", "")
+            .replaceFirst("(?i)(\\s?singapore)*[0-9\\s]*sgp?$", "");
     }
 }
