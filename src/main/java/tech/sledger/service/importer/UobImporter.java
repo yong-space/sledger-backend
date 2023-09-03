@@ -86,6 +86,10 @@ public class UobImporter implements Importer {
             BigDecimal amount = parseDecimal(sheet.getCell(6, i).getContents());
             Template template = matchTemplate(remarks, templates);
 
+            if (amount.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+
             output.add(CreditTransaction.builder()
                 .date(date)
                 .billingMonth(billingMonth)
