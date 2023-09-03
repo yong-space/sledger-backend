@@ -93,7 +93,7 @@ public class DashTests extends BaseTest {
         return Map.of(
             "@type", "credit",
             "date", date,
-            "billingMonth", date,
+            "billingMonth", date.withDayOfMonth(1),
             "category", category,
             "subCategory", category,
             "accountId", creditAccountId,

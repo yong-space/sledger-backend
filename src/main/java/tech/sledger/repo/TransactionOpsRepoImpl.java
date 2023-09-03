@@ -23,13 +23,12 @@ public class TransactionOpsRepoImpl implements TransactionOpsRepo {
             match(Criteria.where("category").ne("Credit Card Bill")),
             stage("""
                 { $group: {
-                    _id: { month: { $dateToString: { format: "%Y-%m-01T00:00:00.000Z", date: "$date" } } },
+                    _id: "$billingMonth",
                     amount: { $sum: { $toDouble: "$amount" } },
                     transactions: { $sum: 1 }
                 }}
             """),
-            stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ \"$_id\", \"$$ROOT\" ] } } }"),
-            sort(ASC, "month")
+            sort(ASC, "_id")
         ), Transaction.class, CreditCardStatement.class).getMappedResults();
     }
 }
