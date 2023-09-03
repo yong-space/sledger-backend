@@ -1,5 +1,6 @@
 package tech.sledger;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -27,6 +28,44 @@ public class TemplateTests extends BaseTest {
         "category", "my category",
         "subCategory", "my sub-category"
     ));
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void addBadTemplate() throws Exception {
+        Map<String, Object> template1 = Map.of();
+        mvc.perform(request(POST, "/api/template", List.of(template1)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail", containsString("Reference cannot be null")))
+            .andExpect(jsonPath("$.detail", containsString("Remarks cannot be null")))
+            .andExpect(jsonPath("$.detail", containsString("Category cannot be null")))
+            .andExpect(jsonPath("$.detail", containsString("Sub-category cannot be null")));
+
+        Map<String, Object> template2 = Map.of(
+            "reference", "",
+            "remarks", "",
+            "category", "",
+            "subCategory", ""
+        );
+        mvc.perform(request(POST, "/api/template", List.of(template2)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail", containsString("Reference should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Category should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Sub-category should be between 3 and 30 characters")));
+
+        Map<String, Object> template3 = Map.of(
+            "reference", "ab",
+            "remarks", "ab",
+            "category", "ab",
+            "subCategory", "ab"
+        );
+        mvc.perform(request(POST, "/api/template", List.of(template3)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail", containsString("Reference should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Category should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Sub-category should be between 3 and 30 characters")));
+    }
 
     @Test
     @Order(1)
