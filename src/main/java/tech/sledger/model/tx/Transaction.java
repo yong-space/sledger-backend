@@ -18,7 +18,8 @@ import java.time.Instant;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = CashTransaction.class, name = "cash"),
     @JsonSubTypes.Type(value = CreditTransaction.class, name = "credit"),
-    @JsonSubTypes.Type(value = ForeignCashTransaction.class, name = "fx"),
+    @JsonSubTypes.Type(value = ForeignCashTransaction.class, name = "fx-cash"),
+    @JsonSubTypes.Type(value = ForeignCreditTransaction.class, name = "fx-credit"),
     @JsonSubTypes.Type(value = CpfTransaction.class, name = "retirement"),
 })
 public class Transaction {
