@@ -1,12 +1,16 @@
 package tech.sledger.service;
 
 import static java.util.Comparator.comparing;
+import static tech.sledger.model.account.AccountType.Cash;
+import static tech.sledger.model.account.AccountType.Credit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
+import tech.sledger.model.user.User;
+import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -20,6 +24,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
+    private final AccountRepo accountRepo;
     private final TransactionRepo txRepo;
     private final CacheService cache;
 
@@ -32,6 +37,12 @@ public class TransactionService {
     @Cacheable(value="tx", key="#account.id")
     public List<Transaction> list(Account account) {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
+    }
+
+    public List<Transaction> listAll(User user) {
+        List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
+            .stream().map(Account::getId).toList();
+        return txRepo.findAllByAccountIdInOrderByDate(accounts);
     }
 
     @Transactional

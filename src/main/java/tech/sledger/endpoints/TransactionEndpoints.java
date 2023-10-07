@@ -10,6 +10,7 @@ import tech.sledger.model.dto.BulkTransactionUpdate;
 import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.Transaction;
+import tech.sledger.model.user.User;
 import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
 import java.util.List;
@@ -77,6 +78,10 @@ public class TransactionEndpoints {
 
     @GetMapping("/{accountId}")
     public List<Transaction> listTransactions(Authentication auth, @PathVariable long accountId) {
+        if (accountId == 0) {
+            User user = (User) auth.getPrincipal();
+            return txService.listAll(user);
+        }
         Account account = userService.authorise(auth, accountId);
         return txService.list(account);
     }
