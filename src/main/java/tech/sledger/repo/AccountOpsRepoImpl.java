@@ -110,8 +110,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
     public List<Insight> getInsights(long ownerId, Instant from, Instant to) {
         Criteria criteria = new Criteria().andOperator(
             Criteria.where("category").exists(true),
-            Criteria.where("category").ne(""),
-            Criteria.where("category").regex("^(?!Transient|Credit Card Bill$).*$", "i"),
+            Criteria.where("category").ne("Credit Card Bill"),
             Criteria.where("date").gte(from),
             Criteria.where("date").lte(to)
         );
