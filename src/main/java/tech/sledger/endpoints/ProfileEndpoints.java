@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,5 +49,10 @@ public class ProfileEndpoints {
         User user = userService.edit((User) auth.getPrincipal(), profile);
         String jwt = jwtService.generate(user);
         return new TokenResponse(jwt);
+    }
+
+    @GetMapping("/challenge")
+    public TokenResponse getChallenge() {
+        return new TokenResponse(jwtService.generate());
     }
 }

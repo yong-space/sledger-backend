@@ -37,4 +37,12 @@ public class JwtService {
             .withClaim("admin", isAdmin)
             .sign(Algorithm.HMAC512(secretKey));
     }
+
+    public String generate() {
+        Instant now = Instant.now();
+        return JWT.create()
+            .withIssuedAt(Date.from(now))
+            .withExpiresAt(Date.from(now.plus(7L, ChronoUnit.DAYS)))
+            .sign(Algorithm.HMAC512(secretKey));
+    }
 }

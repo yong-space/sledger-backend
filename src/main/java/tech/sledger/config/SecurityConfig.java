@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final JwtRequestFilter jwtRequestFilter;
     private final DaoAuthenticationProvider authenticationProvider;
     private final String[] publicEndpoints = {
-        "/actuator/**", "/api/register", "/api/activate/**", "/api/authenticate", "/error"
+        "/actuator/**", "/api/register", "/api/activate/**", "/api/authenticate", "/error", "/api/profile/challenge"
     };
 
     @Bean
