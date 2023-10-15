@@ -48,8 +48,11 @@ public class TransactionService {
     @Transactional
     public <T extends Transaction> List<T> add(List<T> transactions) {
         Transaction previous = txRepo.findFirstByOrderByIdDesc();
-        long id = (previous == null) ? 1 : previous.getId() + 1;
+        long idEpoch = (previous == null) ? 1 : previous.getId() + 1;
+        return updateBalances(processDates(transactions, idEpoch), TxOperation.SAVE);
+    }
 
+    private <T extends Transaction> List<T> processDates(List<T> transactions, long idEpoch) {
         // Get minimum date in new transactions - 1 ms
         Instant rangeAfter = transactions.stream().min(comparing(Transaction::getDate))
             .map(t -> t.getDate().minus(1, ChronoUnit.MILLIS)).orElseThrow();
@@ -60,10 +63,13 @@ public class TransactionService {
         // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
+        long id = idEpoch;
         transactions = new ArrayList<>(transactions);
         transactions.sort(Comparator.comparing(Transaction::getDate));
         for (Transaction transaction : transactions) {
-            transaction.setId(id++);
+            if (id > 0) {
+                transaction.setId(id++);
+            }
             Instant targetDate = transaction.getDate().atZone(ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS).toInstant();
             Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
@@ -80,12 +86,13 @@ public class TransactionService {
             transaction.setDate(targetDate);
             existing.add(transaction);
         }
-        return updateBalances(transactions, TxOperation.SAVE);
+        return transactions;
     }
 
     @Transactional
     public <T extends Transaction> List<T> edit(List<T> transactions) {
-        return updateBalances(transactions, TxOperation.SAVE);
+        transactions.sort(Comparator.comparing(Transaction::getDate));
+        return updateBalances(processDates(transactions, 0), TxOperation.SAVE);
     }
 
     @Transactional
@@ -105,16 +112,21 @@ public class TransactionService {
         Instant minDate = transactions.stream().min(comparing(Transaction::getDate))
             .map(Transaction::getDate).orElseThrow();
         long accountId = transactions.get(0).getAccountId();
-        Transaction epoch = txRepo.findFirstByAccountIdAndDateBeforeOrderByDateDesc(accountId, minDate);
-
-        BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
+        List<Long> txIds = transactions.stream().map(Transaction::getId).toList();
 
         List<T> affectedTx = new ArrayList<>();
         if (op == TxOperation.SAVE) {
             affectedTx.addAll(transactions);
         }
-        affectedTx.addAll((Collection<? extends T>) txRepo.findAllByAccountIdAndDateAfter(accountId, minDate));
+        List<Transaction> txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
+            .stream()
+            .filter(t -> !txIds.contains(t.getId()))
+            .toList();
+        affectedTx.addAll((Collection<? extends T>) txAfterEpoch);
+        affectedTx.sort(Comparator.comparing(Transaction::getDate));
 
+        Transaction epoch = txRepo.findFirstByAccountIdAndDateBeforeOrderByDateDesc(accountId, minDate);
+        BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
         for (T t : affectedTx) {
             balance = balance.add(t.getAmount());
             t.setBalance(balance);
