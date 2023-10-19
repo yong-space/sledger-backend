@@ -92,7 +92,14 @@ public class TransactionService {
     @Transactional
     public <T extends Transaction> List<T> edit(List<T> transactions) {
         transactions.sort(Comparator.comparing(Transaction::getDate));
-        return updateBalances(processDates(transactions, 0), TxOperation.SAVE);
+        List<T> editedTx = processDates(transactions, 0);
+        List<Transaction> existing = txRepo.findAllById(editedTx.stream().map(Transaction::getId).toList());
+        boolean amountsEdited = existing.stream().anyMatch(existingTx -> editedTx.stream()
+            .filter(t -> t.getId() == existingTx.getId())
+            .findFirst().orElseThrow()
+            .getAmount().compareTo(existingTx.getAmount()) != 0
+        );
+        return amountsEdited ? updateBalances(editedTx, TxOperation.SAVE) : editAsIs(editedTx);
     }
 
     @Transactional
@@ -109,8 +116,8 @@ public class TransactionService {
 
     @SuppressWarnings("unchecked")
     private <T extends Transaction> List<T> updateBalances(List<T> transactions, TxOperation op) {
-        Instant minDate = transactions.stream().min(comparing(Transaction::getDate))
-            .map(Transaction::getDate).orElseThrow();
+        T minTx = transactions.stream().min(comparing(Transaction::getDate)).orElseThrow();
+        Instant minDate = minTx.getDate();
         long accountId = transactions.get(0).getAccountId();
         List<Long> txIds = transactions.stream().map(Transaction::getId).toList();
 
@@ -125,7 +132,7 @@ public class TransactionService {
         affectedTx.addAll((Collection<? extends T>) txAfterEpoch);
         affectedTx.sort(Comparator.comparing(Transaction::getDate));
 
-        Transaction epoch = txRepo.findFirstByAccountIdAndDateBeforeOrderByDateDesc(accountId, minDate);
+        Transaction epoch = txRepo.findFirstByAccountIdAndIdNotAndDateBeforeOrderByDateDesc(accountId, minTx.getId(), minDate);
         BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
         for (T t : affectedTx) {
             balance = balance.add(t.getAmount());
