@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,6 +107,9 @@ public class TransactionService {
     @Transactional
     public <T extends Transaction> List<T> editAsIs(List<T> transactions) {
         cache.clearTxCache(transactions.get(0).getAccountId());
+        Map<Long, BigDecimal> balances = txRepo.findAllById(transactions.stream().map(Transaction::getId).toList())
+            .stream().collect(Collectors.toMap(Transaction::getId, Transaction::getBalance));
+        transactions.forEach(t -> t.setBalance(balances.get(t.getId())));
         return txRepo.saveAll(transactions);
     }
 
