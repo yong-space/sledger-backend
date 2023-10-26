@@ -93,15 +93,13 @@ public class TransactionService {
 
     @Transactional
     public <T extends Transaction> List<T> edit(List<T> transactions) {
-        transactions.sort(Comparator.comparing(Transaction::getDate));
-        List<T> editedTx = processDates(transactions, 0);
-        List<Transaction> existing = txRepo.findAllById(editedTx.stream().map(Transaction::getId).toList());
-        boolean amountsEdited = existing.stream().anyMatch(existingTx -> editedTx.stream()
+        List<Transaction> existing = txRepo.findAllById(transactions.stream().map(Transaction::getId).toList());
+        boolean amountsEdited = existing.stream().anyMatch(existingTx -> transactions.stream()
             .filter(t -> t.getId() == existingTx.getId())
             .findFirst().orElseThrow()
             .getAmount().compareTo(existingTx.getAmount()) != 0
         );
-        return amountsEdited ? updateBalances(editedTx, TxOperation.SAVE) : editAsIs(editedTx);
+        return amountsEdited ? updateBalances(transactions, TxOperation.SAVE) : editAsIs(transactions);
     }
 
     @Transactional
