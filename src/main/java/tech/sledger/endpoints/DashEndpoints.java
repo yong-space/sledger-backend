@@ -24,9 +24,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -47,7 +45,6 @@ public class DashEndpoints {
         Instant from = reference.minusMonths(12).toInstant();
         List<Insight> raw = accountRepo.getInsights(user.getId(), from, to);
 
-        Map<String, String> stackMap = new HashMap<>();
         List<CategoryInsight> summary = new ArrayList<>();
 
         raw.stream()
@@ -60,7 +57,6 @@ public class DashEndpoints {
                     .map(Insight::getTotal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(12L), 2, RoundingMode.HALF_EVEN);
-                stackMap.put(category, average.compareTo(BigDecimal.ZERO) < 0 ? "debit" : "credit");
                 summary.add(CategoryInsight.builder()
                     .category(category)
                     .subCategory(subCategory)
@@ -77,33 +73,49 @@ public class DashEndpoints {
             month = month.plusMonths(1);
         }
 
-        List<InsightChartSeries> series = raw.parallelStream()
+        List<InsightChartSeries> series = new ArrayList<>();
+
+        raw.parallelStream()
             .collect(groupingBy(Insight::getCategory))
-            .entrySet().parallelStream().map(entry -> {
-                List<BigDecimal> data = new ArrayList<>();
+            .entrySet().parallelStream().forEach(entry -> {
+                List<BigDecimal> positives = new ArrayList<>();
+                List<BigDecimal> negatives = new ArrayList<>();
+
                 for (Instant m : months) {
-                    data.add(
-                        entry.getValue().stream()
-                            .filter(e -> e.getMonth().equals(m))
-                            .findFirst()
-                            .orElse(Insight.builder().total(BigDecimal.ZERO).build())
-                            .getTotal().abs()
-                    );
+                    BigDecimal total = entry.getValue().stream()
+                        .filter(e -> e.getMonth().equals(m))
+                        .findFirst()
+                        .orElse(Insight.builder().total(BigDecimal.ZERO).build())
+                        .getTotal();
+
+                    boolean isCredit = total.compareTo(BigDecimal.ZERO) > 0;
+                    positives.add(isCredit ? total.abs() : BigDecimal.ZERO);
+                    negatives.add(!isCredit ? total.abs() : BigDecimal.ZERO);
                 }
-                return InsightChartSeries.builder()
-                    .label(entry.getKey())
-                    .id(entry.getKey())
-                    .data(data)
-                    .stack(stackMap.get(entry.getKey()))
-                    .build();
-            })
-            .toList();
+
+                addChartSeries(series, positives, entry.getKey(), "Credit");
+                addChartSeries(series, negatives, entry.getKey(), "Debit");
+            });
 
         return InsightsResponse.builder()
             .xAxis(months)
             .series(series)
             .summary(summary)
             .build();
+    }
+
+    private void addChartSeries(List<InsightChartSeries> series, List<BigDecimal> data, String name, String stack) {
+        BigDecimal sum = data.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (BigDecimal.ZERO.equals(sum)) {
+            return;
+        }
+        String key = (stack.equals("Credit") ? "+" : "-") + name;
+        series.add(InsightChartSeries.builder()
+            .label(key)
+            .id(key)
+            .data(data)
+            .stack(stack)
+            .build());
     }
 
     @GetMapping("credit-card-statement/{accountId}")

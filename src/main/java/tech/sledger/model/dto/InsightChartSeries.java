@@ -15,4 +15,8 @@ public class InsightChartSeries {
     private String stack;
     @Builder.Default
     private String stackOrder = "descending";
+    @Builder.Default
+    private HighlightScope highlightScope = new HighlightScope("series", "global");
+
+    record HighlightScope(String highlighted, String faded) {}
 }
