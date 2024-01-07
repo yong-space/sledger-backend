@@ -21,19 +21,19 @@ public class SuggestEndpoints {
     private final AccountRepo accountRepo;
 
     @GetMapping("/remarks")
-    public List<String> suggestRemarks(Authentication auth, @RequestParam String q) {
+    public List<String> suggestRemarks(Authentication auth, @RequestParam("q") String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "remarks", cleanQuery(q));
     }
 
     @GetMapping("/code")
-    public List<String> suggestCode(Authentication auth, @RequestParam String q) {
+    public List<String> suggestCode(Authentication auth, @RequestParam("q") String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "code", cleanQuery(q));
     }
 
     @GetMapping("/company")
-    public List<String> suggestCompany(Authentication auth, @RequestParam String q) {
+    public List<String> suggestCompany(Authentication auth, @RequestParam("q") String q) {
         User user = (User) auth.getPrincipal();
         return accountRepo.getTopStrings(user.getId(), "company", cleanQuery(q));
     }

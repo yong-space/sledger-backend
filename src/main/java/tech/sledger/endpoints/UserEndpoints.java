@@ -52,7 +52,7 @@ public class UserEndpoints {
     }
 
     @GetMapping("activate/{code}")
-    public void activate(@PathVariable String code, HttpServletResponse response) throws IOException {
+    public void activate(@PathVariable("code") String code, HttpServletResponse response) throws IOException {
         userService.activate(code);
         response.sendRedirect("/login#activated");
     }

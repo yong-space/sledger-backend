@@ -72,12 +72,12 @@ public class TransactionEndpoints {
     }
 
     @DeleteMapping("/{transactionIds}")
-    public void deleteTransactions(Authentication auth, @PathVariable List<Long> transactionIds) {
+    public void deleteTransactions(Authentication auth, @PathVariable("transactionIds") List<Long> transactionIds) {
         txService.delete(bulkValidateAndAuthorise(auth, transactionIds));
     }
 
     @GetMapping("/{accountId}")
-    public List<Transaction> listTransactions(Authentication auth, @PathVariable long accountId) {
+    public List<Transaction> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
         if (accountId == 0) {
             User user = (User) auth.getPrincipal();
             return txService.listAll(user);

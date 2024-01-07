@@ -108,7 +108,7 @@ public class DashEndpoints {
 
     @GetMapping("credit-card-statement/{accountId}")
     public List<CreditCardStatement> getCreditCardStatement(
-        Authentication auth, @PathVariable long accountId
+        Authentication auth, @PathVariable("accountId") long accountId
     ) {
         userService.authorise(auth, accountId);
         return txRepo.getCreditCardStatement(accountId);

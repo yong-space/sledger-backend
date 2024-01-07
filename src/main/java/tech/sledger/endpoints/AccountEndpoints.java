@@ -82,7 +82,7 @@ public class AccountEndpoints {
 
     @PutMapping("/{accountId}")
     public Account updateAccount(
-        Authentication auth, @PathVariable long accountId, @RequestBody NewAccount editAccount
+        Authentication auth, @PathVariable("accountId") long accountId, @RequestBody NewAccount editAccount
     ) {
         Account account = userService.authorise(auth, accountId);
         AccountIssuer issuer = accountIssuerService.get(editAccount.getIssuerId());
@@ -112,7 +112,7 @@ public class AccountEndpoints {
     }
 
     @PutMapping("/{accountId}/{visible}")
-    public Account updateAccountVisibility(Authentication auth, @PathVariable long accountId, @PathVariable boolean visible) {
+    public Account updateAccountVisibility(Authentication auth, @PathVariable("accountId") long accountId, @PathVariable("visible") boolean visible) {
         Account account = accountService.get(accountId);
         userService.authorise(auth, account.getId());
         account.setVisible(visible);

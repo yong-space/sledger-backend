@@ -28,7 +28,7 @@ public class AdminEndpoints {
     }
 
     @DeleteMapping("/account-issuer/{accountIssuerId}")
-    public void deleteAccountIssuer(@PathVariable long accountIssuerId) {
+    public void deleteAccountIssuer(@PathVariable("accountIssuerId") long accountIssuerId) {
         AccountIssuer accountIssuer = accountIssuerService.get(accountIssuerId);
         if (accountIssuer == null) {
             throw new ResponseStatusException(NOT_FOUND, "No such account issuer id");

@@ -1,6 +1,5 @@
 package tech.sledger.endpoints;
 
-import com.opencsv.exceptions.CsvException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -13,7 +12,6 @@ import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
 import tech.sledger.service.ImportService;
 import tech.sledger.service.UserService;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 

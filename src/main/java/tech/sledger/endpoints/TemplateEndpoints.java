@@ -48,7 +48,7 @@ public class TemplateEndpoints {
     }
 
     @DeleteMapping("/{templateId}")
-    public void deleteTemplate(Authentication auth, @PathVariable long templateId) {
+    public void deleteTemplate(Authentication auth, @PathVariable("templateId") long templateId) {
         templateService.delete((User) auth.getPrincipal(), templateId);
     }
 }
