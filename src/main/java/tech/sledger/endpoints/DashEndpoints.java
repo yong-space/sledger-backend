@@ -77,12 +77,12 @@ public class DashEndpoints {
 
         raw.parallelStream()
             .collect(groupingBy(Insight::getCategory))
-            .entrySet().parallelStream().forEach(entry -> {
+            .forEach((key, value) -> {
                 List<BigDecimal> positives = new ArrayList<>();
                 List<BigDecimal> negatives = new ArrayList<>();
 
                 for (Instant m : months) {
-                    BigDecimal total = entry.getValue().stream()
+                    BigDecimal total = value.stream()
                         .filter(e -> e.getMonth().equals(m))
                         .findFirst()
                         .orElse(Insight.builder().total(BigDecimal.ZERO).build())
@@ -93,8 +93,8 @@ public class DashEndpoints {
                     negatives.add(!isCredit ? total.abs() : BigDecimal.ZERO);
                 }
 
-                addChartSeries(series, positives, entry.getKey(), "Credit");
-                addChartSeries(series, negatives, entry.getKey(), "Debit");
+                addChartSeries(series, positives, key, "Credit");
+                addChartSeries(series, negatives, key, "Debit");
             });
 
         return InsightsResponse.builder()
