@@ -1,8 +1,12 @@
 package tech.sledger;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,19 +19,22 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.junit.jupiter.Container;
 import tech.sledger.model.user.User;
+import tech.sledger.repo.ActivationRepo;
 import tech.sledger.repo.UserRepo;
-import tech.sledger.service.*;
+import tech.sledger.service.AccountIssuerService;
+import tech.sledger.service.AccountService;
+import tech.sledger.service.TemplateService;
+import tech.sledger.service.TransactionService;
+import tech.sledger.service.UserService;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 @SpringBootTest
-@Testcontainers
 @AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseTest {
     @Autowired
     public MockMvc mvc;
@@ -49,16 +56,27 @@ public class BaseTest {
     public UserDetailsService userDetailsService;
     @Autowired
     public TemplateService templateService;
+    @Autowired
+    private ActivationRepo activationRepo;
 
     enum SubmitMethod { PUT, POST }
 
-    static {
-        System.setProperty("SLEDGER_SECRET_KEY", "my-secret-key");
-        System.setProperty("MONGO_URI", "mongodb://localhost/sledger");
+    @Container
+    static MongoDBContainer mongodb = new MongoDBContainer("mongo:6").withReuse(true);
+
+    @DynamicPropertySource
+    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+        registry.add("spring.data.mongodb.uri", mongodb::getReplicaSetUrl);
     }
 
-    @PostConstruct
+    static {
+        System.setProperty("SLEDGER_SECRET_KEY", "my-secret-key");
+        mongodb.start();
+    }
+
+    @BeforeAll
     public void initUsers() {
+        userRepo.deleteAll();
         User u1 = userRepo.save(User.builder()
             .id(1)
             .displayName("Basic User 1")
@@ -84,12 +102,9 @@ public class BaseTest {
         userRepo.saveAll(List.of(u1, u2, u3));
     }
 
-    @DynamicPropertySource
-    @SuppressWarnings("resource")
-    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
-        MongoDBContainer container = new MongoDBContainer("mongo:5.0.8");
-        container.start();
-        registry.add("spring.data.mongodb.uri", container::getReplicaSetUrl);
+    @AfterEach
+    void afterEach() {
+        activationRepo.deleteAll();
     }
 
     public MockHttpServletRequestBuilder request(SubmitMethod method, String uri, Object payload) {

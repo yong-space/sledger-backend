@@ -115,7 +115,7 @@ public class AccountTests extends BaseTest {
         Map<String, ?> badIssuerAccount = Map.of(
             "name", "cashAccount",
             "type", "Cash",
-            "issuerId", 123,
+            "issuerId", 678934789,
             "multiCurrency", false
         );
         mvc.perform(request(POST, "/api/account", badIssuerAccount))
@@ -123,7 +123,7 @@ public class AccountTests extends BaseTest {
             .andExpect(jsonPath("$.detail").value("No such issuer"));
 
         var badEditAccount = newAccounts.get(0);
-        badEditAccount.put("issuerId", 123);
+        badEditAccount.put("issuerId", 678934789);
         mvc.perform(request(PUT, "/api/account/" + badEditAccount.get("id"), badEditAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));

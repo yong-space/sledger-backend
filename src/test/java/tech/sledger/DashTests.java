@@ -5,15 +5,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.user.User;
+import tech.sledger.repo.TransactionRepo;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -25,6 +28,13 @@ import java.util.Map;
 public class DashTests extends BaseTest {
     private static long creditAccountId;
     private static ZonedDateTime epoch;
+    @Autowired
+    public TransactionRepo txRepo;
+
+    @BeforeAll
+    public void init() {
+        txRepo.deleteAll();
+    }
 
     @Test
     @Order(1)
