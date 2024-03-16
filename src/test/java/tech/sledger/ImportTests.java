@@ -36,12 +36,14 @@ Ledger Balance,"1,234.56"
 
 Transaction History
 Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
-17/05/2023,16/05/2023,SAMPLE,12.34,
+18/05/2023,16/05/2023,SAMPLE,12.34,
 ,,CASE TEST
+17/05/2023,29/02/2024,INTEREST 1,,0.62
 16/05/2023,16/05/2023,COLLECTION,110.39,
 ,,SHOPPING ITEM
 13/05/2023,13/05/2023,FAST PAYMENT,379.50,
 ,,OTHR - Payment via PayNow-UEN
+01/05/2023,29/02/2024,INTEREST 2,,0.62
             """.getBytes(UTF_8);
     byte[] ocbcCreditCsv = """
 Account details for:,OCBC 365 Credit Card 1111-1111-1111-1111
@@ -213,10 +215,12 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .file(mockFile("ocbc-cash.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(3)))
+            .andExpect(jsonPath("$", iterableWithSize(5)))
             .andExpect(jsonPath("$.[?(@.remarks == 'Sample Case Test')]").exists())
             .andExpect(jsonPath("$.[?(@.category == 'Gifts')]").exists())
-            .andExpect(jsonPath("$.[?(@.subCategory == 'Shopping')]").exists());
+            .andExpect(jsonPath("$.[?(@.subCategory == 'Shopping')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Interest 1')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Interest 2')]").exists());
     }
 
     @Test

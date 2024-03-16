@@ -56,12 +56,23 @@ public class OcbcImporter implements Importer {
         }
     }
 
+    private void completeTransaction(CashTransaction tx, String remarks, List<Template> templates) {
+        Template template = matchTemplate(remarks, templates);
+        tx.setRemarks(template.getRemarks());
+        tx.setCategory(template.getCategory());
+        tx.setSubCategory(template.getSubCategory());
+    }
+
     private List<Transaction> processCash(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
-        CashTransaction tx = new CashTransaction();
+        CashTransaction tx = null;
 
         for (String[] row : data) {
             if (hasText(row[0])) {
+                if (tx != null) {
+                    completeTransaction(tx, tx.getRemarks(), templates);
+                    output.add(tx);
+                }
                 Instant date = LocalDate.parse(row[0], dateFormat)
                     .atStartOfDay(ZoneOffset.UTC).toInstant();
                 BigDecimal debit = parseDecimal(row[3]);
@@ -73,12 +84,15 @@ public class OcbcImporter implements Importer {
                     .accountId(account.getId())
                     .build();
             } else {
-                Template template = matchTemplate(tx.getRemarks() + " " + row[2], templates);
-                tx.setRemarks(template.getRemarks());
-                tx.setCategory(template.getCategory());
-                tx.setSubCategory(template.getSubCategory());
+                assert tx != null;
+                completeTransaction(tx, tx.getRemarks() + " " + row[2], templates);
                 output.add(tx);
+                tx = null;
             }
+        }
+        if (tx != null) {
+            completeTransaction(tx, tx.getRemarks(), templates);
+            output.add(tx);
         }
         return output;
     }
