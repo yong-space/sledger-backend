@@ -1,42 +1,56 @@
 package tech.sledger;
 
-import com.icegreen.greenmail.configuration.GreenMailConfiguration;
-import com.icegreen.greenmail.junit5.GreenMailExtension;
-import com.icegreen.greenmail.util.GreenMailUtil;
-import com.icegreen.greenmail.util.ServerSetupTest;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import com.resend.services.emails.model.SendEmailRequest;
+import com.resend.services.emails.model.SendEmailResponse;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import tech.sledger.service.EmailService;
+import tech.sledger.service.ResendService;
+import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 public class EmailTests {
     static {
         System.setProperty("MONGO_URI", "mongodb://localhost/sledger");
-        System.setProperty("EMAIL_USERNAME", "user");
-        System.setProperty("EMAIL_PASSWORD", "pass");
     }
 
     @Autowired
     private EmailService emailService;
 
-    @RegisterExtension
-    public static final GreenMailExtension greenMail = new GreenMailExtension(ServerSetupTest.SMTP_IMAP)
-        .withConfiguration(GreenMailConfiguration.aConfig().withUser("user@company.com", "user", "pass"));
+    @MockBean
+    private ResendService resendService;
 
     @Test
-    public void sendActivation() throws MessagingException {
+    public void sendFail() {
+        String content = emailService.compileTemplate("abc", Map.of("a", "b"));
+        assertNull(content);
+    }
+
+    @Captor
+    ArgumentCaptor<SendEmailRequest> emailCaptor;
+
+    @Test
+    public void sendActivation() {
+        when(resendService.send(any(SendEmailRequest.class)))
+            .thenReturn(new SendEmailResponse("abc"));
+
         emailService.sendActivation("user@company.com", "Bob Doe", "hash").join();
-        MimeMessage receivedMessage = greenMail.getReceivedMessages()[0];
-        String body = GreenMailUtil.getBody(receivedMessage);
-        assertEquals("Sledger Activation", receivedMessage.getSubject());
-        assertEquals("Bob Doe <user@company.com>", receivedMessage.getAllRecipients()[0].toString());
-        assertTrue(body.contains("Hello Bob Doe,"));
-        assertTrue(body.contains("/activate/hash"));
+        verify(resendService).send(emailCaptor.capture());
+        SendEmailRequest email = emailCaptor.getValue();
+
+        assertEquals("Sledger Activation", email.getSubject());
+        assertEquals("Bob Doe <user@company.com>", email.getTo().getFirst());
+        assertTrue(email.getHtml().contains("Hello Bob Doe,"));
+        assertTrue(email.getHtml().contains("/activate/hash"));
     }
 }

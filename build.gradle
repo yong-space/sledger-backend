@@ -24,9 +24,9 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
-    implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "com.resend:resend-java:2.2.1"
     implementation "org.bouncycastle:bcprov-jdk18on:1.77"
     implementation "com.auth0:java-jwt:4.4.0"
     implementation ("com.opencsv:opencsv:5.9") {
@@ -45,7 +45,6 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
-    testImplementation "com.icegreen:greenmail-junit5:2.0.1"
 }
 
 tasks.named("jar") {enabled = false }
@@ -63,7 +62,11 @@ jacocoTestReport {
     dependsOn test
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [ 'tech/sledger/*.class', 'tech/sledger/model/**' ])
+            fileTree(dir: it, exclude: [
+                'tech/sledger/*.class',
+                'tech/sledger/model/**',
+                'tech/sledger/service/ResendService.class'
+            ])
         })
     }
     reports {

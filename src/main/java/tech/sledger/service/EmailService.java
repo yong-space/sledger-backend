@@ -1,18 +1,15 @@
 package tech.sledger.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.services.emails.model.SendEmailRequest;
+import com.resend.services.emails.model.SendEmailResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -25,10 +22,10 @@ public class EmailService {
     private String baseUri;
     @Value("${sledger.from-email}")
     private String fromEmail;
-    private final JavaMailSender mailSender;
+    private final ResendService resendService;
 
     @Async
-    public CompletableFuture<Boolean> sendActivation(String toEmail, String displayName, String hash) throws MessagingException {
+    public CompletableFuture<Boolean> sendActivation(String toEmail, String displayName, String hash) {
         Map<String, String> data = Map.of(
             "name", displayName,
             "requestUrl", baseUri + "/api/activate/" + hash
@@ -53,13 +50,14 @@ public class EmailService {
         }
     }
 
-    public void sendEmail(String toEmail, String toDisplayName, String subject, String content) throws MessagingException {
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, StandardCharsets.UTF_8.toString());
-        helper.setFrom(fromEmail);
-        helper.setTo(toDisplayName + " <" + toEmail + ">");
-        helper.setSubject(subject);
-        helper.setText(content, true);
-        mailSender.send(mimeMessage);
+    public void sendEmail(String toEmail, String toDisplayName, String subject, String content) {
+        SendEmailRequest request = SendEmailRequest.builder()
+            .from(fromEmail)
+            .to(toDisplayName + " <" + toEmail + ">")
+            .subject(subject)
+            .html(content)
+            .build();
+        SendEmailResponse data = resendService.send(request);
+        log.info("Email sent: {}", data.getId());
     }
 }

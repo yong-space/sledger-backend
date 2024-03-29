@@ -7,26 +7,13 @@ spring:
   data.mongodb:
     uri: ${MONGO_URI}
     auto-index-creation: true
-  mail:
-    host: localhost
-    port: 3025
-    username: ${EMAIL_USERNAME}
-    password: ${EMAIL_PASSWORD}
-    properties:
-      mail.smtp:
-        auth: true
-        connection-timeout: 25000
-        timeout: 25000
-        writeTimeout: 25000
-        starttls.enable: true
   jackson.default-property-inclusion: non_null
 
 sledger:
   uri: http://localhost:8080
   from-email: hello@sledger.tech
   secret-key: ${SLEDGER_SECRET_KEY}
-
-management.health.mail.enabled: false
+  resend-key: ${SLEDGER_RESEND_KEY}
 
 logging.level:
   org:
