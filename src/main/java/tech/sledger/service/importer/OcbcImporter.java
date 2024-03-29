@@ -23,6 +23,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class OcbcImporter implements Importer {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -84,8 +85,7 @@ public class OcbcImporter implements Importer {
                     .accountId(account.getId())
                     .build();
             } else {
-                assert tx != null;
-                completeTransaction(tx, tx.getRemarks() + " " + row[2], templates);
+                completeTransaction(Objects.requireNonNull(tx), tx.getRemarks() + " " + row[2], templates);
                 output.add(tx);
                 tx = null;
             }

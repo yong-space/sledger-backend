@@ -61,7 +61,7 @@ public class TransactionService {
         // Get maximum date in new transactions + 1 day
         Instant rangeBefore = transactions.stream().max(comparing(Transaction::getDate))
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
-        long accountId = transactions.get(0).getAccountId();
+        long accountId = transactions.getFirst().getAccountId();
         // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
@@ -69,9 +69,7 @@ public class TransactionService {
         transactions = new ArrayList<>(transactions);
         transactions.sort(Comparator.comparing(Transaction::getDate));
         for (Transaction transaction : transactions) {
-            if (id > 0) {
-                transaction.setId(id++);
-            }
+            transaction.setId(id++);
             Instant targetDate = transaction.getDate().atZone(ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS).toInstant();
             Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
@@ -104,7 +102,7 @@ public class TransactionService {
 
     @Transactional
     public <T extends Transaction> List<T> editAsIs(List<T> transactions) {
-        cache.clearTxCache(transactions.get(0).getAccountId());
+        cache.clearTxCache(transactions.getFirst().getAccountId());
         Map<Long, BigDecimal> balances = txRepo.findAllById(transactions.stream().map(Transaction::getId).toList())
             .stream().collect(Collectors.toMap(Transaction::getId, Transaction::getBalance));
         transactions.forEach(t -> t.setBalance(balances.get(t.getId())));
@@ -121,7 +119,7 @@ public class TransactionService {
     private <T extends Transaction> List<T> updateBalances(List<T> transactions, TxOperation op) {
         T minTx = transactions.stream().min(comparing(Transaction::getDate)).orElseThrow();
         Instant minDate = minTx.getDate();
-        long accountId = transactions.get(0).getAccountId();
+        long accountId = transactions.getFirst().getAccountId();
         List<Long> txIds = transactions.stream().map(Transaction::getId).toList();
 
         List<T> affectedTx = new ArrayList<>();
@@ -130,7 +128,7 @@ public class TransactionService {
         }
         List<Transaction> txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
             .stream()
-            .filter(t -> !txIds.contains(t.getId()))
+            .filter(t -> !txIds.contains(t.getId())) // why!?
             .toList();
         affectedTx.addAll((Collection<? extends T>) txAfterEpoch);
         affectedTx.sort(Comparator.comparing(Transaction::getDate));

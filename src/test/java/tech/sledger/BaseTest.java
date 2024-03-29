@@ -21,7 +21,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import tech.sledger.model.user.User;
+import tech.sledger.repo.AccountIssuerRepo;
+import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.ActivationRepo;
+import tech.sledger.repo.TemplateRepo;
+import tech.sledger.repo.TransactionRepo;
 import tech.sledger.repo.UserRepo;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
@@ -43,7 +47,11 @@ public class BaseTest {
     @Autowired
     public AccountIssuerService accountIssuerService;
     @Autowired
+    public AccountIssuerRepo accountIssuerRepo;
+    @Autowired
     public AccountService accountService;
+    @Autowired
+    public AccountRepo accountRepo;
     @Autowired
     public TransactionService transactionService;
     @Autowired
@@ -56,6 +64,8 @@ public class BaseTest {
     public UserDetailsService userDetailsService;
     @Autowired
     public TemplateService templateService;
+    @Autowired
+    public TemplateRepo templateRepo;
     @Autowired
     private ActivationRepo activationRepo;
 

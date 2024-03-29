@@ -1,6 +1,7 @@
 package tech.sledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
@@ -81,5 +82,11 @@ public class ProfileTests extends BaseTest {
         Profile profile = new Profile("x", "basic-user@company.com", "B4SicUs3r!", newPassword);
         mvc.perform(request(PUT, "/api/profile", profile))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void challenge() throws Exception {
+        mvc.perform(get("/api/profile/challenge"))
+            .andExpect(status().isOk());
     }
 }

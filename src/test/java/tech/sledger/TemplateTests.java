@@ -71,11 +71,15 @@ public class TemplateTests extends BaseTest {
     @Order(1)
     @WithUserDetails("basic-user@company.com")
     public void addTemplate() throws Exception {
+        templateRepo.deleteAll();
         String result = mvc.perform(request(POST, "/api/template", List.of(template)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.remarks == 'my remarks')]").exists())
             .andReturn().getResponse().getContentAsString();
         id1 = JsonPath.parse(result).read("$.[0].id");
+
+        mvc.perform(request(POST, "/api/template", List.of(template)))
+            .andExpect(status().isOk());
     }
 
     @Test
