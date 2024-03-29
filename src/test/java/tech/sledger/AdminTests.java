@@ -29,8 +29,7 @@ public class AdminTests extends BaseTest {
     @Test
     @WithUserDetails("admin-user@company.com")
     public void addIssuerSuccess() throws Exception {
-        AdminEndpoints.NewAccountIssuer issuer = new AdminEndpoints.NewAccountIssuer("a");
-        mvc.perform(request(POST, "/api/admin/account-issuer", issuer))
+        mvc.perform(request(POST, "/api/admin/account-issuer", new AdminEndpoints.NewAccountIssuer("a")))
             .andExpect(status().isOk());
         AccountIssuer accountIssuer = accountIssuerService.get("a");
         assertNotNull(accountIssuer);
@@ -49,6 +48,8 @@ public class AdminTests extends BaseTest {
     @Test
     @WithUserDetails("admin-user@company.com")
     public void addMultipleIssuer() throws Exception {
+        accountRepo.deleteAll();
+        accountIssuerRepo.deleteAll();
         AdminEndpoints.NewAccountIssuer a1 = new AdminEndpoints.NewAccountIssuer("a1");
         AdminEndpoints.NewAccountIssuer a2 = new AdminEndpoints.NewAccountIssuer("a2");
 

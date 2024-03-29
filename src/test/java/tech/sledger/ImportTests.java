@@ -45,6 +45,16 @@ Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
 ,,OTHR - Payment via PayNow-UEN
 01/05/2023,29/02/2024,INTEREST 2,,0.62
             """.getBytes(UTF_8);
+    byte[] ocbcCashCsv2 = """
+Account details for:,360 Account 111-111111-001
+Available Balance,"1,234.56"
+Ledger Balance,"1,234.56"
+
+Transaction History
+Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
+13/05/2023,13/05/2023,FAST PAYMENT,379.50,
+,,OTHR - Payment via PayNow-UEN
+            """.getBytes(UTF_8);
     byte[] ocbcCreditCsv = """
 Account details for:,OCBC 365 Credit Card 1111-1111-1111-1111
 Credit limit,"SGD 1,234.56"
@@ -58,6 +68,7 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             """.getBytes(UTF_8);
     Map<String, byte[]> ocbcCsv = Map.of(
         "ocbc-cash.csv", ocbcCashCsv,
+        "ocbc-cash-2.csv", ocbcCashCsv2,
         "ocbc-credit.csv", ocbcCreditCsv
     );
 
@@ -221,6 +232,12 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .andExpect(jsonPath("$.[?(@.subCategory == 'Shopping')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Interest 1')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Interest 2')]").exists());
+
+        var request2 = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(ocbcCashAccountId).getBytes()))
+            .file(mockFile("ocbc-cash-2.csv"));
+        mvc.perform(request2).andExpect(status().isOk());
     }
 
     @Test

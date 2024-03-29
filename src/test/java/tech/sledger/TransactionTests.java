@@ -183,6 +183,11 @@ public class TransactionTests extends BaseTest {
         mvc.perform(get("/api/transaction/" + creditAccountId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.category == 'Credit Category')]").exists());
+
+        mvc.perform(get("/api/transaction/0"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.category == 'Cash Category')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Credit Category')]").exists());
     }
 
     @Test
@@ -237,23 +242,40 @@ public class TransactionTests extends BaseTest {
     public void updateTx() throws Exception {
         Map<String, Object> payload = Map.of(
             "@type", "cash",
-            "date", Instant.now(),
+            "date", date("2023-01-01"),
             "category", "Edit Test",
             "accountId", cashAccountId,
             "amount", 1,
             "remarks", "Cash"
         );
-        String result = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+        String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Cash"))
             .andReturn().getResponse().getContentAsString();
-        Integer id = JsonPath.parse(result).read("$.[0].id");
+        String result2 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].remarks").value("Cash"))
+            .andReturn().getResponse().getContentAsString();
+        Integer id1 = JsonPath.parse(result1).read("$.[0].id");
+        Integer id2 = JsonPath.parse(result2).read("$.[0].id");
 
         Map<String, Object> payload2 = new HashMap<>(payload);
+        payload2.put("date", date("2022-01-01"));
         payload2.put("remarks", "Edited");
-        payload2.put("id", id);
+        payload2.put("id", id1);
 
-        mvc.perform(request(PUT, "/api/transaction", List.of(payload2)))
+        Map<String, Object> payload3 = new HashMap<>(payload2);
+        payload3.put("date", date("2020-01-01"));
+        payload3.put("id", id2);
+
+        mvc.perform(request(PUT, "/api/transaction", List.of(payload2, payload3)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].remarks").value("Edited"));
+
+        Map<String, Object> payload4 = new HashMap<>(payload2);
+        payload4.put("amount", 2);
+
+        mvc.perform(request(PUT, "/api/transaction", List.of(payload4)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Edited"));
     }
