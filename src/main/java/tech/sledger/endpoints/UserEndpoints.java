@@ -1,6 +1,7 @@
 package tech.sledger.endpoints;
 
-import jakarta.mail.MessagingException;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Activation;
 import tech.sledger.model.user.Registration;
@@ -20,8 +26,6 @@ import tech.sledger.service.EmailService;
 import tech.sledger.service.JwtService;
 import tech.sledger.service.UserService;
 import java.io.IOException;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Slf4j
 @RestController
@@ -40,7 +44,7 @@ public class UserEndpoints {
     public RegistrationResponse register(
         @RequestBody @Valid Registration registration,
         BindingResult binding
-    ) throws MessagingException {
+    ) {
         if (binding.hasErrors()) {
             throw new ResponseStatusException(BAD_REQUEST, binding.getFieldError().getDefaultMessage());
         }
