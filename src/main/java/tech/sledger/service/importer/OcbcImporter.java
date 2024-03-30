@@ -7,6 +7,7 @@ import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.CreditAccount;
@@ -25,8 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 public class OcbcImporter implements Importer {
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d/M/yyyy");
 
     @Override
     public List<Transaction> process(
@@ -53,6 +55,7 @@ public class OcbcImporter implements Importer {
                 return processCredit(reader.readAll(), account, templates);
             }
         } catch (Exception e) {
+            log.error("Error importing OCBC file", e);
             throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
     }

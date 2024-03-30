@@ -2,6 +2,7 @@ package tech.sledger.service.importer;
 
 import jxl.Sheet;
 import jxl.Workbook;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountType;
@@ -23,6 +24,7 @@ import static org.springframework.util.StringUtils.hasText;
 import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 
+@Slf4j
 public class UobImporter implements Importer {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
@@ -42,6 +44,7 @@ public class UobImporter implements Importer {
             return account.getType() == AccountType.Cash ?
                 processCash(sheet, account, templates) : processCredit(sheet, account, templates);
         } catch (Exception e) {
+            log.error("Error importing UOB file", e);
             throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
     }
