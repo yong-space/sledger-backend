@@ -55,6 +55,8 @@ public class BaseTest {
     @Autowired
     public TransactionService transactionService;
     @Autowired
+    public TransactionRepo txRepo;
+    @Autowired
     public UserService userService;
     @Autowired
     public UserRepo userRepo;

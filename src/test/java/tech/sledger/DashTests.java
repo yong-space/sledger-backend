@@ -10,26 +10,27 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithUserDetails;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CashAccount;
 import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.user.User;
-import tech.sledger.repo.TransactionRepo;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DashTests extends BaseTest {
     private static long creditAccountId;
-    private static ZonedDateTime epoch;
-    @Autowired
-    public TransactionRepo txRepo;
+    private static ZonedDateTime epoch = LocalDate.now()
+        .atStartOfDay(ZoneOffset.UTC)
+        .withDayOfMonth(1)
+        .minusMonths(12);
 
     @BeforeAll
     public void init() {
@@ -56,20 +57,15 @@ public class DashTests extends BaseTest {
             .paymentRemarks("Credit Card Bill")
             .build()).getId();
 
-        epoch = LocalDate.now()
-            .atStartOfDay(ZoneOffset.UTC)
-            .withDayOfMonth(1)
-            .minusMonths(12);
-
         List<Map<String, ?>> transactions = List.of(
-            tx(epoch.plusMonths(2).plusDays(1), "Insight A", 8),
-            tx(epoch.plusMonths(2).plusDays(2), "Insight A", -2),
-            tx(epoch.plusMonths(2).plusDays(3), "Insight B", -23),
-            tx(epoch.plusMonths(2).plusDays(4), "Insight B", 15),
-            tx(epoch.plusMonths(3).plusDays(5), "Insight A", 20),
-            tx(epoch.plusMonths(3).plusDays(6), "Insight A", -14),
-            tx(epoch.plusMonths(3).plusDays(7), "Insight B", -67),
-            tx(epoch.plusMonths(3).plusDays(8), "Insight B", 51)
+            creditTx(epoch.plusMonths(2).plusDays(1), "Insight A", 8),
+            creditTx(epoch.plusMonths(2).plusDays(2), "Insight A", -2),
+            creditTx(epoch.plusMonths(2).plusDays(3), "Insight B", -23),
+            creditTx(epoch.plusMonths(2).plusDays(4), "Insight B", 15),
+            creditTx(epoch.plusMonths(3).plusDays(5), "Insight A", 20),
+            creditTx(epoch.plusMonths(3).plusDays(6), "Insight A", -14),
+            creditTx(epoch.plusMonths(3).plusDays(7), "Insight B", -67),
+            creditTx(epoch.plusMonths(3).plusDays(8), "Insight B", 51)
         );
         mvc.perform(request(POST, "/api/transaction", transactions))
             .andExpect(status().isOk());
@@ -90,16 +86,76 @@ public class DashTests extends BaseTest {
     @Test
     @Order(3)
     @WithUserDetails("basic-user@company.com")
-    public void creditCardStatements() throws Exception {
+    public void creditCardBills() throws Exception {
         Instant month = epoch.plusMonths(2).toInstant();
-        mvc.perform(get("/api/dash/credit-card-statement/" + creditAccountId))
+        mvc.perform(get("/api/dash/credit-card-bills/" + creditAccountId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$.[?(@.month == '" + month + "')].amount").value(-2.0))
             .andExpect(jsonPath("$.[?(@.month == '" + month + "')].transactions").value(4));
     }
 
-    Map<String, ?> tx(ZonedDateTime date, String category, int amount) {
+    @Test
+    @Order(4)
+    @WithUserDetails("basic-user@company.com")
+    public void balanceHistory() throws Exception {
+        AccountIssuer accountIssuerB = new AccountIssuer();
+        accountIssuerB.setName("b");
+        accountIssuerB = accountIssuerService.add(accountIssuerB);
+
+        User user = userService.get("basic-user@company.com");
+
+        txRepo.deleteAll();
+        accountRepo.deleteAll();
+
+        long cashAccountId1 = accountService.add(CashAccount.builder()
+            .issuer(accountIssuerB)
+            .name("Cash Account 1")
+            .owner(user)
+            .type(AccountType.Cash)
+            .multiCurrency(false)
+            .build()).getId();
+        long cashAccountId2 = accountService.add(CashAccount.builder()
+            .issuer(accountIssuerB)
+            .name("Cash Account 2")
+            .owner(user)
+            .type(AccountType.Cash)
+            .multiCurrency(false)
+            .build()).getId();
+
+        List<Map<String, ?>> transactions1 = new ArrayList<>();
+        List<Map<String, ?>> transactions2 = new ArrayList<>();
+        List<Map<String, ?>> transactions3 = new ArrayList<>();
+        for (int i=0; i < 13; i++) {
+            transactions1.add(cashTx(cashAccountId1, epoch.plusMonths(i).plusDays(i), "Month " + i, i));
+            transactions2.add(cashTx(cashAccountId2, epoch.plusMonths(i).plusDays(i), "Month " + i, i + 1));
+            transactions3.add(creditTx(epoch.plusMonths(i).plusDays(i), "Month " + i, i));
+        }
+        mvc.perform(request(POST, "/api/transaction", transactions1)).andExpect(status().isOk());
+        mvc.perform(request(POST, "/api/transaction", transactions2)).andExpect(status().isOk());
+        mvc.perform(request(POST, "/api/transaction", transactions3)).andExpect(status().isOk());
+
+        mvc.perform(get("/api/dash/balance-history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.series", hasSize(2)))
+            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId1 + ")].data[12]").value(156))
+            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId2 + ")].data[12]").value(91));
+    }
+
+    Map<String, ?> cashTx(long accountId, ZonedDateTime date, String category, int amount) {
+        return Map.of(
+            "@type", "cash",
+            "date", date,
+            "billingMonth", date.withDayOfMonth(1),
+            "category", category,
+            "accountId", accountId,
+            "amount", amount,
+            "balance", amount,
+            "remarks", "x"
+        );
+    }
+
+    Map<String, ?> creditTx(ZonedDateTime date, String category, int amount) {
         return Map.of(
             "@type", "credit",
             "date", date,

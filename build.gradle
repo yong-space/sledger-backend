@@ -51,6 +51,10 @@ tasks.named("jar") {enabled = false }
 
 tasks.withType(Test).configureEach { useJUnitPlatform() }
 test {
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+    }
     reports {
         junitXml.required = false
         html.required = false

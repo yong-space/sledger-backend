@@ -7,8 +7,8 @@ import java.util.List;
 
 @Data
 @Builder
-public class InsightsResponse {
+public class ChartResponse {
     private List<Instant> xAxis;
-    private List<InsightChartSeries> series;
-    private List<CategoryInsight> summary;
+    private List<ChartSeries> series;
+    private List<?> summary;
 }
