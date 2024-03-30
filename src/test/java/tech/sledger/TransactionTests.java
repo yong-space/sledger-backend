@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 import static tech.sledger.BaseTest.SubmitMethod.PUT;
 import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,12 @@ public class TransactionTests extends BaseTest {
     private static Integer creditId2;
     private static Integer cpfId;
     private static Map<String, Object> cashPayload;
+
+    @BeforeAll
+    public void init() {
+        txRepo.deleteAll();
+        accountRepo.deleteAll();
+    }
 
     @Test
     @Order(1)

@@ -8,11 +8,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import tech.sledger.model.account.Account;
+import tech.sledger.model.account.AccountType;
 import tech.sledger.model.dto.CategoryInsight;
 import tech.sledger.model.dto.CreditCardStatement;
 import tech.sledger.model.dto.Insight;
-import tech.sledger.model.dto.InsightChartSeries;
-import tech.sledger.model.dto.InsightsResponse;
+import tech.sledger.model.dto.ChartSeries;
+import tech.sledger.model.dto.ChartResponse;
+import tech.sledger.model.dto.MonthlyBalance;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
@@ -25,6 +28,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -36,7 +41,7 @@ public class DashEndpoints {
     private final TransactionRepo txRepo;
 
     @GetMapping("insights")
-    public InsightsResponse getInsights(Authentication auth) {
+    public ChartResponse getInsights(Authentication auth) {
         User user = (User) auth.getPrincipal();
         ZonedDateTime reference = LocalDate.now()
             .atStartOfDay(ZoneOffset.UTC)
@@ -73,7 +78,7 @@ public class DashEndpoints {
             month = month.plusMonths(1);
         }
 
-        List<InsightChartSeries> series = new ArrayList<>();
+        List<ChartSeries> series = new ArrayList<>();
 
         raw.parallelStream()
             .collect(groupingBy(Insight::getCategory))
@@ -97,20 +102,20 @@ public class DashEndpoints {
                 addChartSeries(series, negatives, key, "Debit");
             });
 
-        return InsightsResponse.builder()
+        return ChartResponse.builder()
             .xAxis(months)
             .series(series)
             .summary(summary)
             .build();
     }
 
-    private void addChartSeries(List<InsightChartSeries> series, List<BigDecimal> data, String name, String stack) {
+    private void addChartSeries(List<ChartSeries> series, List<BigDecimal> data, String name, String stack) {
         BigDecimal sum = data.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         if (BigDecimal.ZERO.equals(sum)) {
             return;
         }
         String key = (stack.equals("Credit") ? "+" : "-") + name;
-        series.add(InsightChartSeries.builder()
+        series.add(ChartSeries.builder()
             .label(key)
             .id(key)
             .data(data)
@@ -118,11 +123,51 @@ public class DashEndpoints {
             .build());
     }
 
-    @GetMapping("credit-card-statement/{accountId}")
-    public List<CreditCardStatement> getCreditCardStatement(
+    @GetMapping("credit-card-bills/{accountId}")
+    public List<CreditCardStatement> getCreditCardBills(
         Authentication auth, @PathVariable("accountId") long accountId
     ) {
         userService.authorise(auth, accountId);
-        return txRepo.getCreditCardStatement(accountId);
+        return txRepo.getCreditCardBills(accountId);
+    }
+
+    @GetMapping("balance-history")
+    public ChartResponse getBalanceHistory(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        List<Long> accountIds = accountRepo.findAllByOwnerAndTypeIn(user, List.of(AccountType.Cash))
+            .stream().map(Account::getId).toList();
+        ZonedDateTime reference = LocalDate.now()
+            .atStartOfDay(ZoneOffset.UTC)
+            .withDayOfMonth(1);
+        Instant from = reference.minusMonths(12).toInstant();
+        List<MonthlyBalance> balanceHistory = txRepo.getBalanceHistory(accountIds, from, Instant.now());
+
+        List<Instant> months = balanceHistory.stream().map(MonthlyBalance::getMonth).distinct().sorted().toList();
+
+        Map<Long, String> accountNames = accountRepo.findAllById(accountIds)
+            .stream().collect(Collectors.toMap(Account::getId, Account::getName));
+
+        List<ChartSeries> series = accountIds.stream()
+            .map(accountId -> {
+                List<BigDecimal> data = months.stream()
+                    .map(month -> balanceHistory.stream()
+                        .filter(b -> b.getAccountId() == accountId && b.getMonth().equals(month))
+                        .findFirst().orElse(MonthlyBalance.builder().balance(BigDecimal.ZERO).build())
+                    )
+                    .map(MonthlyBalance::getBalance)
+                    .toList();
+                return ChartSeries.builder()
+                    .id(accountId.toString())
+                    .label(accountNames.get(accountId))
+                    .stack("history")
+                    .data(data)
+                    .build();
+            })
+            .toList();
+
+        return ChartResponse.builder()
+            .xAxis(months)
+            .series(series)
+            .build();
     }
 }
