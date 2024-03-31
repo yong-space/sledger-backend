@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountType;
 import tech.sledger.model.dto.CategoryInsight;
+import tech.sledger.model.dto.ChartResponse;
+import tech.sledger.model.dto.ChartSeries;
 import tech.sledger.model.dto.CreditCardStatement;
 import tech.sledger.model.dto.Insight;
-import tech.sledger.model.dto.ChartSeries;
-import tech.sledger.model.dto.ChartResponse;
 import tech.sledger.model.dto.MonthlyBalance;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.AccountRepo;
@@ -29,6 +29,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -147,23 +149,29 @@ public class DashEndpoints {
         Map<Long, String> accountNames = accountRepo.findAllById(accountIds)
             .stream().collect(Collectors.toMap(Account::getId, Account::getName));
 
-        List<ChartSeries> series = accountIds.stream()
-            .map(accountId -> {
-                List<BigDecimal> data = months.stream()
-                    .map(month -> balanceHistory.stream()
+        var previous = new AtomicReference<>(BigDecimal.ZERO);
+        var series = accountIds.stream().map(accountId -> {
+            List<BigDecimal> data = months.stream()
+                .map(month -> {
+                    Optional<MonthlyBalance> value = balanceHistory.stream()
                         .filter(b -> b.getAccountId() == accountId && b.getMonth().equals(month))
-                        .findFirst().orElse(MonthlyBalance.builder().balance(BigDecimal.ZERO).build())
-                    )
-                    .map(MonthlyBalance::getBalance)
-                    .toList();
-                return ChartSeries.builder()
-                    .id(accountId.toString())
-                    .label(accountNames.get(accountId))
-                    .stack("history")
-                    .data(data)
-                    .build();
-            })
-            .toList();
+                        .findFirst();
+                    if (value.isPresent()) {
+                        previous.set(value.get().getBalance());
+                        return value.get();
+                    } else {
+                        return MonthlyBalance.builder().balance(previous.get()).build();
+                    }
+                })
+                .map(MonthlyBalance::getBalance)
+                .toList();
+            return ChartSeries.builder()
+                .id(accountId.toString())
+                .label(accountNames.get(accountId))
+                .stack("history")
+                .data(data)
+                .build();
+        }).toList();
 
         return ChartResponse.builder()
             .xAxis(months)
