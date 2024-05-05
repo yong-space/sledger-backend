@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -136,7 +137,7 @@ public class DashEndpoints {
     @GetMapping("balance-history")
     public ChartResponse getBalanceHistory(Authentication auth) {
         User user = (User) auth.getPrincipal();
-        List<Long> accountIds = accountRepo.findAllByOwnerAndTypeIn(user, List.of(AccountType.Cash))
+        List<Long> accountIds = accountRepo.findAllByOwnerAndTypeIn(user, List.of(AccountType.Cash, AccountType.Credit))
             .stream().map(Account::getId).toList();
         ZonedDateTime reference = LocalDate.now()
             .atStartOfDay(ZoneOffset.UTC)
@@ -149,8 +150,11 @@ public class DashEndpoints {
         Map<Long, String> accountNames = accountRepo.findAllById(accountIds)
             .stream().collect(Collectors.toMap(Account::getId, Account::getName));
 
-        var previous = new AtomicReference<>(BigDecimal.ZERO);
-        var series = accountIds.stream().map(accountId -> {
+        List<BigDecimal> summaryData = new ArrayList<>();
+
+        var accountSeries = accountIds.stream().map(accountId -> {
+            var previous = new AtomicReference<>(BigDecimal.ZERO);
+            AtomicInteger monthIndex = new AtomicInteger();
             List<BigDecimal> data = months.stream()
                 .map(month -> {
                     Optional<MonthlyBalance> value = balanceHistory.stream()
@@ -164,6 +168,14 @@ public class DashEndpoints {
                     }
                 })
                 .map(MonthlyBalance::getBalance)
+                .peek(balance -> {
+                    if (summaryData.size() < months.size()) {
+                        summaryData.add(balance);
+                    } else {
+                        summaryData.set(monthIndex.get(), summaryData.get(monthIndex.get()).add(balance));
+                        monthIndex.getAndIncrement();
+                    }
+                })
                 .toList();
             return ChartSeries.builder()
                 .id(accountId.toString())
@@ -172,6 +184,14 @@ public class DashEndpoints {
                 .data(data)
                 .build();
         }).toList();
+
+        List<ChartSeries> series = new ArrayList<>(accountSeries);
+        series.add(ChartSeries.builder()
+            .id("total")
+            .label("Total")
+            .data(summaryData)
+            .type("line")
+            .build());
 
         return ChartResponse.builder()
             .xAxis(months)

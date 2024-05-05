@@ -15,6 +15,8 @@ public class ChartSeries {
     @Builder.Default
     private String stackOrder = "descending";
     @Builder.Default
+    private String type = "bar";
+    @Builder.Default
     private HighlightScope highlightScope = new HighlightScope("series", "global");
 
     record HighlightScope(String highlighted, String faded) {}

@@ -137,9 +137,10 @@ public class DashTests extends BaseTest {
 
         mvc.perform(get("/api/dash/balance-history"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.series", hasSize(2)))
-            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId1 + ")].data[12]").value(156))
-            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId2 + ")].data[12]").value(91));
+            .andExpect(jsonPath("$.series", hasSize(3)))
+            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId1 + ")].data[11]").value(132))
+            .andExpect(jsonPath("$.series[?(@.id == " + cashAccountId2 + ")].data[11]").value(78))
+            .andExpect(jsonPath("$.series[?(@.id == 'total')].data[11]").value(210));
     }
 
     Map<String, ?> cashTx(long accountId, ZonedDateTime date, String category, int amount) {
