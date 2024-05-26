@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
@@ -67,7 +68,7 @@ public class TransactionService {
         // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
-        log.info("Existing dates: {}", existing.stream().map(Transaction::getDate).toList());
+        log.info("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
 
         long id = idEpoch;
         transactions = new ArrayList<>(transactions);
