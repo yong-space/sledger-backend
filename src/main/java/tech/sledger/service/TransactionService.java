@@ -4,6 +4,7 @@ import static java.util.Comparator.comparing;
 import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
@@ -65,6 +67,8 @@ public class TransactionService {
         // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
+        log.info("Existing dates: {}", existing.stream().map(Transaction::getDate).toList());
+
         long id = idEpoch;
         transactions = new ArrayList<>(transactions);
         transactions.sort(Comparator.comparing(Transaction::getDate));
@@ -82,6 +86,9 @@ public class TransactionService {
                 .map(Transaction::getDate).orElse(null);
             if (existingDate != null) {
                 targetDate = existingDate.plus(1L, ChronoUnit.SECONDS);
+                log.info("Updated date to: {}", targetDate);
+            } else {
+                log.info("No existing date found. Maintain {}", targetDate);
             }
             transaction.setDate(targetDate);
             existing.add(transaction);
@@ -128,7 +135,7 @@ public class TransactionService {
         }
         List<Transaction> txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
             .stream()
-            .filter(t -> !txIds.contains(t.getId())) // why!?
+            .filter(t -> !txIds.contains(t.getId())) // exclude incoming transactions
             .toList();
         affectedTx.addAll((Collection<? extends T>) txAfterEpoch);
         affectedTx.sort(Comparator.comparing(Transaction::getDate));

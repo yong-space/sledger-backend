@@ -1,7 +1,7 @@
 package tech.sledger.service;
 
-import com.resend.services.emails.model.SendEmailRequest;
-import com.resend.services.emails.model.SendEmailResponse;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,13 +51,13 @@ public class EmailService {
     }
 
     public void sendEmail(String toEmail, String toDisplayName, String subject, String content) {
-        SendEmailRequest request = SendEmailRequest.builder()
+        CreateEmailOptions options = CreateEmailOptions.builder()
             .from(fromEmail)
             .to(toDisplayName + " <" + toEmail + ">")
             .subject(subject)
             .html(content)
             .build();
-        SendEmailResponse data = resendService.send(request);
+        CreateEmailResponse data = resendService.send(options);
         log.info("Email sent: {}", data.getId());
     }
 }

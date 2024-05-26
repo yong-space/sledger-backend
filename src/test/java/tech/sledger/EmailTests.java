@@ -3,8 +3,8 @@ package tech.sledger;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import com.resend.services.emails.model.SendEmailRequest;
-import com.resend.services.emails.model.SendEmailResponse;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -37,16 +37,16 @@ public class EmailTests {
     }
 
     @Captor
-    ArgumentCaptor<SendEmailRequest> emailCaptor;
+    ArgumentCaptor<CreateEmailOptions> emailCaptor;
 
     @Test
     public void sendActivation() {
-        when(resendService.send(any(SendEmailRequest.class)))
-            .thenReturn(new SendEmailResponse("abc"));
+        when(resendService.send(any(CreateEmailOptions.class)))
+            .thenReturn(new CreateEmailResponse("abc"));
 
         emailService.sendActivation("user@company.com", "Bob Doe", "hash").join();
         verify(resendService).send(emailCaptor.capture());
-        SendEmailRequest email = emailCaptor.getValue();
+        CreateEmailOptions email = emailCaptor.getValue();
 
         assertEquals("Sledger Activation", email.getSubject());
         assertEquals("Bob Doe <user@company.com>", email.getTo().getFirst());
