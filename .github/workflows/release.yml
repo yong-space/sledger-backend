@@ -8,50 +8,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.meta.outputs.tags }}
+      tag: ${{ steps.tag.outputs.new_tag }}
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-java@v4
+    - uses: graalvm/setup-graalvm@v1
       with:
-        distribution: corretto
-        java-version: 22
+        java-version: '22'
+        distribution: 'graalvm'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: gradle/actions/setup-gradle@v3
 
-    - run: ./gradlew build
+    - id: tag
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag_prefix: ''
+
+    - run: echo "IMAGE_NAME=ghcr.io/${{github.repository}}:${{ steps.tag.outputs.new_tag }}" >> $GITHUB_ENV
+
+    - run: echo "DOCKER_USER=${{ github.actor }}" >> $GITHUB_ENV
+
+    - run: echo "DOCKER_PASS=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+
+    - run: ./gradlew bootBuildImage --imageName $IMAGE_NAME --publishImage
 
     - uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-
-    - uses: docker/metadata-action@v5
-      id: meta
-      with:
-        images: ghcr.io/${{ github.repository }}
-        flavor: latest=false
-        tags: type=sha
-
-    - uses: docker/setup-qemu-action@v3
-      with:
-        platforms: arm64
-
-    - uses: docker/setup-buildx-action@v3
-      with:
-        platforms: linux/arm64
-
-    - uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: docker/build-push-action@v5
-      with:
-        context: .
-        platforms: linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
 
   release:
     needs: build
