@@ -9,7 +9,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(22))
     }
 }
 
@@ -77,5 +77,15 @@ jacocoTestReport {
     reports {
         xml.required = true
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+bootBuildImage {
+    pullPolicy = "IF_NOT_PRESENT"
+    docker {
+        publishRegistry {
+            username = "$System.env.DOCKER_USER"
+            password = "$System.env.DOCKER_PASS"
+        }
     }
 }
