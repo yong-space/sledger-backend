@@ -82,6 +82,11 @@ jacocoTestReport {
 
 bootBuildImage {
     pullPolicy = "IF_NOT_PRESENT"
+    environment = [
+        "BP_JVM_VERSION": "22",
+        "BPE_DELIM_JAVA_TOOL_OPTIONS": " ",
+        "BPE_APPEND_JAVA_TOOL_OPTIONS": " -XX:MaxDirectMemorySize=200M"
+    ]
     docker {
         publishRegistry {
             username = "$System.env.DOCKER_USER"
