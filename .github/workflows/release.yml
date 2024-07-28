@@ -40,15 +40,15 @@ jobs:
 
   release:
     needs: build
-    runs-on: self-hosted
+    runs-on: on-prem
     environment: 'Prod'
     env:
       DEPLOYMENT: ${{ github.event.repository.name }}
     steps:
     - name: Perform rolling update
       run: |
-        kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.tag }}
-        kubectl rollout status deployment/${DEPLOYMENT}
+        kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.tag }} -n default
+        kubectl rollout status deployment/${DEPLOYMENT} -n default
 
     - uses: smartsquaregmbh/delete-old-packages@v0.8.0
       with:
