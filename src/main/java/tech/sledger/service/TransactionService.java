@@ -68,7 +68,7 @@ public class TransactionService {
         // Get existing transactions in range
         List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
-        log.info("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
+        log.debug("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
 
         long id = idEpoch;
         transactions = new ArrayList<>(transactions);
@@ -87,9 +87,9 @@ public class TransactionService {
                 .map(Transaction::getDate).orElse(null);
             if (existingDate != null) {
                 targetDate = existingDate.plus(1L, ChronoUnit.SECONDS);
-                log.info("Updated date to: {}", targetDate);
+                log.debug("Updated date to: {}", targetDate);
             } else {
-                log.info("No existing date found. Maintain {}", targetDate);
+                log.debug("No existing date found. Maintain {}", targetDate);
             }
             transaction.setDate(targetDate);
             existing.add(transaction);

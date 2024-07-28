@@ -32,6 +32,8 @@ public class ImportEndpoints {
         Account account = userService.authorise(auth, accountId);
         try (InputStream inputStream = file.getInputStream()) {
             return importService.process(account, inputStream);
+        } finally {
+            System.gc();
         }
     }
 }
