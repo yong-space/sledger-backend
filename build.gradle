@@ -1,7 +1,7 @@
 plugins {
     id 'com.github.ben-manes.versions' version '0.51.0'
-    id 'org.springframework.boot' version '3.3.0'
-    id 'io.spring.dependency-management' version '1.1.5'
+    id 'org.springframework.boot' version '3.3.2'
+    id 'io.spring.dependency-management' version '1.1.6'
     id 'io.freefair.lombok' version '8.6'
     id 'java'
     id 'jacoco'
@@ -19,7 +19,7 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-parameters")
 }
 
-def testContainersVersion = '1.19.8'
+def testContainersVersion = '1.20.0'
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
@@ -39,8 +39,8 @@ dependencies {
     }
     developmentOnly "org.springframework.boot:spring-boot-devtools"
 
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.0-M2"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.0-M2"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
@@ -84,8 +84,7 @@ bootBuildImage {
     pullPolicy = "IF_NOT_PRESENT"
     environment = [
         "BP_JVM_VERSION": "22",
-        "BPE_DELIM_JAVA_TOOL_OPTIONS": " ",
-        "BPE_APPEND_JAVA_TOOL_OPTIONS": " -XX:MaxDirectMemorySize=200M -XX:+UseZGC -XX:+ZGenerational"
+        "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true"
     ]
     docker {
         publishRegistry {
