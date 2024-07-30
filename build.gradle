@@ -85,7 +85,7 @@ bootBuildImage {
     environment = [
         "BP_JVM_VERSION": "22",
         "BPE_DELIM_JAVA_TOOL_OPTIONS": " ",
-        "BPE_APPEND_JAVA_TOOL_OPTIONS": " -XX:MaxDirectMemorySize=200M"
+        "BPE_APPEND_JAVA_TOOL_OPTIONS": " -XX:MaxDirectMemorySize=200M -XX:+UseZGC -XX:+ZGenerational"
     ]
     docker {
         publishRegistry {
