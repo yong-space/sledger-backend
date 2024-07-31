@@ -42,7 +42,7 @@ public class UserService {
         User previous = userRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
 
-        List<GrantedAuthority> roles = new ArrayList<>();
+        List<SimpleGrantedAuthority> roles = new ArrayList<>();
         if (id == 1) {
             roles.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
