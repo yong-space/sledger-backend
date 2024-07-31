@@ -11,6 +11,7 @@ import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.aot.DisabledInAotMode;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.ResendService;
 import java.util.Map;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+@DisabledInAotMode
 @SpringBootTest
 public class EmailTests {
     static {
