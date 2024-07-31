@@ -5,9 +5,7 @@ import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
@@ -39,12 +37,11 @@ public class TransactionService {
         return txRepo.findAllById(ids);
     }
 
-    @Cacheable(value="tx", key="#account.id")
-    public List<Transaction> list(Account account) {
+    public <T extends Transaction> List<T> list(Account account) {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
 
-    public List<Transaction> listAll(User user) {
+    public <T extends Transaction> List<T> listAll(User user) {
         List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
             .stream().map(Account::getId).toList();
         return txRepo.findAllByAccountIdInOrderByDate(accounts);
@@ -66,14 +63,14 @@ public class TransactionService {
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
         long accountId = transactions.getFirst().getAccountId();
         // Get existing transactions in range
-        List<Transaction> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
+        List<T> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
 
         log.debug("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
 
         long id = idEpoch;
         transactions = new ArrayList<>(transactions);
         transactions.sort(Comparator.comparing(Transaction::getDate));
-        for (Transaction transaction : transactions) {
+        for (T transaction : transactions) {
             transaction.setId(id++);
             Instant targetDate = transaction.getDate().atZone(ZoneOffset.UTC)
                 .truncatedTo(ChronoUnit.DAYS).toInstant();
@@ -134,11 +131,11 @@ public class TransactionService {
         if (op == TxOperation.SAVE) {
             affectedTx.addAll(transactions);
         }
-        List<Transaction> txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
+        var txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
             .stream()
             .filter(t -> !txIds.contains(t.getId())) // exclude incoming transactions
             .toList();
-        affectedTx.addAll((Collection<? extends T>) txAfterEpoch);
+        affectedTx.addAll((Collection<T>) txAfterEpoch);
         affectedTx.sort(Comparator.comparing(Transaction::getDate));
 
         Transaction epoch = txRepo.findFirstByAccountIdAndIdNotAndDateBeforeOrderByDateDesc(accountId, minTx.getId(), minDate);

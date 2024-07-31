@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.aot.DisabledInAotMode;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.TokenResponse;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 
+@DisabledInAotMode
 public class UserTests extends BaseTest {
     @MockBean
     private EmailService emailService;

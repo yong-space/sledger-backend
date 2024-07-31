@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.aot.DisabledInAotMode;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static tech.sledger.BaseTest.SubmitMethod.POST;
 
+@DisabledInAotMode
 public class UserBaseTest extends BaseTest {
     @Autowired
     public PasswordEncoder passwordEncoder;
