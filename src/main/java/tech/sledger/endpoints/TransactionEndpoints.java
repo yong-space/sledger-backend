@@ -77,7 +77,7 @@ public class TransactionEndpoints {
     }
 
     @GetMapping("/{accountId}")
-    public List<Transaction> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
+    public <T extends Transaction> List<T> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
         if (accountId == 0) {
             User user = (User) auth.getPrincipal();
             return txService.listAll(user);
