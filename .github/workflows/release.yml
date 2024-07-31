@@ -13,7 +13,8 @@ jobs:
     - uses: graalvm/setup-graalvm@v1
       with:
         java-version: '22'
-        distribution: 'graalvm'
+        components: 'native-image'
+        native-image-job-reports: 'true'
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: gradle/actions/setup-gradle@v3
