@@ -87,6 +87,7 @@ jacocoTestReport {
 bootBuildImage {
     imageName = "$System.env.IMAGE_NAME"
     publish = true
+    createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "22",
         "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true"
