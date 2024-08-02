@@ -4,11 +4,15 @@ on:
   push:
     branches: [ main ]
 
+env:
+  REPO: ${{ github.event.repository.name }}
+  IMAGE_BASE: ${{ secrets.DOCKER_REGISTRY }}/${{ github.event.repository.name }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image_name: ${{ env.IMAGE_NAME }}
+      tag: ${{ steps.tag.outputs.new_tag }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -39,9 +43,9 @@ jobs:
 
     - name: Setup Docker metadata
       run: |
-        echo "IMAGE_NAME=ghcr.io/${{github.repository}}:${{ steps.tag.outputs.new_tag }}" >> $GITHUB_ENV
-        echo "DOCKER_USER=${{ github.actor }}" >> $GITHUB_ENV
-        echo "DOCKER_PASS=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+        echo "IMAGE_NAME=${IMAGE_BASE}:${{ steps.tag.outputs.new_tag }}" >> $GITHUB_ENV
+        echo "DOCKER_USER=${{ secrets.DOCKER_USER }}" >> $GITHUB_ENV
+        echo "DOCKER_PASS=${{ secrets.DOCKER_PASS }}" >> $GITHUB_ENV
 
     - name: Build native image
       run: ./gradlew bootBuildImage
@@ -50,19 +54,8 @@ jobs:
     needs: build
     runs-on: on-prem
     environment: 'Prod'
-    env:
-      DEPLOYMENT: ${{ github.event.repository.name }}
     steps:
     - name: Perform rolling update
       run: |
-        kubectl set image deployment/${DEPLOYMENT} ${DEPLOYMENT}=${{ needs.build.outputs.image_name }} -n default
-        kubectl rollout status deployment/${DEPLOYMENT} -n default
-
-    - name: Delete old packages
-      uses: smartsquaregmbh/delete-old-packages@v0.8.0
-      with:
-        keep: 2
-        type: container
-        names: ${{ env.DEPLOYMENT }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        organization: ${{ github.event.organization.login }}
+        kubectl -n default set image deploy/${REPO} ${REPO}=${IMAGE_BASE}:${{ needs.build.outputs.tag }}
+        kubectl -n default rollout status deploy/${REPO}
