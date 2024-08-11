@@ -1,0 +1,23 @@
+meta {
+  name: Import
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/api/import?accountId=1
+  body: multipartForm
+  auth: bearer
+}
+
+params:query {
+  accountId: 1
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file()
+}
