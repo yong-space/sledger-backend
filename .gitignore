@@ -13,7 +13,7 @@ out
 .vscode/
 
 ### Spring ###
-application-*.yml
+src/main/resources/application-*.yml
 
 ### Web ###
 **/node_modules

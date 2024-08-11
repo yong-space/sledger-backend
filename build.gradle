@@ -1,14 +1,14 @@
 plugins {
-    id 'com.github.ben-manes.versions' version '0.51.0'
-    id 'org.springframework.boot' version '3.3.2'
-    id 'io.spring.dependency-management' version '1.1.6'
-    id 'io.freefair.lombok' version '8.6'
-    id 'org.graalvm.buildtools.native' version '0.10.2'
-    id 'java'
-    id 'jacoco'
+    id "com.github.ben-manes.versions" version "0.51.0"
+    id "org.springframework.boot" version "3.3.2"
+    id "io.spring.dependency-management" version "1.1.6"
+    id "io.freefair.lombok" version "8.7.1"
+    id "org.graalvm.buildtools.native" version "0.10.2"
+    id "java"
+    id "jacoco"
 }
 
-group = 'tech.sledger'
+group = "tech.sledger"
 
 java {
     toolchain {
@@ -22,7 +22,7 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-parameters")
 }
 
-def testContainersVersion = '1.20.0'
+def testContainersVersion = "1.20.1"
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
@@ -34,11 +34,11 @@ dependencies {
     implementation "org.bouncycastle:bcprov-jdk18on:1.78.1"
     implementation "com.auth0:java-jwt:4.4.0"
     implementation ("com.opencsv:opencsv:5.9") {
-        exclude group: 'commons-logging', module: 'commons-logging'
+        exclude group: "commons-logging", module: "commons-logging"
     }
     implementation ("org.jxls:jxls-jexcel:1.0.9") {
-        exclude group: 'commons-logging', module: 'commons-logging'
-        exclude group: 'log4j', module: 'log4j'
+        exclude group: "commons-logging", module: "commons-logging"
+        exclude group: "log4j", module: "log4j"
     }
     developmentOnly "org.springframework.boot:spring-boot-devtools"
 
@@ -51,7 +51,7 @@ dependencies {
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
 }
 
-tasks.named("jar") {enabled = false }
+tasks.named("jar") { enabled = false }
 
 tasks.withType(Test).configureEach { useJUnitPlatform() }
 test {
@@ -64,29 +64,28 @@ test {
         html.required = false
     }
     finalizedBy jacocoTestReport
-    jacoco { excludes = [ 'tech.sledger.model.*' ] }
 }
 jacocoTestReport {
     dependsOn test
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
-                'tech/sledger/*.class',
-                'tech/sledger/model/**',
-                'tech/sledger/service/ResendService.class',
-                'tech/sledger/config/AotHints.class'
+                "tech/sledger/*.class",
+                "tech/sledger/model/**",
+                "tech/sledger/service/ResendService.class",
+                "tech/sledger/config/AotHints.class"
             ])
         })
     }
     reports {
         xml.required = true
-        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+        html.outputLocation = layout.buildDirectory.dir("jacocoHtml")
     }
 }
 
 bootBuildImage {
-    imageName = "$System.env.IMAGE_NAME"
-    publish = true
+    imageName = System.getenv("IMAGE_NAME") ?: "sledger-backend"
+    publish = System.getenv("DOCKER_PASS") != null
     createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "22",
@@ -94,8 +93,8 @@ bootBuildImage {
     ]
     docker {
         publishRegistry {
-            username = "$System.env.DOCKER_USER"
-            password = "$System.env.DOCKER_PASS"
+            username = System.getenv("DOCKER_USER")
+            password = System.getenv("DOCKER_PASS")
         }
     }
 }
