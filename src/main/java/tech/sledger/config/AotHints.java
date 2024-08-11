@@ -12,6 +12,8 @@ import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.ForeignCashTransaction;
 import tech.sledger.model.tx.ForeignCreditTransaction;
 import tech.sledger.model.tx.Transaction;
+import tech.sledger.service.importer.OcbcImporter;
+import tech.sledger.service.importer.UobImporter;
 import java.util.List;
 
 public class AotHints implements RuntimeHintsRegistrar {
@@ -25,7 +27,9 @@ public class AotHints implements RuntimeHintsRegistrar {
             ForeignCashTransaction.class,
             ForeignCreditTransaction.class,
             CategoryInsight.class,
-            ChartResponse.class
+            ChartResponse.class,
+            OcbcImporter.class,
+            UobImporter.class
         ).forEach(c -> {
             hints.reflection().registerType(c, INVOKE_DECLARED_CONSTRUCTORS);
             hints.reflection().registerType(c, INVOKE_PUBLIC_CONSTRUCTORS);
