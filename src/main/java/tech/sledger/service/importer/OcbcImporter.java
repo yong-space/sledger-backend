@@ -61,7 +61,7 @@ public class OcbcImporter implements Importer {
     }
 
     private void completeTransaction(CashTransaction tx, String remarks, List<Template> templates) {
-        Template template = matchTemplate(remarks, templates);
+        Template template = matchTemplate(cleanCashRemarks(remarks), templates);
         tx.setRemarks(template.getRemarks());
         tx.setCategory(template.getCategory());
         tx.setSubCategory(template.getSubCategory());
@@ -106,7 +106,7 @@ public class OcbcImporter implements Importer {
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
-            Template template = matchTemplate(cleanRemarks(row[1]), templates);
+            Template template = matchTemplate(cleanCreditRemarks(row[1]), templates);
             BigDecimal debit = parseDecimal(row[2]);
             BigDecimal credit = parseDecimal(row[3]);
 
@@ -123,8 +123,14 @@ public class OcbcImporter implements Importer {
         return output;
     }
 
-    private String cleanRemarks(String raw) {
-        return raw.replaceFirst("^-[0-9]+\\s+", "")
+    private String cleanCashRemarks(String raw) {
+        return raw.replaceAll("\\s{2,}", " ")
+            .replaceAll("[\\r\\n]+", "");
+    }
+
+    private String cleanCreditRemarks(String raw) {
+        return cleanCashRemarks(raw)
+            .replaceFirst("^-[0-9]+", "")
             .replaceFirst("(?i)(\\s?singapore)*[0-9\\s]*sgp?$", "");
     }
 }
