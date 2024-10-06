@@ -60,11 +60,13 @@ Account details for:,OCBC 365 Credit Card 1111-1111-1111-1111
 Credit limit,"SGD 1,234.56"
 Credit left,"SGD 321.23"
 
-Transaction History
-Main Credit CardOCBC 365 Credit Card 1111-1111-1111-1111
+Transaction history
+Main credit card OCBC INFINITY Cashback Card 5413-8301-0004-9600
 Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
-04/05/2023,SHOPPING,30.41,
-01/05/2023,Household Stuff,0.12,
+2024-09-02 00:00:00.0,-9489 KOUFU PTE LTD    Singapore     SGP,2.60,
+2024-09-02 00:00:00.0,-9489 BUS/MRT 498357444SINGAPORE     SGP,7.62,
+2024-08-31 00:00:00.0,-9489 BUS/MRT CM8880515SINGAPORE     SGP,,1.21
+2024-08-31 00:00:00.0,-9489 PIZZAKAYA-JEM    SINGAPORE     SGP,46.28,
             """.getBytes(UTF_8);
     Map<String, byte[]> ocbcCsv = Map.of(
         "ocbc-cash.csv", ocbcCashCsv,
@@ -249,8 +251,8 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .file(mockFile("ocbc-credit.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(2)))
-            .andExpect(jsonPath("$.[?(@.remarks == 'Household Stuff')]").exists());
+            .andExpect(jsonPath("$", iterableWithSize(4)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Bus/Mrt Cm8880515')]").exists());
 
         request = MockMvcRequestBuilders
             .multipart("/api/import")
