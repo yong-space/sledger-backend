@@ -36,14 +36,11 @@ dependencies {
     implementation ("com.opencsv:opencsv:5.9") {
         exclude group: "commons-logging", module: "commons-logging"
     }
-    implementation ("org.jxls:jxls-jexcel:1.0.9") {
-        exclude group: "commons-logging", module: "commons-logging"
-        exclude group: "log4j", module: "log4j"
-    }
+    implementation "org.apache.poi:poi:5.3.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
 
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.0-M2"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.11.0-M2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.2"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.2"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
@@ -89,7 +86,8 @@ bootBuildImage {
     createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "23",
-        "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true"
+        "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true",
+        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets"
     ]
     docker {
         publishRegistry {

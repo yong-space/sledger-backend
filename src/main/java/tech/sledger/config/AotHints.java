@@ -1,6 +1,14 @@
 package tech.sledger.config;
 
-import static org.springframework.aot.hint.MemberCategory.*;
+import static org.springframework.aot.hint.MemberCategory.DECLARED_FIELDS;
+import static org.springframework.aot.hint.MemberCategory.INVOKE_DECLARED_CONSTRUCTORS;
+import static org.springframework.aot.hint.MemberCategory.INVOKE_DECLARED_METHODS;
+import static org.springframework.aot.hint.MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS;
+import static org.springframework.aot.hint.MemberCategory.INVOKE_PUBLIC_METHODS;
+import static org.springframework.aot.hint.MemberCategory.PUBLIC_FIELDS;
+import org.apache.logging.log4j.message.DefaultFlowMessageFactory;
+import org.apache.logging.log4j.message.ParameterizedMessageFactory;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.lang.NonNull;
@@ -29,7 +37,10 @@ public class AotHints implements RuntimeHintsRegistrar {
             CategoryInsight.class,
             ChartResponse.class,
             OcbcImporter.class,
-            UobImporter.class
+            UobImporter.class,
+            HSSFWorkbook.class,
+            DefaultFlowMessageFactory.class,
+            ParameterizedMessageFactory.class
         ).forEach(c -> {
             hints.reflection().registerType(c, INVOKE_DECLARED_CONSTRUCTORS);
             hints.reflection().registerType(c, INVOKE_PUBLIC_CONSTRUCTORS);
