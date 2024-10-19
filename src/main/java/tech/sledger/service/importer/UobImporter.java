@@ -34,12 +34,13 @@ public class UobImporter implements Importer {
     ) {
         try {
             Sheet sheet = Workbook.getWorkbook(inputStream).getSheet(0);
-            long accountNumberLength = sheet.getCell(1, 4).getContents().length();
+            String accountNumber = sheet.getCell(1, 4).getContents();
+            long accountNumberLength = accountNumber.length();
             if (
                 (account.getType() == Cash && accountNumberLength != 10) ||
                 (account.getType() == Credit && accountNumberLength != 16)
             ) {
-                throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
+                throw new ResponseStatusException(BAD_REQUEST, "Invalid import file for " + account.getType() + ": " + accountNumber);
             }
             return account.getType() == AccountType.Cash ?
                 processCash(sheet, account, templates) : processCredit(sheet, account, templates);
