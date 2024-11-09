@@ -2,15 +2,30 @@ package tech.sledger;
 
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
 import tech.sledger.model.account.*;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.user.User;
+import tech.sledger.repo.UserRepo;
+import tech.sledger.service.AccountIssuerService;
+import tech.sledger.service.AccountService;
+import tech.sledger.service.TemplateService;
+import tech.sledger.service.UserService;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +36,38 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class ImportTests extends BaseTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class ImportTests {
+    @Container
+    static MongoDBContainer mongodb = new MongoDBContainer("mongo:7");
+
+    @DynamicPropertySource
+    public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
+        registry.add("spring.data.mongodb.uri", mongodb::getReplicaSetUrl);
+    }
+
+    static {
+        System.setProperty("SLEDGER_SECRET_KEY", "my-secret-key");
+        mongodb.start();
+    }
+
+    @Autowired
+    public MockMvc mvc;
+    @Autowired
+    public AccountIssuerService accountIssuerService;
+    @Autowired
+    public AccountService accountService;
+    @Autowired
+    public UserService userService;
+    @Autowired
+    public UserRepo userRepo;
+    @Autowired
+    public PasswordEncoder passwordEncoder;
+    @Autowired
+    public TemplateService templateService;
+
     private long ocbcCashAccountId;
     private long ocbcCreditAccountId;
     private long ocbcCreditAccountId2;
@@ -88,7 +134,13 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
         cpfIssuer.setName("CPF");
         cpfIssuer = accountIssuerService.add(cpfIssuer);
 
-        User user = userService.get("basic-user@company.com");
+        User user = userRepo.save(User.builder()
+            .id(1)
+            .displayName("Basic User 1")
+            .username("basic-user@company.com")
+            .password(passwordEncoder.encode("B4SicUs3r!"))
+            .enabled(true)
+            .build());
 
         ocbcCashAccountId = accountService.add(CashAccount.builder()
             .issuer(ocbcIssuer)

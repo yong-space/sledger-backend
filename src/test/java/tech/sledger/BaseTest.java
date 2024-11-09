@@ -29,14 +29,12 @@ import tech.sledger.repo.TransactionRepo;
 import tech.sledger.repo.UserRepo;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
-import tech.sledger.service.TemplateService;
-import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseTest {
@@ -53,8 +51,6 @@ public class BaseTest {
     @Autowired
     public AccountRepo accountRepo;
     @Autowired
-    public TransactionService transactionService;
-    @Autowired
     public TransactionRepo txRepo;
     @Autowired
     public UserService userService;
@@ -65,16 +61,14 @@ public class BaseTest {
     @Autowired
     public UserDetailsService userDetailsService;
     @Autowired
-    public TemplateService templateService;
-    @Autowired
     public TemplateRepo templateRepo;
     @Autowired
     private ActivationRepo activationRepo;
 
-    enum SubmitMethod { PUT, POST }
+    public enum SubmitMethod { PUT, POST }
 
     @Container
-    static MongoDBContainer mongodb = new MongoDBContainer("mongo:6").withReuse(true);
+    static MongoDBContainer mongodb = new MongoDBContainer("mongo:7");
 
     @DynamicPropertySource
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
