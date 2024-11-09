@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -153,19 +152,13 @@ public class DashEndpoints {
         List<BigDecimal> summaryData = new ArrayList<>();
 
         var accountSeries = accountIds.stream().map(accountId -> {
-            var previous = new AtomicReference<>(BigDecimal.ZERO);
             AtomicInteger monthIndex = new AtomicInteger();
             List<BigDecimal> data = months.stream()
                 .map(month -> {
                     Optional<MonthlyBalance> value = balanceHistory.stream()
                         .filter(b -> b.getAccountId() == accountId && b.getMonth().equals(month))
                         .findFirst();
-                    if (value.isPresent()) {
-                        previous.set(value.get().getBalance());
-                        return value.get();
-                    } else {
-                        return MonthlyBalance.builder().balance(previous.get()).build();
-                    }
+                    return value.get();
                 })
                 .map(MonthlyBalance::getBalance)
                 .peek(balance -> {
