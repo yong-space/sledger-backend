@@ -29,7 +29,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -154,13 +153,10 @@ public class DashEndpoints {
         var accountSeries = accountIds.stream().map(accountId -> {
             AtomicInteger monthIndex = new AtomicInteger();
             List<BigDecimal> data = months.stream()
-                .map(month -> {
-                    Optional<MonthlyBalance> value = balanceHistory.stream()
-                        .filter(b -> b.getAccountId() == accountId && b.getMonth().equals(month))
-                        .findFirst();
-                    return value.get();
-                })
-                .map(MonthlyBalance::getBalance)
+                .map(month -> balanceHistory.stream()
+                    .filter(b -> b.getAccountId() == accountId && b.getMonth().equals(month))
+                    .findFirst()
+                    .map(MonthlyBalance::getBalance).orElse(BigDecimal.ZERO))
                 .peek(balance -> {
                     if (summaryData.size() < months.size()) {
                         summaryData.add(balance);
