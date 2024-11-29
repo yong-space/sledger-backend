@@ -1,8 +1,8 @@
 plugins {
     id "com.github.ben-manes.versions" version "0.51.0"
-    id "org.springframework.boot" version "3.3.5"
+    id "org.springframework.boot" version "3.4.0"
     id "io.spring.dependency-management" version "1.1.6"
-    id "io.freefair.lombok" version "8.10.2"
+    id "io.freefair.lombok" version "8.11"
     id "org.graalvm.buildtools.native" version "0.10.3"
     id "java"
     id "jacoco"
@@ -22,7 +22,9 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.add("-parameters")
 }
 
-def testContainersVersion = "1.20.3"
+def testContainersVersion = "1.20.4"
+
+configurations { mockitoAgent }
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
@@ -38,7 +40,7 @@ dependencies {
     }
     implementation "org.apache.poi:poi:5.3.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-
+    testRuntimeOnly "org.mockito:mockito-inline:+"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.3"
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
@@ -46,11 +48,15 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
+    runtimeOnly "io.projectreactor:reactor-core:3.7.0" // remove when spring boot updated
+    mockitoAgent 'org.mockito:mockito-core'
 }
 
-tasks.named("jar") { enabled = false }
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    jvmArgs("-javaagent:${configurations.mockitoAgent.first()}")
+}
 
-tasks.withType(Test).configureEach { useJUnitPlatform() }
 test {
     testLogging {
         events "failed"
@@ -62,6 +68,7 @@ test {
     }
     finalizedBy jacocoTestReport
 }
+
 jacocoTestReport {
     dependsOn test
     afterEvaluate {
@@ -79,6 +86,8 @@ jacocoTestReport {
         html.outputLocation = layout.buildDirectory.dir("jacocoHtml")
     }
 }
+
+tasks.named("jar") { enabled = false }
 
 bootBuildImage {
     imageName = System.getenv("IMAGE_NAME") ?: "sledger-backend"

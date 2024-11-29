@@ -1,8 +1,11 @@
 package tech.sledger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
 import org.junit.jupiter.api.Test;
@@ -10,14 +13,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.aot.DisabledInAotMode;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.ResendService;
 import java.util.Map;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @DisabledInAotMode
 @SpringBootTest
@@ -29,7 +29,7 @@ public class EmailTests {
     @Autowired
     private EmailService emailService;
 
-    @MockBean
+    @MockitoBean
     private ResendService resendService;
 
     @Test

@@ -3,10 +3,10 @@ package tech.sledger;
 import com.mongodb.assertions.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.aot.DisabledInAotMode;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tech.sledger.model.user.Registration;
 import tech.sledger.model.user.User;
 import tech.sledger.service.EmailService;
@@ -23,7 +23,7 @@ import static tech.sledger.BaseTest.SubmitMethod.POST;
 public class UserBaseTest extends BaseTest {
     @Autowired
     public PasswordEncoder passwordEncoder;
-    @MockBean
+    @MockitoBean
     private EmailService emailService;
 
     @Test

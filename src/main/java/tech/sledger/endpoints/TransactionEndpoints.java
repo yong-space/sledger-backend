@@ -26,9 +26,9 @@ public class TransactionEndpoints {
     private final TransactionService txService;
 
     @PostMapping
-    public <T extends Transaction> List<T> addTransactions(
+    public List<Transaction> addTransactions(
         Authentication auth,
-        @RequestBody List<T> transactions
+        @RequestBody List<Transaction> transactions
     ) {
         bulkAuthorise(auth, transactions);
         return txService.add(transactions);
