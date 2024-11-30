@@ -83,7 +83,7 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
             stage("{ $replaceRoot: { newRoot: { $mergeObjects: [ { $arrayElemAt: [ \"$transactionLookup\", 0 ] }, \"$$ROOT\" ] } } }"),
             lookup("accountIssuer", "issuer.$id", "_id", "issuerLookup"),
             unwind("$issuerLookup"),
-            sort(ASC, "type", "issuerLookup.name", "name"),
+            sort(ASC, "type", "sortOrder", "issuerLookup.name", "name"),
             stage("{ $addFields: { issuerId: \"$issuerLookup._id\" } }"),
             stage("{ $project: { transactionLookup: 0, issuerLookup: 0, owner: 0, issuer: 0 } }")
         );

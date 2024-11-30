@@ -9,6 +9,7 @@ public class AccountDTO {
     private long id;
     private long issuerId;
     private AccountType type;
+    private int sortOrder;
     private String name;
     private boolean visible;
     private BigDecimal balance;

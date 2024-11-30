@@ -19,7 +19,7 @@ java {
 repositories { mavenCentral() }
 
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs.add("-parameters")
+    options.compilerArgs << "-parameters" // << "-Xlint:unchecked" << "-Werror"
 }
 
 def testContainersVersion = "1.20.4"

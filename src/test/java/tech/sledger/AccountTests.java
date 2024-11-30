@@ -99,13 +99,24 @@ public class AccountTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void updateAccounts() throws Exception {
         for (Map<String, Object> account : newAccounts) {
-            mvc.perform(put("/api/account/" + account.get("id") + "/false"))
+            mvc.perform(put("/api/account/" + account.get("id") + "?visible=false"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.visible").value(false));
 
             mvc.perform(request(PUT, "/api/account/" + account.get("id"), account))
                 .andExpect(status().isOk());
         }
+
+        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/down"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/up"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$." + newAccounts.get(0).get("id")).value(0));
+        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/up"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/down"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$." + newAccounts.get(0).get("id")).value(1));
     }
 
     @Test

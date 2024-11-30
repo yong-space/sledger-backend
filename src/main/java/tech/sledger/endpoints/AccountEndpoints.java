@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
@@ -26,6 +27,7 @@ import tech.sledger.service.AccountService;
 import tech.sledger.service.CacheService;
 import tech.sledger.service.UserService;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -82,9 +84,17 @@ public class AccountEndpoints {
 
     @PutMapping("/{accountId}")
     public Account updateAccount(
-        Authentication auth, @PathVariable("accountId") long accountId, @RequestBody NewAccount editAccount
+        Authentication auth,
+        @PathVariable("accountId") long accountId,
+        @RequestBody(required = false) NewAccount editAccount,
+        @RequestParam(required = false) Boolean visible
     ) {
         Account account = userService.authorise(auth, accountId);
+        if (visible != null) {
+            account.setVisible(visible);
+            return accountService.edit(account);
+        }
+
         AccountIssuer issuer = accountIssuerService.get(editAccount.getIssuerId());
         if (issuer == null) {
             throw new ResponseStatusException(BAD_REQUEST, "No such issuer");
@@ -111,12 +121,15 @@ public class AccountEndpoints {
         return accountService.edit(account);
     }
 
-    @PutMapping("/{accountId}/{visible}")
-    public Account updateAccountVisibility(Authentication auth, @PathVariable("accountId") long accountId, @PathVariable("visible") boolean visible) {
-        Account account = accountService.get(accountId);
-        userService.authorise(auth, account.getId());
-        account.setVisible(visible);
-        return accountService.edit(account);
+    public enum SortDirection { up, down }
+    @PutMapping("/{accountId}/sort/{direction}")
+    public Map<Long, Integer> updateAccountSort(
+        Authentication auth,
+        @PathVariable("accountId") long accountId,
+        @PathVariable("direction") SortDirection direction
+    ) {
+        Account account = userService.authorise(auth, accountId);
+        return accountService.updateAccountSort(account, direction);
     }
 
     @DeleteMapping("/{accountId}")
