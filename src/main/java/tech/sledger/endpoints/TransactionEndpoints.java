@@ -2,6 +2,7 @@ package tech.sledger.endpoints;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -77,7 +78,7 @@ public class TransactionEndpoints {
     }
 
     @GetMapping("/{accountId}")
-    public <T extends Transaction> List<T> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
+    public List<Transaction> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
         if (accountId == 0) {
             User user = (User) auth.getPrincipal();
             return txService.listAll(user);
