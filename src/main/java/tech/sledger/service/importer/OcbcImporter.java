@@ -28,8 +28,7 @@ import java.util.Objects;
 
 @Slf4j
 public class OcbcImporter implements Importer {
-    private final DateTimeFormatter dateFormat1 = DateTimeFormatter.ofPattern("d/M/yyyy");
-    private final DateTimeFormatter dateFormat2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("d/M/yyyy");
 
     @Override
     public List<Transaction> process(
@@ -78,7 +77,7 @@ public class OcbcImporter implements Importer {
                     completeTransaction(tx, tx.getRemarks(), templates);
                     output.add(tx);
                 }
-                Instant date = LocalDate.parse(row[0], dateFormat1)
+                Instant date = LocalDate.parse(row[0], dateFormat)
                     .atStartOfDay(ZoneOffset.UTC).toInstant();
                 BigDecimal debit = parseDecimal(row[3]);
                 BigDecimal credit = parseDecimal(row[4]);
@@ -104,7 +103,7 @@ public class OcbcImporter implements Importer {
     private List<Transaction> processCredit(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
         for (String[] row : data) {
-            LocalDate localDate = LocalDate.parse(row[0], dateFormat2);
+            LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
             Template template = matchTemplate(cleanCreditRemarks(row[1]), templates);

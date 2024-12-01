@@ -109,10 +109,10 @@ Credit left,"SGD 321.23"
 Transaction history
 Main credit card OCBC INFINITY Cashback Card 5413-8301-0004-9600
 Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
-2024-09-02 00:00:00.0,-9489 KOUFU PTE LTD    Singapore     SGP,2.60,
-2024-09-02 00:00:00.0,-9489 BUS/MRT 498357444SINGAPORE     SGP,7.62,
-2024-08-31 00:00:00.0,-9489 BUS/MRT CM8880515SINGAPORE     SGP,,1.21
-2024-08-31 00:00:00.0,-9489 PIZZAKAYA-JEM    SINGAPORE     SGP,46.28,
+02/09/2024,-9489 KOUFU PTE LTD    Singapore     SGP,2.60,
+02/09/2024,-9489 BUS/MRT 498357444SINGAPORE     SGP,7.62,
+31/08/2024,-9489 BUS/MRT CM8880515SINGAPORE     SGP,,1.21
+02/09/2024,-9489 PIZZAKAYA-JEM    SINGAPORE     SGP,46.28,
             """.getBytes(UTF_8);
     Map<String, byte[]> ocbcCsv = Map.of(
         "ocbc-cash.csv", ocbcCashCsv,
