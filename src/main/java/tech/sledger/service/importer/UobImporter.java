@@ -107,7 +107,7 @@ public class UobImporter implements Importer {
     ) {
         List<Transaction> output = new ArrayList<>();
 
-        for (int i = 11; i <= data.size(); i++) {
+        for (int i = 11; i < data.size(); i++) {
             List<Object> dataRow = data.get(i);
             LocalDate localDate = LocalDate.parse(dataRow.getFirst().toString(), dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
