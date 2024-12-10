@@ -8,10 +8,11 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.proj
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.stage;
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.aggregation.ConditionalOperators.Cond;
+import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
-import tech.sledger.model.account.Account;
 import tech.sledger.model.dto.CreditCardStatement;
 import tech.sledger.model.dto.MonthlyBalance;
 import tech.sledger.model.tx.Transaction;
@@ -24,17 +25,31 @@ public class TransactionOpsRepoImpl implements TransactionOpsRepo {
 
     @Override
     public List<CreditCardStatement> getCreditCardBills(long accountId) {
+        Criteria creditCardBill = Criteria.where("_id.category").ne("Credit Card Bill");
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("accountId").is(accountId)),
-            match(Criteria.where("category").ne("Credit Card Bill")),
-            stage("""
-                { $group: {
-                    _id: "$billingMonth",
-                    amount: { $sum: { $toDouble: "$amount" } },
-                    transactions: { $sum: 1 }
-                }}
-            """),
-            sort(ASC, "_id")
+            group("billingMonth", "category")
+                .sum(ConvertOperators.valueOf("amount").convertToDouble()).as("totalAmount")
+                .count().as("transactions"),
+            group("_id.billingMonth")
+                .sum("$totalAmount").as("net")
+                .sum(Cond.when(creditCardBill).then("$totalAmount").otherwise(0))
+                    .as("amount")
+                .sum(Cond.when(creditCardBill).then("$transactions").otherwise(0))
+                    .as("transactions"),
+            _ -> Document.parse("""
+            {
+                $setWindowFields: {
+                    sortBy: { _id: 1 },
+                    output: {
+                        balance: {
+                            $sum: "$net",
+                            window: { documents: ["unbounded", "current"] }
+                        }
+                    }
+                }
+            }
+            """)
         ), Transaction.class, CreditCardStatement.class).getMappedResults();
     }
 

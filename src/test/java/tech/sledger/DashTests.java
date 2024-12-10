@@ -141,10 +141,10 @@ public class DashTests {
     public void insights() throws Exception {
         mvc.perform(get("/api/dash/insights"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.series[?(@.id == '+Insight A')].data[2]").value(6.0))
+            .andExpect(jsonPath("$.series[?(@.id == '+Insight A')].data[2]").value(6))
             .andExpect(jsonPath("$.series[?(@.id == '-Insight B')].stack").value("Debit"))
-            .andExpect(jsonPath("$.summary[?(@.category == 'Insight A')].average").value(1.0))
-            .andExpect(jsonPath("$.summary[?(@.category == 'Insight B')].average").value(-2.0));
+            .andExpect(jsonPath("$.summary[?(@.category == 'Insight A')].average").value(1))
+            .andExpect(jsonPath("$.summary[?(@.category == 'Insight B')].average").value(-2));
     }
 
     @Test
@@ -155,7 +155,7 @@ public class DashTests {
         mvc.perform(get("/api/dash/credit-card-bills/" + creditAccountId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$.[?(@.month == '" + month + "')].amount").value(-2.0))
+            .andExpect(jsonPath("$.[?(@.month == '" + month + "')].amount").value(-2))
             .andExpect(jsonPath("$.[?(@.month == '" + month + "')].transactions").value(4));
     }
 

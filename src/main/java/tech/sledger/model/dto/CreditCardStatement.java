@@ -8,5 +8,7 @@ public record CreditCardStatement(
     @Id
     Instant month,
     BigDecimal amount,
+    BigDecimal net,
+    BigDecimal balance,
     int transactions
 ) {}
