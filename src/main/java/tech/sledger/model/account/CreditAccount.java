@@ -13,6 +13,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("account")
 public class CreditAccount extends CashAccount {
     private int billingCycle;
-    private long paymentAccountId;
-    private String paymentRemarks;
+    private int billingMonthOffset;
 }

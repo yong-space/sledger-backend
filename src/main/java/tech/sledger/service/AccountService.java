@@ -30,13 +30,6 @@ public class AccountService {
         long id = (previous == null) ? 1 : previous.getId() + 1;
         account.setId(id);
         account.setSortOrder((previous == null) ? 0 : previous.getSortOrder() + 1);
-
-        if (account instanceof CreditAccount creditAccount && creditAccount.getPaymentAccountId() > 0) {
-            Account paymentAccount = get(creditAccount.getPaymentAccountId());
-            if (paymentAccount == null || !account.getOwner().equals(paymentAccount.getOwner())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid payment account id");
-            }
-        }
         return accountRepo.save(account);
     }
 

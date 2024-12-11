@@ -11,9 +11,8 @@ public class NewAccount {
     private AccountType type;
     private long issuerId;
     private int billingCycle;
+    private int billingMonthOffset;
     private boolean multiCurrency;
-    private long paymentAccount;
-    private String paymentRemarks;
     private BigDecimal ordinaryRatio;
     private BigDecimal specialRatio;
     private BigDecimal medisaveRatio;

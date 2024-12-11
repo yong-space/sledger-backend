@@ -68,9 +68,8 @@ public class TransactionTests extends BaseTest {
             .owner(user)
             .type(AccountType.Credit)
             .billingCycle(1)
-            .paymentAccountId(cashAccountId)
+            .billingMonthOffset(0)
             .multiCurrency(false)
-            .paymentRemarks("Credit Card Bill")
             .build()).getId();
 
         cpfAccountId = accountService.add(CPFAccount.builder()
