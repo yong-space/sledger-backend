@@ -111,10 +111,10 @@ public class UobImporter implements Importer {
             List<Object> dataRow = data.get(i);
             LocalDate localDate = LocalDate.parse(dataRow.getFirst().toString(), dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-            Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
             String remarks = dataRow.get(2).toString().trim();
             BigDecimal amount = parseDecimal(dataRow.get(6).toString());
             Template template = matchTemplate(remarks, templates);
+            Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account, template.getCategory());
 
             if (amount.compareTo(BigDecimal.ZERO) == 0) {
                 continue;

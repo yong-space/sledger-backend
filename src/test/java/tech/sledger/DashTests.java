@@ -118,7 +118,6 @@ public class DashTests {
             .type(AccountType.Credit)
             .billingCycle(1)
             .multiCurrency(false)
-            .paymentRemarks("Credit Card Bill")
             .build()).getId();
 
         List<Map<String, ?>> transactions = List.of(

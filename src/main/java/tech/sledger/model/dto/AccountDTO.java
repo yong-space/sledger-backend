@@ -16,8 +16,7 @@ public class AccountDTO {
     private long transactions;
     private boolean multiCurrency;
     private Integer billingCycle;
-    private Long paymentAccountId;
-    private String paymentRemarks;
+    private Integer billingMonthOffset;
     private BigDecimal ordinaryRatio;
     private BigDecimal specialRatio;
     private BigDecimal medisaveRatio;

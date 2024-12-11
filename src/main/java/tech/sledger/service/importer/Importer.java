@@ -32,13 +32,21 @@ public interface Importer {
             );
     }
 
-    default Instant getBillingMonth(LocalDate date, CreditAccount account) {
+    default Instant getBillingMonth(LocalDate date, CreditAccount account, String category) {
         int cycle = account.getBillingCycle();
         LocalDate localMonth = date.withDayOfMonth(1);
+        long offset = account.getBillingMonthOffset();
         if (date.getDayOfMonth() < cycle) {
-            localMonth = localMonth.minusMonths(1).withDayOfMonth(1);
+            offset -= 1;
         }
-        return localMonth.atStartOfDay(ZoneOffset.UTC).toInstant();
+        if (category.equalsIgnoreCase("Credit Card Bill")) {
+            offset -= 1;
+        }
+        return localMonth
+            .plusMonths(offset)
+            .withDayOfMonth(1)
+            .atStartOfDay(ZoneOffset.UTC)
+            .toInstant();
     }
 
     private String toProperCase(String s) {

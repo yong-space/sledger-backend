@@ -55,8 +55,7 @@ public class AccountTests extends BaseTest {
                 "name", "creditAccount",
                 "type", "Credit",
                 "issuerId", accountIssuer.getId(),
-                "billingCycle", 15L,
-                "paymentAccount", myAccount.getId()
+                "billingCycle", 15L
             )),
             new HashMap<>(Map.of(
                 "name", "creditAccountNoPayment",
@@ -138,26 +137,6 @@ public class AccountTests extends BaseTest {
         mvc.perform(request(PUT, "/api/account/" + badEditAccount.get("id"), badEditAccount))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("No such issuer"));
-
-        Map<String, ?> badPaymentAccount = Map.of(
-            "name", "creditAccount",
-            "type", "Credit",
-            "issuerId", accountIssuer.getId(),
-            "paymentAccount", 1234567
-        );
-        mvc.perform(request(POST, "/api/account", badPaymentAccount))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Invalid payment account id"));
-
-        Map<String, ?> badPaymentAccount2 = Map.of(
-            "name", "creditAccount",
-            "type", "Credit",
-            "issuerId", accountIssuer.getId(),
-            "paymentAccount", someoneElsesAccount.getId()
-        );
-        mvc.perform(request(POST, "/api/account", badPaymentAccount2))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Invalid payment account id"));
 
         Map<String, Object> noIssuerAccount = Map.of("name", "badAccount");
         mvc.perform(request(POST, "/api/account", noIssuerAccount))

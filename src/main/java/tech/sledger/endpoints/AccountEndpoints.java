@@ -60,8 +60,7 @@ public class AccountEndpoints {
                 .name(newAccount.getName())
                 .type(newAccount.getType())
                 .billingCycle(newAccount.getBillingCycle())
-                .paymentAccountId(newAccount.getPaymentAccount())
-                .paymentRemarks(newAccount.getPaymentRemarks())
+                .billingMonthOffset(newAccount.getBillingMonthOffset())
                 .owner(user)
                 .multiCurrency(newAccount.isMultiCurrency())
                 .build();
@@ -105,8 +104,7 @@ public class AccountEndpoints {
             creditAccount.setName(editAccount.getName());
             creditAccount.setMultiCurrency(editAccount.isMultiCurrency());
             creditAccount.setBillingCycle(editAccount.getBillingCycle());
-            creditAccount.setPaymentAccountId(editAccount.getPaymentAccount());
-            creditAccount.setPaymentRemarks(editAccount.getPaymentRemarks());
+            creditAccount.setBillingMonthOffset(editAccount.getBillingMonthOffset());
         } else if (account instanceof CashAccount cashAccount) {
             cashAccount.setIssuer(issuer);
             cashAccount.setName(editAccount.getName());

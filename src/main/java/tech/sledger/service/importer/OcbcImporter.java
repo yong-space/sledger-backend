@@ -105,8 +105,8 @@ public class OcbcImporter implements Importer {
         for (String[] row : data) {
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-            Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account);
             Template template = matchTemplate(cleanCreditRemarks(row[1]), templates);
+            Instant billingMonth = getBillingMonth(localDate, (CreditAccount) account, template.getCategory());
             BigDecimal debit = parseDecimal(row[2]);
             BigDecimal credit = parseDecimal(row[3]);
 
