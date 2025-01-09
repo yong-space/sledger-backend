@@ -74,6 +74,7 @@ public class ImportTests {
     private long uobCashAccountId;
     private long uobCreditAccountId;
     private long uobCreditAccountId2;
+    private long grabAccountId;
     private long cpfAccountId;
     byte[] ocbcCashCsv = """
 Account details for:,360 Account 111-111111-001
@@ -107,17 +108,27 @@ Credit limit,"SGD 1,234.56"
 Credit left,"SGD 321.23"
 
 Transaction history
-Main credit card OCBC INFINITY Cashback Card 5413-8301-0004-9600
+Main credit card OCBC INFINITY Cashback Card 1111-1111-1111-1111
 Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
 02/09/2024,-9489 KOUFU PTE LTD    Singapore     SGP,2.60,
 02/09/2024,-9489 BUS/MRT 498357444SINGAPORE     SGP,7.62,
 31/08/2024,-9489 BUS/MRT CM8880515SINGAPORE     SGP,,1.21
 02/09/2024,-9489 PIZZAKAYA-JEM    SINGAPORE     SGP,46.28,
+02/09/2024,credit card bill,,100
             """.getBytes(UTF_8);
-    Map<String, byte[]> ocbcCsv = Map.of(
+    byte[] grabCsv = """
+Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Amount
+"05 Jan 2025, 06:08PM",A-7BP78NGGWJ7H,"Somewhere","Somewhere Else",JustGrab,SGD,10.2
+"18 Oct 2024, 03:29PM",A-7XJ9MW9WWF6S,"Somewhere","Somewhere Else",4 Seats GrabCar,SGD,28.1
+"14 Sep 2024, 05:19PM",A-6T7HBO2GWG7W,"Somewhere","Somewhere Else",GrabPet,SGD,23.7
+"04 Jan 2025, 04:35PM",A-7BKQVTMWWH5E,"Somewhere","Somewhere Else",GrabMart,SGD,105.9
+"19 Dec 2024, 08:19PM",A-79JI2BCWWFQS,"Somewhere","Somewhere Else",GrabFood,SGD,18.8
+            """.getBytes(UTF_8);
+    Map<String, byte[]> csvFiles = Map.of(
         "ocbc-cash.csv", ocbcCashCsv,
         "ocbc-cash-2.csv", ocbcCashCsv2,
-        "ocbc-credit.csv", ocbcCreditCsv
+        "ocbc-credit.csv", ocbcCreditCsv,
+        "grab.csv", grabCsv
     );
 
     @PostConstruct
@@ -129,6 +140,10 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
         AccountIssuer uobIssuer = new AccountIssuer();
         uobIssuer.setName("UOB");
         uobIssuer = accountIssuerService.add(uobIssuer);
+
+        AccountIssuer grabIssuer = new AccountIssuer();
+        grabIssuer.setName("Grab");
+        grabIssuer = accountIssuerService.add(grabIssuer);
 
         AccountIssuer cpfIssuer = new AccountIssuer();
         cpfIssuer.setName("CPF");
@@ -182,7 +197,12 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .type(AccountType.Credit)
             .billingCycle(25)
             .build()).getId();
-
+        grabAccountId = accountService.add(CashAccount.builder()
+            .issuer(grabIssuer)
+            .name("My Grab Account")
+            .owner(user)
+            .type(AccountType.Cash)
+            .build()).getId();
         cpfAccountId = accountService.add(CPFAccount.builder()
             .issuer(cpfIssuer)
             .name("CPF")
@@ -190,14 +210,16 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .type(AccountType.Retirement)
             .build()).getId();
 
-        Template template = Template.builder()
+        Template template1 = Template.builder()
             .id(1).reference("shop").remarks("Stuff").category("Gifts").subCategory("Shopping").build();
-        templateService.add(user, List.of(template));
+        Template template2 = Template.builder()
+            .id(2).reference("credit card bill").remarks("Credit Card Bill").category("Credit Card Bill").subCategory("Credit Card Bill").build();
+        templateService.add(user, List.of(template1, template2));
     }
 
     private MockMultipartFile mockFile(String filename) throws IOException {
         InputStream inputStream = filename.endsWith(".csv") ?
-            new ByteArrayInputStream(ocbcCsv.get(filename)) :
+            new ByteArrayInputStream(csvFiles.get(filename)) :
             new ClassPathResource(filename).getInputStream();
         return new MockMultipartFile(
             "file",
@@ -303,7 +325,7 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .file(mockFile("ocbc-credit.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(4)))
+            .andExpect(jsonPath("$", iterableWithSize(5)))
             .andExpect(jsonPath("$.[?(@.remarks == 'Bus/Mrt Cm8880515')]").exists());
 
         request = MockMvcRequestBuilders
@@ -350,5 +372,24 @@ Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].amount").value("100.0"))
             .andExpect(jsonPath("$.[0].billingMonth").value("2023-04-01T00:00:00Z"));
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void grab() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(grabAccountId).getBytes()))
+            .file(mockFile("grab.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(5)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Grab: Somewhere to Somewhere Else')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Transport')]").exists())
+            .andExpect(jsonPath("$.[?(@.subCategory == 'Private')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'GrabFood: Somewhere')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'GrabMart: Somewhere')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Groceries')]").exists())
+            .andExpect(jsonPath("$.[?(@.category == 'Food')]").exists());
     }
 }

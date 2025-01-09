@@ -20,6 +20,7 @@ import tech.sledger.model.tx.CreditTransaction;
 import tech.sledger.model.tx.ForeignCashTransaction;
 import tech.sledger.model.tx.ForeignCreditTransaction;
 import tech.sledger.model.tx.Transaction;
+import tech.sledger.service.importer.GrabImporter;
 import tech.sledger.service.importer.OcbcImporter;
 import tech.sledger.service.importer.UobImporter;
 import java.util.List;
@@ -38,6 +39,7 @@ public class AotHints implements RuntimeHintsRegistrar {
             ChartResponse.class,
             OcbcImporter.class,
             UobImporter.class,
+            GrabImporter.class,
             HSSFWorkbook.class,
             DefaultFlowMessageFactory.class,
             ParameterizedMessageFactory.class
