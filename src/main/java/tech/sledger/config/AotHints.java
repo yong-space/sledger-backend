@@ -14,6 +14,8 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.lang.NonNull;
 import tech.sledger.model.dto.CategoryInsight;
 import tech.sledger.model.dto.ChartResponse;
+import tech.sledger.model.portfolio.PortfolioSnapshot;
+import tech.sledger.model.portfolio.PortfolioSummary;
 import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CpfTransaction;
 import tech.sledger.model.tx.CreditTransaction;
@@ -41,6 +43,8 @@ public class AotHints implements RuntimeHintsRegistrar {
             UobImporter.class,
             GrabImporter.class,
             HSSFWorkbook.class,
+            PortfolioSummary.class,
+            PortfolioSnapshot.class,
             DefaultFlowMessageFactory.class,
             ParameterizedMessageFactory.class
         ).forEach(c -> {
