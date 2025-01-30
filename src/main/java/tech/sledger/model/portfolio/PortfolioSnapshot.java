@@ -23,6 +23,4 @@ public class PortfolioSnapshot {
     private BigDecimal cash;
     private BigDecimal fx;
     private Instant time;
-    private String broker;
-    private String brokerColour;
 }

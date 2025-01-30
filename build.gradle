@@ -1,9 +1,9 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.51.0"
-    id "org.springframework.boot" version "3.4.0"
-    id "io.spring.dependency-management" version "1.1.6"
-    id "io.freefair.lombok" version "8.11"
-    id "org.graalvm.buildtools.native" version "0.10.3"
+    id "com.github.ben-manes.versions" version "0.52.0"
+    id "org.springframework.boot" version "3.4.2"
+    id "io.spring.dependency-management" version "1.1.7"
+    id "io.freefair.lombok" version "8.12"
+    id "org.graalvm.buildtools.native" version "0.10.4"
     id "java"
     id "jacoco"
 }
@@ -32,23 +32,22 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "com.resend:resend-java:4.0.0"
-    implementation "org.bouncycastle:bcprov-jdk18on:1.79"
-    implementation "com.auth0:java-jwt:4.4.0"
-    implementation ("com.opencsv:opencsv:5.9") {
+    implementation "com.resend:resend-java:4.1.1"
+    implementation "org.bouncycastle:bcprov-jdk18on:1.80"
+    implementation "com.auth0:java-jwt:4.5.0"
+    implementation ("com.opencsv:opencsv:5.10") {
         exclude group: "commons-logging", module: "commons-logging"
     }
-    implementation "org.apache.poi:poi:5.3.0"
+    implementation "org.apache.poi:poi:5.4.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-    testRuntimeOnly "org.mockito:mockito-inline:+"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.3"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.11.3"
+    testRuntimeOnly "org.mockito:mockito-inline:5.2.0"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
-    runtimeOnly "io.projectreactor:reactor-core:3.7.0" // remove when spring boot updated
     mockitoAgent 'org.mockito:mockito-core'
 }
 
@@ -60,7 +59,7 @@ tasks.withType(Test).configureEach {
 test {
     testLogging {
         events "failed"
-        exceptionFormat "full"
+        exceptionFormat = "full"
     }
     reports {
         junitXml.required = false
