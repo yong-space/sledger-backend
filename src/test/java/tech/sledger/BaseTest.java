@@ -95,6 +95,7 @@ public class BaseTest {
             .displayName("Basic User 2")
             .username("basic-user2@company.com")
             .password(passwordEncoder.encode("B4SicUs3r!"))
+            .authorities(List.of(new SimpleGrantedAuthority("ROLE_TRADING")))
             .enabled(true)
             .build());
         User u3 = userRepo.save(User.builder()

@@ -25,10 +25,11 @@ import java.time.Instant;
 @RequiredArgsConstructor
 @RequestMapping("/api/portfolio")
 public class PortfolioSnapshotEndpoints {
-    @Value("${portfolio-endpoint}")
+    @Value("${portfolio-endpoint:http://portfolio}")
     public String portfolioEndpoint;
     public final PortfolioSnapshotRepo portfolioSnapshotRepo;
     public final ObjectMapper mapper;
+    public final HttpClient httpClient;
 
     @GetMapping
     public PortfolioSnapshot getSnapshot(Authentication auth) {
@@ -51,19 +52,17 @@ public class PortfolioSnapshotEndpoints {
                 .build();
         }
 
-        try (HttpClient client = HttpClient.newHttpClient()) {
+        try {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(portfolioEndpoint))
                 .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Failed to fetch portfolio summary");
             }
             PortfolioSummary portfolio = mapper.readValue(response.body(), new TypeReference<>() {});
             snapshot.setCash(portfolio.getCash());
             snapshot.setHoldings(portfolio.getHoldings());
-            snapshot.setBroker(portfolio.getBroker());
-            snapshot.setBrokerColour(portfolio.getBrokerColour());
             snapshot.setFx(portfolio.getFx());
             snapshot.setTime(Instant.now());
             portfolioSnapshotRepo.save(snapshot);
