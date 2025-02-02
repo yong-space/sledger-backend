@@ -19,7 +19,6 @@ import static tech.sledger.BaseTest.SubmitMethod.PUT;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AccountTests extends BaseTest {
     private static AccountIssuer accountIssuer;
-    private static Account someoneElsesAccount;
     private static List<Map<String, Object>> newAccounts;
 
     @Test
@@ -29,20 +28,6 @@ public class AccountTests extends BaseTest {
         accountIssuer = new AccountIssuer();
         accountIssuer.setName("b");
         accountIssuer = accountIssuerService.add(accountIssuer);
-
-        Account myAccount = accountService.add(CashAccount.builder()
-            .issuer(accountIssuer)
-            .name("My Account")
-            .type(AccountType.Cash)
-            .owner(userService.get("basic-user@company.com"))
-            .build());
-
-        someoneElsesAccount = accountService.add(CashAccount.builder()
-            .issuer(accountIssuer)
-            .name("Someone Else's Account")
-            .type(AccountType.Cash)
-            .owner(userService.get("admin-user@company.com"))
-            .build());
 
         newAccounts = List.of(
             new HashMap<>(Map.of(
@@ -106,16 +91,17 @@ public class AccountTests extends BaseTest {
                 .andExpect(status().isOk());
         }
 
-        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/down"))
+        String id = newAccounts.get(1).get("id").toString();
+        mvc.perform(put("/api/account/" + id + "/sort/up"))
             .andExpect(status().isBadRequest());
-        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/up"))
+        mvc.perform(put("/api/account/" + id + "/sort/down"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$." + newAccounts.get(0).get("id")).value(0));
-        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/up"))
+            .andExpect(jsonPath("$." + id).value(1));
+        mvc.perform(put("/api/account/" + id + "/sort/down"))
             .andExpect(status().isBadRequest());
-        mvc.perform(put("/api/account/" + newAccounts.get(0).get("id") + "/sort/down"))
+        mvc.perform(put("/api/account/" + id + "/sort/up"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$." + newAccounts.get(0).get("id")).value(1));
+            .andExpect(jsonPath("$." + id).value(0));
     }
 
     @Test

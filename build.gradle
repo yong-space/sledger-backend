@@ -40,7 +40,6 @@ dependencies {
     }
     implementation "org.apache.poi:poi:5.4.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-    testRuntimeOnly "org.mockito:mockito-inline:5.2.0"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
     testImplementation "org.springframework.boot:spring-boot-starter-test"

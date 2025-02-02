@@ -28,7 +28,8 @@ public class AccountService {
         Account previous = accountRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
         account.setId(id);
-        account.setSortOrder((previous == null) ? 0 : previous.getSortOrder() + 1);
+        Account previousOfType = accountRepo.findFirstByOwnerAndTypeOrderBySortOrderDesc(account.getOwner(), account.getType());
+        account.setSortOrder((previousOfType == null) ? 0 : previousOfType.getSortOrder() + 1);
         return accountRepo.save(account);
     }
 

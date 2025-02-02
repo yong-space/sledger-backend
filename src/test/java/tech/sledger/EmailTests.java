@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.aot.DisabledInAotMode;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tech.sledger.service.EmailService;
@@ -20,12 +19,7 @@ import tech.sledger.service.ResendService;
 import java.util.Map;
 
 @DisabledInAotMode
-@SpringBootTest
-public class EmailTests {
-    static {
-        System.setProperty("MONGO_URI", "mongodb://localhost/sledger");
-    }
-
+public class EmailTests extends BaseTest {
     @Autowired
     private EmailService emailService;
 

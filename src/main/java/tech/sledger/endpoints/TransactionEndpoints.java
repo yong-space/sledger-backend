@@ -1,8 +1,8 @@
 package tech.sledger.endpoints;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,9 +14,8 @@ import tech.sledger.model.tx.Transaction;
 import tech.sledger.model.user.User;
 import tech.sledger.service.TransactionService;
 import tech.sledger.service.UserService;
+import java.time.Instant;
 import java.util.List;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @RestController
@@ -49,7 +48,7 @@ public class TransactionEndpoints {
         Authentication auth,
         @RequestBody BulkTransactionUpdate update
     ) {
-        bulkValidateAndAuthorise(auth, update.ids());
+        bulkValidateAndAuthoriseMultiAccounts(auth, update.ids());
         List<Transaction> transactions = txService.get(update.ids());
         for (Transaction t : transactions) {
             if (t instanceof CashTransaction cashTx) {
@@ -78,21 +77,57 @@ public class TransactionEndpoints {
     }
 
     @GetMapping("/{accountId}")
-    public List<Transaction> listTransactions(Authentication auth, @PathVariable("accountId") long accountId) {
+    public List<? extends Transaction> listTransactions(
+        Authentication auth,
+        @PathVariable("accountId") long accountId,
+        @RequestParam(required = false) String q,
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false) String subCategory,
+        @RequestParam(required = false) Instant from,
+        @RequestParam(required = false) Instant to
+    ) {
         if (accountId == 0) {
             User user = (User) auth.getPrincipal();
+            if (q != null) {
+                return txService.listAll(user, q);
+            }
+            if (from != null && to != null) {
+                if (subCategory != null) {
+                    return txService.listAll(user, null, subCategory, from, to);
+                }
+                if (category != null) {
+                    return txService.listAll(user, category, null, from, to);
+                }
+                return txService.listAll(user, null, null, from, to);
+            }
+            if (category != null || subCategory != null) {
+                throw new ResponseStatusException(BAD_REQUEST, "Date range is required");
+            }
             return txService.listAll(user);
         }
         Account account = userService.authorise(auth, accountId);
+        if (from != null && to != null) {
+            return txService.listByDates(account, from, to);
+        }
         return txService.list(account);
     }
 
     private List<Transaction> bulkValidateAndAuthorise(Authentication auth, List<Long> transactionIds) {
         List<Transaction> transactions = txService.get(transactionIds);
         if (transactionIds.size() != transactions.size()) {
-            throw new ResponseStatusException(NOT_FOUND, "Some transaction ids are not valid");
+            throw new ResponseStatusException(BAD_REQUEST, "Some transaction ids are not valid");
         }
         return bulkAuthorise(auth, transactions);
+    }
+
+    private void bulkValidateAndAuthoriseMultiAccounts(Authentication auth, List<Long> transactionIds) {
+        List<Transaction> transactions = txService.get(transactionIds);
+        if (transactionIds.size() != transactions.size()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Some transaction ids are not valid");
+        }
+        transactions.stream()
+            .map(Transaction::getAccountId)
+            .distinct().forEach(accountId -> userService.authorise(auth, accountId));
     }
 
     private <T extends Transaction> List<T> bulkAuthorise(Authentication auth, List<T> transactions) {
@@ -100,7 +135,7 @@ public class TransactionEndpoints {
         if (accounts.size() > 1) {
             throw new ResponseStatusException(BAD_REQUEST, "Bulk operations can only be performed on transactions under the same account");
         }
-        userService.authorise(auth, accounts.get(0));
+        userService.authorise(auth, accounts.getFirst());
         return transactions;
     }
 }

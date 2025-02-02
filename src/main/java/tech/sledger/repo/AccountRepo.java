@@ -13,4 +13,5 @@ public interface AccountRepo extends MongoRepository<Account, Long>, AccountOpsR
     List<Account> findAllByIssuer(AccountIssuer issuer);
     List<Account> findAllByOwnerAndTypeIn(User user, List<AccountType> type);
     List<Account> findAllByOwnerAndTypeOrderBySortOrder(User user, AccountType type);
+    Account findFirstByOwnerAndTypeOrderBySortOrderDesc(User user, AccountType type);
 }

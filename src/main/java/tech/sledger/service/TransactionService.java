@@ -1,12 +1,14 @@
 package tech.sledger.service;
 
 import static java.util.Comparator.comparing;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Transaction;
 import tech.sledger.model.user.User;
@@ -41,10 +43,35 @@ public class TransactionService {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
 
+    public <T extends Transaction> List<T> listByDates(Account account, Instant from, Instant to) {
+        return txRepo.findAllByAccountIdAndDateBetweenOrderByDate(account.getId(), from, to);
+    }
+
     public <T extends Transaction> List<T> listAll(User user) {
         List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
             .stream().map(Account::getId).toList();
         return txRepo.findAllByAccountIdInOrderByDate(accounts);
+    }
+
+    public List<? extends Transaction> listAll(User user, String remarks) {
+        if (remarks.length() < 3) {
+            throw new ResponseStatusException(BAD_REQUEST, "Remarks search must be at least 3 characters");
+        }
+        List<Long> accountIds = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
+            .stream().map(Account::getId).toList();
+        return txRepo.findAllByAccountIdInAndRemarksContainingIgnoreCaseOrderByDate(accountIds, remarks);
+    }
+
+    public List<? extends Transaction> listAll(User user, String category, String subCategory, Instant from, Instant to) {
+        List<Long> accountIds = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
+            .stream().map(Account::getId).toList();
+        if (category == null && subCategory == null) {
+            return txRepo.listAllByDateRange(accountIds, from, to);
+        }
+        if (category != null) {
+            return txRepo.listAllByCategoryAndDateRange(accountIds, category, from, to);
+        }
+        return txRepo.listAllBySubCategoryAndDateRange(accountIds, subCategory, from, to);
     }
 
     @Transactional
@@ -63,7 +90,7 @@ public class TransactionService {
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
         long accountId = transactions.getFirst().getAccountId();
         // Get existing transactions in range
-        List<T> existing = txRepo.findAllByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore);
+        List<T> existing = txRepo.findAllByAccountIdAndDateBetweenOrderByDate(accountId, rangeAfter, rangeBefore);
 
         log.debug("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
 

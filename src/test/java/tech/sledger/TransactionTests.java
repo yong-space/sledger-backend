@@ -96,18 +96,28 @@ public class TransactionTests extends BaseTest {
     @Test
     @Order(2)
     @WithUserDetails("basic-user@company.com")
-    public void addTxBadAccount() throws Exception {
-        Map<String, Object> payload = Map.of(
+    public void addTxBadInput() throws Exception {
+        Map<String, Object> payload = new HashMap<>(Map.of(
             "@type", "cash",
             "date", Instant.now(),
-            "account", Map.of("id", 1234),
+            "accountId", 1234,
             "amount", 1,
             "remarks", "Hello"
-        );
+        ));
 
         mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.detail").value("No such account id"));
+
+        Map<String, Object> payload2 = new HashMap<>(payload);
+        payload2.put("accountId", cashAccountId);
+        Map<String, Object> payload3 = new HashMap<>(payload);
+        payload3.put("accountId", creditAccountId);
+        payload3.put("@type", "credit");
+
+        mvc.perform(request(POST, "/api/transaction", List.of(payload2, payload3)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Bulk operations can only be performed on transactions under the same account"));
     }
 
     @Test
@@ -134,12 +144,12 @@ public class TransactionTests extends BaseTest {
     public void addCreditTx() throws Exception {
         Map<String, Object> payload = Map.of(
             "@type", "credit",
-            "date", Instant.now(),
+            "date", "2024-01-01T00:00:00.000Z",
             "category", "Credit Category",
             "billingMonth", Instant.now(),
             "accountId", creditAccountId,
             "amount", 1,
-            "remarks", "Credit"
+            "remarks", "cali"
         );
 
         String result1 = mvc.perform(request(POST, "/api/transaction", List.of(payload)))
@@ -194,6 +204,51 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[?(@.category == 'Cash Category')]").exists())
             .andExpect(jsonPath("$.[?(@.category == 'Credit Category')]").exists());
+
+        mvc.perform(get("/api/transaction/0?q=ca"))
+            .andExpect(status().isBadRequest());
+
+        mvc.perform(get("/api/transaction/0?category=abc"))
+            .andExpect(status().isBadRequest());
+
+        mvc.perform(get("/api/transaction/0?subCategory=abc"))
+            .andExpect(status().isBadRequest());
+
+        mvc.perform(get("/api/transaction/0?q=cali"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(4)));
+
+        mvc.perform(get("/api/transaction/0?category=Credit Category&from=2024-01-01T00:00:00.000Z&to=2024-01-02T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
+
+        mvc.perform(get("/api/transaction/0?subCategory=Cash Sub-category&from=2022-01-01T00:00:00.000Z&to=2022-01-02T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
+
+        mvc.perform(get("/api/transaction/0?from=2022-01-01T00:00:00.000Z&to=2022-01-02T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
+
+        mvc.perform(get("/api/transaction/0?from=2022-01-01T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(4)));
+
+        mvc.perform(get("/api/transaction/0?to=2022-01-01T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(4)));
+
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2022-01-01T00:00:00.000Z&to=2022-01-02T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
+
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2022-01-01T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
+
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?to=2022-01-01T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)));
     }
 
     @Test
@@ -297,6 +352,9 @@ public class TransactionTests extends BaseTest {
             "category", "Bulk Category",
             "subCategory", "Bulk Sub-category"
         );
+        mvc.perform(request(PUT, "/api/transaction/bulk", Map.of("ids", List.of(123))))
+            .andExpect(status().isBadRequest());
+
         mvc.perform(request(PUT, "/api/transaction/bulk", payload1))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Bulk Remarks"));
@@ -322,17 +380,6 @@ public class TransactionTests extends BaseTest {
         mvc.perform(request(PUT, "/api/transaction/bulk", Map.of("ids", List.of(creditId1, creditId2))))
             .andExpect(status().isOk());
 
-        Map<String, Object> payload3 = Map.of(
-            "ids", List.of(cashId1, creditId2),
-            "remarks", "Bulk Remarks",
-            "category", "Bulk Category",
-            "subCategory", "Bulk Sub-category",
-            "billingMonth", "2023-01-01T00:00:00.000Z"
-        );
-        mvc.perform(request(PUT, "/api/transaction/bulk", payload3))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.detail").value("Bulk operations can only be performed on transactions under the same account"));
-
         Map<String, Object> payload4 = Map.of("ids", List.of(cpfId));
         mvc.perform(request(PUT, "/api/transaction/bulk", payload4))
             .andExpect(status().isOk());
@@ -349,6 +396,6 @@ public class TransactionTests extends BaseTest {
             .andExpect(status().isOk());
 
         mvc.perform(delete("/api/transaction/" + cashId1))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isBadRequest());
     }
 }
