@@ -20,7 +20,7 @@ public class Template {
     @Size(min = 3, max = 30, message = "Reference should be between 3 and 30 characters")
     private String reference;
     @NotNull(message = "Remarks cannot be null")
-    @Size(min = 3, max = 30, message = "Remarks should be between 3 and 30 characters")
+    @Size(min = 3, max = 50, message = "Remarks should be between 3 and 50 characters")
     private String remarks;
     @NotNull(message = "Category cannot be null")
     @Size(min = 3, max = 30, message = "Category should be between 3 and 30 characters")

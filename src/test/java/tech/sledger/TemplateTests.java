@@ -49,7 +49,7 @@ public class TemplateTests extends BaseTest {
         mvc.perform(request(POST, "/api/template", List.of(template2)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail", containsString("Reference should be between 3 and 30 characters")))
-            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 50 characters")))
             .andExpect(jsonPath("$.detail", containsString("Category should be between 3 and 30 characters")))
             .andExpect(jsonPath("$.detail", containsString("Sub-category should be between 3 and 30 characters")));
 
@@ -62,7 +62,7 @@ public class TemplateTests extends BaseTest {
         mvc.perform(request(POST, "/api/template", List.of(template3)))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail", containsString("Reference should be between 3 and 30 characters")))
-            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 30 characters")))
+            .andExpect(jsonPath("$.detail", containsString("Remarks should be between 3 and 50 characters")))
             .andExpect(jsonPath("$.detail", containsString("Category should be between 3 and 30 characters")))
             .andExpect(jsonPath("$.detail", containsString("Sub-category should be between 3 and 30 characters")));
     }
