@@ -92,7 +92,7 @@ bootBuildImage {
     publish = System.getenv("DOCKER_PASS") != null
     createdDate = "now"
     environment = [
-        "BP_JVM_VERSION": "23",
+        "BP_JVM_VERSION": "24",
         "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true",
         "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets"
     ]
