@@ -68,7 +68,7 @@ public class BaseTest {
     public enum SubmitMethod { PUT, POST }
 
     @Container
-    static MongoDBContainer mongodb = new MongoDBContainer("mongo:7");
+    static MongoDBContainer mongodb = new MongoDBContainer("mongo:8");
 
     @DynamicPropertySource
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
