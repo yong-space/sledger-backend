@@ -1,16 +1,22 @@
 package tech.sledger.service;
 
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Helper;
+import com.github.jknack.handlebars.Options;
+import com.github.jknack.handlebars.Template;
+import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +29,31 @@ public class EmailService {
     @Value("${sledger.from-email}")
     private String fromEmail;
     private final ResendService resendService;
+    private Handlebars handlebars;
+
+    @PostConstruct
+    public void init() {
+        ClassPathTemplateLoader loader = new ClassPathTemplateLoader("/email", ".hbs");
+        handlebars = new Handlebars(loader);
+
+        handlebars.registerHelper("formatCurrency", (Helper<BigDecimal>) (value, _) -> {
+            if (value == null) return "";
+            NumberFormat format = NumberFormat.getNumberInstance();
+            format.setMaximumFractionDigits(2);
+            format.setMinimumFractionDigits(2);
+            return format.format(value);
+        });
+
+        handlebars.registerHelper("formatPercentage", (Helper<BigDecimal>) (value, _) -> {
+            if (value == null) return "";
+            return String.format("%.2f%%", value);
+        });
+
+        handlebars.registerHelper("signClass", (Helper<BigDecimal>) (value, _) -> {
+            if (value == null) return "";
+            return value.compareTo(BigDecimal.ZERO) >= 0 ? "positive" : "negative";
+        });
+    }
 
     @Async
     public CompletableFuture<Boolean> sendActivation(String toEmail, String displayName, String hash) {
@@ -36,14 +67,11 @@ public class EmailService {
         return CompletableFuture.completedFuture(true);
     }
 
-    public String compileTemplate(String template, Map<String, String> data) {
+    public String compileTemplate(String templateName, Object data) {
+        Template template = null;
         try {
-            File file = ResourceUtils.getFile("classpath:email/" + template + ".hbs");
-            String content = new String(Files.readAllBytes(file.toPath()));
-            for (String key : data.keySet()) {
-                content = content.replaceAll("\\{\\{" + key + "}}", data.get(key));
-            }
-            return content;
+            template = handlebars.compile(templateName);
+            return template.apply(data);
         } catch (IOException e) {
             log.error("Unable to load template: {}", template);
             return null;

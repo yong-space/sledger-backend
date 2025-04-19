@@ -1,7 +1,9 @@
 package tech.sledger;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.*;
 import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.web.servlet.MvcResult;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.account.AccountIssuer;
 import tech.sledger.model.account.AccountType;
@@ -9,7 +11,6 @@ import tech.sledger.model.account.CashAccount;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,11 +64,11 @@ public class AccountTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void addAccounts() throws Exception {
         for (Map<String, Object> account : newAccounts) {
-            AtomicLong id = new AtomicLong();
-            mvc.perform(request(POST, "/api/account", account))
+            MvcResult result = mvc.perform(request(POST, "/api/account", account))
                 .andExpect(status().isOk())
-                .andDo(res -> id.set((int) objectMapper.readValue(res.getResponse().getContentAsString(), Map.class).get("id")));
-            account.put("id", id.get());
+                .andExpect(jsonPath("$.type").value(account.get("type")))
+                .andReturn();
+            account.put("id", JsonPath.read(result.getResponse().getContentAsString(), "$.id"));
         }
 
         mvc.perform(get("/api/account"))
