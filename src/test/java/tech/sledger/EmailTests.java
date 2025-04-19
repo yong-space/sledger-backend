@@ -1,7 +1,7 @@
 package tech.sledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.aot.DisabledInAotMode;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.service.EmailService;
 import tech.sledger.service.ResendService;
 import java.util.Map;
@@ -22,14 +24,14 @@ import java.util.Map;
 public class EmailTests extends BaseTest {
     @Autowired
     private EmailService emailService;
-
     @MockitoBean
     private ResendService resendService;
 
     @Test
     public void sendFail() {
-        String content = emailService.compileTemplate("abc", Map.of("a", "b"));
-        assertNull(content);
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+            () -> emailService.compileTemplate("abc", Map.of("a", "b")));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
     }
 
     @Captor
