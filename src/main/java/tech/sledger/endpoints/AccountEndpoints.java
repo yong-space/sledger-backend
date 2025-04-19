@@ -88,6 +88,7 @@ public class AccountEndpoints {
         @RequestBody(required = false) NewAccount editAccount,
         @RequestParam(required = false) Boolean visible
     ) {
+        cacheService.clearAuthCache(accountId);
         Account account = userService.authorise(auth, accountId);
         if (visible != null) {
             account.setVisible(visible);
@@ -115,7 +116,6 @@ public class AccountEndpoints {
             cpfAccount.setSpecialRatio(editAccount.getSpecialRatio());
             cpfAccount.setMedisaveRatio(editAccount.getMedisaveRatio());
         }
-        cacheService.clearAuthCache(accountId);
         return accountService.edit(account);
     }
 
