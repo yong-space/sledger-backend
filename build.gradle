@@ -38,7 +38,8 @@ dependencies {
     implementation ("com.opencsv:opencsv:5.10") {
         exclude group: "commons-logging", module: "commons-logging"
     }
-    implementation "org.apache.poi:poi:5.4.0"
+    implementation "org.apache.poi:poi:5.4.1"
+    implementation "pl.allegro.tech.boot:handlebars-spring-boot-starter:0.5.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.11.4"
     testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
@@ -47,6 +48,7 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
+    testImplementation 'org.jsoup:jsoup:1.19.1'
     mockitoAgent 'org.mockito:mockito-core'
 }
 
@@ -72,8 +74,8 @@ jacocoTestReport {
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
-                "tech/sledger/*.class",
                 "tech/sledger/model/**",
+                "tech/sledger/Sledger.class",
                 "tech/sledger/service/ResendService.class",
                 "tech/sledger/config/AotHints.class"
             ])

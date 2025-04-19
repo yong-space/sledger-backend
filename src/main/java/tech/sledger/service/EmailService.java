@@ -1,16 +1,21 @@
 package tech.sledger.service;
 
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.Helper;
+import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
-import java.io.File;
+import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +28,25 @@ public class EmailService {
     @Value("${sledger.from-email}")
     private String fromEmail;
     private final ResendService resendService;
+    private Handlebars handlebars;
+
+    @PostConstruct
+    public void init() {
+        Helper<BigDecimal> formatCurrency = (value, _) -> {
+            NumberFormat format = NumberFormat.getNumberInstance();
+            format.setMaximumFractionDigits(0);
+            format.setMinimumFractionDigits(0);
+            return format.format(value);
+        };
+        Helper<BigDecimal> formatPercentage = (value, _) -> String.format("%.1f%%", value);
+        Helper<BigDecimal> signClass = (value, _) -> value.compareTo(BigDecimal.ZERO) >= 0 ? "positive" : "negative";
+
+        ClassPathTemplateLoader loader = new ClassPathTemplateLoader("/email", ".hbs");
+        handlebars = new Handlebars(loader);
+        handlebars.registerHelper("formatCurrency", formatCurrency);
+        handlebars.registerHelper("formatPercentage", formatPercentage);
+        handlebars.registerHelper("signClass", signClass);
+    }
 
     @Async
     public CompletableFuture<Boolean> sendActivation(String toEmail, String displayName, String hash) {
@@ -36,17 +60,11 @@ public class EmailService {
         return CompletableFuture.completedFuture(true);
     }
 
-    public String compileTemplate(String template, Map<String, String> data) {
+    public String compileTemplate(String templateName, Object data) {
         try {
-            File file = ResourceUtils.getFile("classpath:email/" + template + ".hbs");
-            String content = new String(Files.readAllBytes(file.toPath()));
-            for (String key : data.keySet()) {
-                content = content.replaceAll("\\{\\{" + key + "}}", data.get(key));
-            }
-            return content;
+            return handlebars.compile(templateName).apply(data);
         } catch (IOException e) {
-            log.error("Unable to load template: {}", template);
-            return null;
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unable to compile template: " + templateName, e);
         }
     }
 

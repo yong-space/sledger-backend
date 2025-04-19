@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: Arial, sans-serif;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .summary-row td {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+        .negative {
+            color: #dc3545;
+        }
+        .positive {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+<table>
+    <thead>
+    <tr>
+        <th>Ticker</th>
+        <th>Last Price</th>
+        <th>Daily PnL</th>
+        <th>Daily %</th>
+        <th>Unrealized PnL</th>
+        <th>Unrealized %</th>
+        <th>Market Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{#each positions}}
+        <tr>
+            <td>{{ticker}}</td>
+            <td>{{formatCurrency lastPrice}}</td>
+            <td class="{{signClass dailyPnl}}">{{formatCurrency dailyPnl}}</td>
+            <td class="{{signClass changePercent}}">{{formatPercentage changePercent}}</td>
+            <td class="{{signClass unrealizedPnl}}">{{formatCurrency unrealizedPnl}}</td>
+            <td class="{{signClass unrealizedPnlPercent}}">{{formatPercentage unrealizedPnlPercent}}</td>
+            <td>{{formatCurrency mktValue}}</td>
+        </tr>
+    {{/each}}
+    <tr class="summary-row">
+        <td colspan="2">TOTAL</td>
+        <td class="{{signClass dayPnl}}">{{formatCurrency dayPnl}}</td>
+        <td class="{{signClass dayPnlPercent}}">{{formatPercentage dayPnlPercent}}</td>
+        <td class="{{signClass netPnl}}">{{formatCurrency netPnl}}</td>
+        <td class="{{signClass netPnlPercent}}">{{formatPercentage netPnlPercent}}</td>
+        <td>{{formatCurrency mktValue}}</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
