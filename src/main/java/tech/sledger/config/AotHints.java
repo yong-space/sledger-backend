@@ -6,8 +6,6 @@ import static org.springframework.aot.hint.MemberCategory.INVOKE_DECLARED_METHOD
 import static org.springframework.aot.hint.MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS;
 import static org.springframework.aot.hint.MemberCategory.INVOKE_PUBLIC_METHODS;
 import static org.springframework.aot.hint.MemberCategory.PUBLIC_FIELDS;
-import com.github.jknack.handlebars.Helper;
-import com.github.jknack.handlebars.springmvc.HandlebarsViewResolver;
 import org.apache.logging.log4j.message.DefaultFlowMessageFactory;
 import org.apache.logging.log4j.message.ParameterizedMessageFactory;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -48,9 +46,7 @@ public class AotHints implements RuntimeHintsRegistrar {
             PortfolioSummary.class,
             PortfolioSnapshot.class,
             DefaultFlowMessageFactory.class,
-            ParameterizedMessageFactory.class,
-            Helper.class,
-            HandlebarsViewResolver.class
+            ParameterizedMessageFactory.class
         ).forEach(c -> {
             hints.reflection().registerType(c, INVOKE_DECLARED_CONSTRUCTORS);
             hints.reflection().registerType(c, INVOKE_PUBLIC_CONSTRUCTORS);
