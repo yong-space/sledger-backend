@@ -26,6 +26,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +76,8 @@ public class PortfolioSnapshotEndpoints {
         User user = (User) auth.getPrincipal();
         EmailSnapshot snapshotData = buildSnapshotData();
         String content = emailService.compileTemplate("portfolio-snapshot", snapshotData);
-        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String date = LocalDate.now(ZoneId.of("America/New_York"))
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         emailService.sendEmail(user.getUsername(), user.getDisplayName(), "Portfolio Snapshot for " + date, content);
         return content;
     }
