@@ -1,9 +1,9 @@
 plugins {
     id "com.github.ben-manes.versions" version "0.52.0"
-    id "org.springframework.boot" version "3.5.0"
+    id "org.springframework.boot" version "3.5.4"
     id "io.spring.dependency-management" version "1.1.7"
-    id "io.freefair.lombok" version "8.13.1"
-    id "org.graalvm.buildtools.native" version "0.10.6"
+    id "io.freefair.lombok" version "8.14"
+    id "org.graalvm.buildtools.native" version "0.11.0"
     id "java"
     id "jacoco"
 }
@@ -22,7 +22,7 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << "-parameters" // << "-Xlint:unchecked" << "-Werror"
 }
 
-def testContainersVersion = "1.21.1"
+def testContainersVersion = "1.21.3"
 
 configurations { mockitoAgent }
 
@@ -33,22 +33,21 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "com.resend:resend-java:4.4.0"
-    implementation "org.bouncycastle:bcprov-jdk18on:1.80"
+    implementation "org.bouncycastle:bcprov-jdk18on:1.81"
     implementation "com.auth0:java-jwt:4.5.0"
-    implementation ("com.opencsv:opencsv:5.11.1") {
+    implementation ("com.opencsv:opencsv:5.12.0") {
         exclude group: "commons-logging", module: "commons-logging"
     }
     implementation "org.apache.poi:poi:5.4.1"
     implementation "com.github.jknack:handlebars:4.4.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.13.0"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.13.0"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.13.4"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.security:spring-security-test"
     testImplementation "org.testcontainers:testcontainers:$testContainersVersion"
     testImplementation "org.testcontainers:junit-jupiter:$testContainersVersion"
     testImplementation "org.testcontainers:mongodb:$testContainersVersion"
-    testImplementation 'org.jsoup:jsoup:1.20.1'
+    testImplementation 'org.jsoup:jsoup:1.21.1'
     mockitoAgent 'org.mockito:mockito-core'
 }
 
@@ -104,4 +103,8 @@ bootBuildImage {
             password = System.getenv("DOCKER_PASS")
         }
     }
+}
+
+dependencyUpdates {
+    rejectVersionIf { it.candidate.version ==~ /^.*-M\d+.*$/ }
 }
