@@ -13,9 +13,12 @@ public interface TransactionRepo extends MongoRepository<Transaction, Long>, Tra
     <T extends Transaction> List<T> findAllByAccountIdOrderByDate(long accountId);
     @Query(value = "{ 'accountId': ?0, 'date': { $gte: ?1, $lte: ?2 } }", sort = "{ 'date': 1 }")
     <T extends Transaction> List<T> findAllByAccountIdAndDateBetweenOrderByDate(long accountId, Instant from, Instant to);
+    @Query(value = "{ 'accountId': ?0, 'date': { $gte: ?1, $lte: ?2 } }", fields = "{ 'date': 1 }")
+    List<Transaction> findDatesByAccountIdAndDateBetween(long accountId, Instant from, Instant to);
     <T extends Transaction> List<T> findAllByAccountIdInOrderByDate(List<Long> accountIds);
     <T extends Transaction> T findFirstByAccountIdAndIdNotAndDateBeforeOrderByDateDesc(long accountId, long id, Instant date);
-    <T extends Transaction> List<T> findAllByAccountIdAndDateAfterOrderByDate(long accountId, Instant date);
+    @Query("{ 'accountId': ?0, 'date': { $gt: ?1 }, '_id': { $nin: ?2 } }")
+    <T extends Transaction> List<T> findAllByAccountIdAndDateAfterExcludingIds(long accountId, Instant date, List<Long> ids);
     List<? extends CashTransaction> findAllByAccountIdInAndRemarksContainingIgnoreCaseOrderByDate(List<Long> accountIds, String remarks);
     @Query(value = "{ 'accountId': { $in: ?0 }, 'date': { $gte: ?1, $lte: ?2 } }", sort = "{ 'date': 1 }")
     List<? extends CashTransaction> listAllByDateRange(List<Long> accountIds, Instant from, Instant to);

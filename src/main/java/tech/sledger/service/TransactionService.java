@@ -16,6 +16,7 @@ import tech.sledger.repo.AccountRepo;
 import tech.sledger.repo.TransactionRepo;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -82,54 +83,69 @@ public class TransactionService {
     }
 
     private <T extends Transaction> List<T> processDates(List<T> transactions, long idEpoch) {
-        // Get minimum date in new transactions - 1 ms
+        long accountId = transactions.getFirst().getAccountId();
+        if (transactions.stream().anyMatch(t -> t.getAccountId() != accountId)) {
+            throw new IllegalArgumentException("All transactions must belong to the same account");
+        }
+
         Instant rangeAfter = transactions.stream().min(comparing(Transaction::getDate))
             .map(t -> t.getDate().minus(1, ChronoUnit.MILLIS)).orElseThrow();
-        // Get maximum date in new transactions + 1 day
         Instant rangeBefore = transactions.stream().max(comparing(Transaction::getDate))
             .map(t -> t.getDate().plus(1, ChronoUnit.DAYS)).orElseThrow();
-        long accountId = transactions.getFirst().getAccountId();
-        // Get existing transactions in range
-        List<T> existing = txRepo.findAllByAccountIdAndDateBetweenOrderByDate(accountId, rangeAfter, rangeBefore);
 
-        log.debug("Existing dates between {} and {}: {}", rangeAfter, rangeBefore, existing.stream().map(Transaction::getDate).toList());
+        // Date-only projection avoids loading full documents just to sequence timestamps
+        Map<LocalDate, Instant> dayMaxDate = txRepo.findDatesByAccountIdAndDateBetween(accountId, rangeAfter, rangeBefore)
+            .stream()
+            .collect(Collectors.toMap(
+                t -> t.getDate().atZone(ZoneOffset.UTC).toLocalDate(),
+                Transaction::getDate,
+                (a, b) -> a.isAfter(b) ? a : b
+            ));
+
+        log.debug("Day max dates in range {}-{}: {}", rangeAfter, rangeBefore, dayMaxDate);
 
         long id = idEpoch;
-        transactions = new ArrayList<>(transactions);
-        transactions.sort(Comparator.comparing(Transaction::getDate));
-        for (T transaction : transactions) {
-            transaction.setId(id++);
-            Instant targetDate = transaction.getDate().atZone(ZoneOffset.UTC)
-                .truncatedTo(ChronoUnit.DAYS).toInstant();
-            Instant before = targetDate.minus(1, ChronoUnit.MILLIS);
-            Instant after = before.plus(1, ChronoUnit.DAYS);
+        List<T> sorted = new ArrayList<>(transactions);
+        sorted.sort(Comparator.comparing(Transaction::getDate));
 
-            // Filter existing transactions to find same day transaction
-            Instant existingDate = existing.stream()
-                .filter(t -> t.getDate().isAfter(before) && t.getDate().isBefore(after))
-                .max(Comparator.comparing(Transaction::getDate))
-                .map(Transaction::getDate).orElse(null);
-            if (existingDate != null) {
-                targetDate = existingDate.plus(1L, ChronoUnit.SECONDS);
-                log.debug("Updated date to: {}", targetDate);
+        for (T transaction : sorted) {
+            transaction.setId(id++);
+            LocalDate targetDay = transaction.getDate().atZone(ZoneOffset.UTC).toLocalDate();
+            Instant maxExisting = dayMaxDate.get(targetDay);
+
+            Instant finalDate;
+            if (maxExisting != null) {
+                finalDate = maxExisting.plus(1L, ChronoUnit.SECONDS);
+                log.debug("Updated date to: {}", finalDate);
             } else {
-                log.debug("No existing date found. Maintain {}", targetDate);
+                finalDate = targetDay.atStartOfDay(ZoneOffset.UTC).toInstant();
+                log.debug("No existing date found. Maintain {}", finalDate);
             }
-            transaction.setDate(targetDate);
-            existing.add(transaction);
+            transaction.setDate(finalDate);
+            // Track this tx so subsequent same-batch transactions chain off it
+            dayMaxDate.put(targetDay, finalDate);
         }
-        return transactions;
+        return sorted;
     }
 
     @Transactional
     public <T extends Transaction> List<T> edit(List<T> transactions) {
-        List<Transaction> existing = txRepo.findAllById(transactions.stream().map(Transaction::getId).toList());
-        boolean amountsEdited = existing.stream().anyMatch(existingTx -> transactions.stream()
-            .filter(t -> t.getId() == existingTx.getId())
-            .findFirst().orElseThrow()
-            .getAmount().compareTo(existingTx.getAmount()) != 0
-        );
-        return amountsEdited ? updateBalances(transactions, TxOperation.SAVE) : editAsIs(transactions);
+        Map<Long, Transaction> existingById = txRepo.findAllById(
+                transactions.stream().map(Transaction::getId).toList())
+            .stream().collect(Collectors.toMap(Transaction::getId, t -> t));
+
+        boolean amountsEdited = transactions.stream()
+            .anyMatch(t -> t.getAmount().compareTo(existingById.get(t.getId()).getAmount()) != 0);
+
+        if (!amountsEdited) {
+            // No balance impact — reuse the already-loaded balances, no second DB fetch
+            long accountId = transactions.getFirst().getAccountId();
+            transactions.forEach(t -> t.setBalance(existingById.get(t.getId()).getBalance()));
+            cache.clearTxCache(accountId);
+            return txRepo.saveAll(transactions);
+        }
+
+        return updateBalances(transactions, TxOperation.SAVE);
     }
 
     @Transactional
@@ -158,11 +174,9 @@ public class TransactionService {
         if (op == TxOperation.SAVE) {
             affectedTx.addAll(transactions);
         }
-        var txAfterEpoch = txRepo.findAllByAccountIdAndDateAfterOrderByDate(accountId, minDate)
-            .stream()
-            .filter(t -> !txIds.contains(t.getId())) // exclude incoming transactions
-            .toList();
-        affectedTx.addAll((Collection<T>) txAfterEpoch);
+        // DB-side ID exclusion avoids loading and filtering in Java
+        var txAfterEpoch = (List<T>) txRepo.findAllByAccountIdAndDateAfterExcludingIds(accountId, minDate, txIds);
+        affectedTx.addAll(txAfterEpoch);
         affectedTx.sort(Comparator.comparing(Transaction::getDate));
 
         Transaction epoch = txRepo.findFirstByAccountIdAndIdNotAndDateBeforeOrderByDateDesc(accountId, minTx.getId(), minDate);

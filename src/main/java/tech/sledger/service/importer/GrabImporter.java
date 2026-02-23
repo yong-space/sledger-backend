@@ -15,12 +15,17 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 public class GrabImporter implements Importer {
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mma");
+    private final DateTimeFormatter dateFormat = new DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .appendPattern("dd MMM yyyy, hh:mma")
+        .toFormatter(Locale.ENGLISH);
     private final List<String> rideServices = List.of("JustGrab", "GrabPet", "4 Seats GrabCar");
 
     @Override
