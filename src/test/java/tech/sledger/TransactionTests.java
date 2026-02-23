@@ -388,6 +388,74 @@ public class TransactionTests extends BaseTest {
     @Test
     @Order(11)
     @WithUserDetails("basic-user@company.com")
+    public void editTxDateOnly() throws Exception {
+        // Use dates in year 2000, before all other test data, so the epoch is 0
+        // and balances are deterministic: A=101, B=152, C=178
+        // Amounts chosen to avoid scientific-notation serialization (e.g. 100 -> 1E+2)
+        Map<String, Object> txA = new HashMap<>(Map.of(
+            "@type", "cash", "accountId", cashAccountId,
+            "date", date("2000-01-01"), "amount", 101, "remarks", "DateEditA"
+        ));
+        Map<String, Object> txB = new HashMap<>(Map.of(
+            "@type", "cash", "accountId", cashAccountId,
+            "date", date("2000-02-01"), "amount", 51, "remarks", "DateEditB"
+        ));
+        Map<String, Object> txC = new HashMap<>(Map.of(
+            "@type", "cash", "accountId", cashAccountId,
+            "date", date("2000-03-01"), "amount", 26, "remarks", "DateEditC"
+        ));
+        String rA = mvc.perform(request(POST, "/api/transaction", List.of(txA))).andReturn().getResponse().getContentAsString();
+        String rB = mvc.perform(request(POST, "/api/transaction", List.of(txB))).andReturn().getResponse().getContentAsString();
+        String rC = mvc.perform(request(POST, "/api/transaction", List.of(txC))).andReturn().getResponse().getContentAsString();
+        int idA = JsonPath.parse(rA).read("$.[0].id");
+        int idB = JsonPath.parse(rB).read("$.[0].id");
+        int idC = JsonPath.parse(rC).read("$.[0].id");
+
+        // Scenario 1: date-only backward move — C from 2000-03-01 to 2000-01-15 (between A and B).
+        // Previously this skipped recalculation entirely, leaving B with a stale balance.
+        // Expected order/balances: A(101), C(127), B(178)
+        Map<String, Object> editC = new HashMap<>(Map.of(
+            "@type", "cash", "accountId", cashAccountId,
+            "id", idC, "date", date("2000-01-15"), "amount", 26, "remarks", "DateEditC"
+        ));
+        mvc.perform(request(PUT, "/api/transaction", List.of(editC)))
+            .andExpect(status().isOk());
+
+        // Verify order and balances using index-based access (filter expressions have numeric type issues)
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2000-01-01T00:00:00.000Z&to=2000-03-31T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$.[0].remarks").value("DateEditA"))
+            .andExpect(jsonPath("$.[0].balance").value(BigDecimal.valueOf(101)))
+            .andExpect(jsonPath("$.[1].remarks").value("DateEditC"))
+            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(127)))
+            .andExpect(jsonPath("$.[2].remarks").value("DateEditB"))
+            .andExpect(jsonPath("$.[2].balance").value(BigDecimal.valueOf(178)));
+
+        // Scenario 2: date-only forward move — A from 2000-01-01 to 2000-01-20 (past C).
+        // Previously used the new date as minDate, so C (between old and new positions) was not recomputed.
+        // Expected order/balances: C(26), A(127), B(178)
+        Map<String, Object> editA = new HashMap<>(Map.of(
+            "@type", "cash", "accountId", cashAccountId,
+            "id", idA, "date", date("2000-01-20"), "amount", 101, "remarks", "DateEditA"
+        ));
+        mvc.perform(request(PUT, "/api/transaction", List.of(editA)))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2000-01-01T00:00:00.000Z&to=2000-03-31T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$.[0].remarks").value("DateEditC"))
+            .andExpect(jsonPath("$.[0].balance").value(BigDecimal.valueOf(26)))
+            .andExpect(jsonPath("$.[1].remarks").value("DateEditA"))
+            .andExpect(jsonPath("$.[1].balance").value(BigDecimal.valueOf(127)))
+            .andExpect(jsonPath("$.[2].remarks").value("DateEditB"))
+            .andExpect(jsonPath("$.[2].balance").value(BigDecimal.valueOf(178)));
+    }
+
+    @Test
+    @Order(12)
+    @WithUserDetails("basic-user@company.com")
     public void deleteCashTx() throws Exception {
         mvc.perform(delete("/api/transaction/" + cashId1))
             .andExpect(status().isOk());

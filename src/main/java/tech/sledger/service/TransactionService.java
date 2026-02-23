@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -134,10 +133,14 @@ public class TransactionService {
                 transactions.stream().map(Transaction::getId).toList())
             .stream().collect(Collectors.toMap(Transaction::getId, t -> t));
 
-        boolean amountsEdited = transactions.stream()
-            .anyMatch(t -> t.getAmount().compareTo(existingById.get(t.getId()).getAmount()) != 0);
+        boolean hasBalanceImpact = transactions.stream()
+            .anyMatch(t -> {
+                Transaction existing = existingById.get(t.getId());
+                return t.getAmount().compareTo(existing.getAmount()) != 0
+                    || !t.getDate().equals(existing.getDate());
+            });
 
-        if (!amountsEdited) {
+        if (!hasBalanceImpact) {
             // No balance impact — reuse the already-loaded balances, no second DB fetch
             long accountId = transactions.getFirst().getAccountId();
             transactions.forEach(t -> t.setBalance(existingById.get(t.getId()).getBalance()));
@@ -145,7 +148,7 @@ public class TransactionService {
             return txRepo.saveAll(transactions);
         }
 
-        return updateBalances(transactions, TxOperation.SAVE);
+        return updateBalancesForEdit(transactions, existingById);
     }
 
     @Transactional
@@ -161,6 +164,38 @@ public class TransactionService {
     public void delete(List<Transaction> transactions) {
         txRepo.deleteAll(transactions);
         updateBalances(transactions, TxOperation.REMOVE);
+    }
+
+    // Edit-specific recalculation: starts from min(new dates, old dates) so that
+    // transactions between an old and new position are always recomputed correctly.
+    // Uses all edited IDs for epoch exclusion rather than just the minDate transaction.
+    @SuppressWarnings("unchecked")
+    private <T extends Transaction> List<T> updateBalancesForEdit(
+            List<T> transactions, Map<Long, Transaction> existingById) {
+        long accountId = transactions.getFirst().getAccountId();
+        List<Long> txIds = transactions.stream().map(Transaction::getId).toList();
+
+        Instant minNewDate = transactions.stream().min(comparing(Transaction::getDate))
+            .map(Transaction::getDate).orElseThrow();
+        Instant minOldDate = txIds.stream()
+            .map(id -> existingById.get(id).getDate())
+            .min(Comparator.naturalOrder()).orElseThrow();
+        Instant minDate = minNewDate.isBefore(minOldDate) ? minNewDate : minOldDate;
+
+        Transaction epoch = txRepo.findFirstByAccountIdAndIdNotInAndDateBeforeOrderByDateDesc(accountId, txIds, minDate);
+
+        List<T> affectedTx = new ArrayList<>(transactions);
+        affectedTx.addAll((List<T>) txRepo.findAllByAccountIdAndDateAfterExcludingIds(accountId, minDate, txIds));
+        affectedTx.sort(Comparator.comparing(Transaction::getDate));
+
+        BigDecimal balance = epoch != null ? epoch.getBalance() : BigDecimal.ZERO;
+        for (T t : affectedTx) {
+            balance = balance.add(t.getAmount());
+            t.setBalance(balance);
+        }
+        txRepo.saveAll(affectedTx);
+        cache.clearTxCache(accountId);
+        return transactions;
     }
 
     @SuppressWarnings("unchecked")

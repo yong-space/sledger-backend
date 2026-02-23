@@ -17,6 +17,7 @@ public interface TransactionRepo extends MongoRepository<Transaction, Long>, Tra
     List<Transaction> findDatesByAccountIdAndDateBetween(long accountId, Instant from, Instant to);
     <T extends Transaction> List<T> findAllByAccountIdInOrderByDate(List<Long> accountIds);
     <T extends Transaction> T findFirstByAccountIdAndIdNotAndDateBeforeOrderByDateDesc(long accountId, long id, Instant date);
+    <T extends Transaction> T findFirstByAccountIdAndIdNotInAndDateBeforeOrderByDateDesc(long accountId, List<Long> ids, Instant date);
     @Query("{ 'accountId': ?0, 'date': { $gt: ?1 }, '_id': { $nin: ?2 } }")
     <T extends Transaction> List<T> findAllByAccountIdAndDateAfterExcludingIds(long accountId, Instant date, List<Long> ids);
     List<? extends CashTransaction> findAllByAccountIdInAndRemarksContainingIgnoreCaseOrderByDate(List<Long> accountIds, String remarks);
