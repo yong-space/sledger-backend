@@ -340,6 +340,15 @@ public class TransactionTests extends BaseTest {
         mvc.perform(request(PUT, "/api/transaction", List.of(payload4)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.[0].remarks").value("Modified"));
+
+        // Amount-only change: same date, different amount — hits line 136's != 0 branch
+        // (previous edits short-circuited on the date check before reaching the amount check)
+        Map<String, Object> payload5 = new HashMap<>(payload4);
+        payload5.put("amount", 99);
+
+        mvc.perform(request(PUT, "/api/transaction", List.of(payload5)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].amount").value(99));
     }
 
     @Test
@@ -465,5 +474,27 @@ public class TransactionTests extends BaseTest {
 
         mvc.perform(delete("/api/transaction/" + cashId1))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Order(13)
+    @WithUserDetails("basic-user@company.com")
+    public void dayMaxDateMergeBranch() throws Exception {
+        // Cover the toMap merge function's isAfter=true branch in processDates.
+        // After deleteCashTx (order 12), cashAccountId has two transactions on 2022-01-01:
+        //   id=8  date=2022-01-01T00:00:02Z  (added in calculateCashBalanceAndDates, lower ID)
+        //   id=11 date=2022-01-01T00:00:00Z  (edited to 2022-01-01 in updateTx, higher ID)
+        // MongoDB returns in natural (_id asc) order: id=8 first, then id=11.
+        // toMap: id=8 seeds {2022-01-01: 00:00:02Z}; id=11 triggers
+        // merge(a=00:00:02Z, b=00:00:00Z) -> isAfter(02Z, 00Z) = TRUE, covering the missed branch.
+        Map<String, Object> payload = Map.of(
+            "@type", "cash",
+            "date", date("2022-01-01"),
+            "accountId", cashAccountId,
+            "amount", 1,
+            "remarks", "MergeTest"
+        );
+        mvc.perform(request(POST, "/api/transaction", List.of(payload)))
+            .andExpect(status().isOk());
     }
 }

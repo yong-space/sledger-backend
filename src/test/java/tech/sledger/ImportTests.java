@@ -1,11 +1,15 @@
 package tech.sledger;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hamcrest.Matchers.iterableWithSize;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -18,7 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
-import tech.sledger.model.account.*;
+import tech.sledger.model.account.AccountIssuer;
+import tech.sledger.model.account.AccountType;
+import tech.sledger.model.account.CPFAccount;
+import tech.sledger.model.account.CashAccount;
+import tech.sledger.model.account.CreditAccount;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.user.User;
 import tech.sledger.repo.UserRepo;
@@ -31,10 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.Matchers.iterableWithSize;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = Sledger.class)
 @AutoConfigureMockMvc
@@ -45,7 +49,7 @@ public class ImportTests {
 
     @DynamicPropertySource
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongodb::getReplicaSetUrl);
+        registry.add("spring.mongodb.uri", mongodb::getReplicaSetUrl);
     }
 
     static {
@@ -211,9 +215,9 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
             .build()).getId();
 
         Template template1 = Template.builder()
-            .id(1).reference("shop").remarks("Stuff").category("Gifts").subCategory("Shopping").build();
+            .id(1L).reference("shop").remarks("Stuff").category("Gifts").subCategory("Shopping").build();
         Template template2 = Template.builder()
-            .id(2).reference("credit card bill").remarks("Credit Card Bill").category("Credit Card Bill").subCategory("Credit Card Bill").build();
+            .id(2L).reference("credit card bill").remarks("Credit Card Bill").category("Credit Card Bill").subCategory("Credit Card Bill").build();
         templateService.add(user, List.of(template1, template2));
     }
 

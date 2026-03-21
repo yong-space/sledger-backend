@@ -83,9 +83,6 @@ public class TransactionService {
 
     private <T extends Transaction> List<T> processDates(List<T> transactions, long idEpoch) {
         long accountId = transactions.getFirst().getAccountId();
-        if (transactions.stream().anyMatch(t -> t.getAccountId() != accountId)) {
-            throw new IllegalArgumentException("All transactions must belong to the same account");
-        }
 
         Instant rangeAfter = transactions.stream().min(comparing(Transaction::getDate))
             .map(t -> t.getDate().minus(1, ChronoUnit.MILLIS)).orElseThrow();

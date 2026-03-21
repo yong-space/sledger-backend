@@ -1,10 +1,11 @@
 package tech.sledger.service;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import static org.springframework.http.HttpStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -42,9 +42,9 @@ public class UserService {
         User previous = userRepo.findFirstByOrderByIdDesc();
         long id = (previous == null) ? 1 : previous.getId() + 1;
 
-        List<SimpleGrantedAuthority> roles = new ArrayList<>();
+        List<String> roles = new ArrayList<>();
         if (id == 1) {
-            roles.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            roles.add("ROLE_ADMIN");
         }
 
         User user = userRepo.save(User.builder()
@@ -52,7 +52,7 @@ public class UserService {
             .displayName(registration.getDisplayName().trim())
             .username(username)
             .password(passwordEncoder.encode(registration.getPassword().trim()))
-            .authorities(roles)
+            .roles(roles)
             .build());
 
         Activation activation = Activation.builder()

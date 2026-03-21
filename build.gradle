@@ -1,9 +1,9 @@
 plugins {
     id "com.github.ben-manes.versions" version "0.53.0"
-    id "org.springframework.boot" version "3.5.7"
+    id "org.springframework.boot" version "4.0.4"
     id "io.spring.dependency-management" version "1.1.7"
-    id "io.freefair.lombok" version "9.1.0"
-    id "org.graalvm.buildtools.native" version "0.11.3"
+    id "io.freefair.lombok" version "9.2.0"
+    id "org.graalvm.buildtools.native" version "0.11.5"
     id "java"
     id "jacoco"
 }
@@ -26,26 +26,28 @@ configurations { mockitoAgent }
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-json"
     implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-data-mongodb"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "com.resend:resend-java:4.11.0"
-    implementation "org.bouncycastle:bcprov-jdk18on:1.82"
-    implementation "com.auth0:java-jwt:4.5.0"
+    implementation "com.resend:resend-java:4.13.0"
+    implementation "org.bouncycastle:bcprov-jdk18on:1.83"
+    implementation "com.auth0:java-jwt:4.5.1"
     implementation ("com.opencsv:opencsv:5.12.0") {
         exclude group: "commons-logging", module: "commons-logging"
     }
-    implementation "org.apache.poi:poi:5.5.0"
+    implementation "org.apache.poi:poi:5.5.1"
     implementation "com.github.jknack:handlebars:4.5.0"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-    testImplementation "org.junit.jupiter:junit-jupiter:6.0.1"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.0.3"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-    testImplementation "org.springframework.security:spring-security-test"
-    testImplementation "org.testcontainers:testcontainers:2.0.2"
-    testImplementation "org.testcontainers:junit-jupiter:1.21.3"
-    testImplementation "org.testcontainers:mongodb:1.21.3"
-    testImplementation 'org.jsoup:jsoup:1.21.2'
+    testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation "org.testcontainers:junit-jupiter:1.21.4"
+    testImplementation "org.testcontainers:mongodb:1.21.4"
+    testImplementation 'org.jsoup:jsoup:1.22.1'
     mockitoAgent 'org.mockito:mockito-core'
 }
 
@@ -92,10 +94,10 @@ bootBuildImage {
     createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "25",
-        "BP_SPRING_CLOUD_BINDINGS_DISABLED": "true",
         "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets"
     ]
     docker {
+        bindHostToBuilder = true
         publishRegistry {
             username = System.getenv("DOCKER_USER")
             password = System.getenv("DOCKER_PASS")

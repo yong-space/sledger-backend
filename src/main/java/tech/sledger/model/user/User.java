@@ -9,9 +9,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
+import java.util.List;
 
 @Data
 @Builder
@@ -38,5 +40,11 @@ public class User implements UserDetails {
     @JsonIgnore
     private boolean enabled;
     @JsonIgnore
-    private Collection<SimpleGrantedAuthority> authorities;
+    private List<String> roles;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (roles == null) return List.of();
+        return roles.stream().map(SimpleGrantedAuthority::new).toList();
+    }
 }

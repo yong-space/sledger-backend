@@ -104,7 +104,7 @@ public class DashEndpoints {
             });
 
         return ChartResponse.builder()
-            .xAxis(months)
+            .xaxis(months)
             .series(series)
             .summary(summary)
             .build();
@@ -183,7 +183,7 @@ public class DashEndpoints {
             .build());
 
         return ChartResponse.builder()
-            .xAxis(months)
+            .xaxis(months)
             .series(series)
             .build();
     }

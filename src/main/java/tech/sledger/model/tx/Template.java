@@ -14,8 +14,8 @@ import org.springframework.data.annotation.Id;
 @AllArgsConstructor
 public class Template {
     @Id
-    private long id;
-    private long ownerId;
+    private Long id;
+    private Long ownerId;
     @NotNull(message = "Reference cannot be null")
     @Size(min = 3, max = 30, message = "Reference should be between 3 and 30 characters")
     private String reference;
