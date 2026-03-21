@@ -15,7 +15,7 @@ jobs:
       contents: write
       packages: write
     outputs:
-      tag: ${{ steps.tag.outputs.new_tag }}
+      tag: ${{ steps.tag.outputs.nextStrict }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
