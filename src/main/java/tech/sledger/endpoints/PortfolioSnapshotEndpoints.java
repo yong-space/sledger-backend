@@ -1,8 +1,8 @@
 package tech.sledger.endpoints;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;

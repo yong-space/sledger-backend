@@ -2,16 +2,13 @@ package tech.sledger;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -30,6 +27,8 @@ import tech.sledger.repo.UserRepo;
 import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.UserService;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -72,7 +71,7 @@ public class BaseTest {
 
     @DynamicPropertySource
     public static void setDatasourceProperties(final DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongodb::getReplicaSetUrl);
+        registry.add("spring.mongodb.uri", mongodb::getReplicaSetUrl);
     }
 
     static {
@@ -95,7 +94,7 @@ public class BaseTest {
             .displayName("Basic User 2")
             .username("basic-user2@company.com")
             .password(passwordEncoder.encode("B4SicUs3r!"))
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_TRADING")))
+            .roles(List.of("ROLE_TRADING"))
             .enabled(true)
             .build());
         User u3 = userRepo.save(User.builder()
@@ -103,7 +102,7 @@ public class BaseTest {
             .displayName("Admin User")
             .username("admin-user@company.com")
             .password(passwordEncoder.encode("aDm1nU53r$"))
-            .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+            .roles(List.of("ROLE_ADMIN"))
             .enabled(true)
             .build());
         userRepo.saveAll(List.of(u1, u2, u3));
@@ -122,7 +121,7 @@ public class BaseTest {
             };
             return builder.contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return null;
         }
     }

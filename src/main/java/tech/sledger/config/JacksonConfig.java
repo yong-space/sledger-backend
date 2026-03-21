@@ -1,28 +1,29 @@
 package tech.sledger.config;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.module.SimpleModule;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Configuration
 public class JacksonConfig {
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer customizer() {
-        return builder -> builder.serializerByType(BigDecimal.class, new JsonSerializer<BigDecimal>() {
+    public JsonMapperBuilderCustomizer customizer() {
+        return builder -> builder.addModule(new SimpleModule().addSerializer(BigDecimal.class, new ValueSerializer<>() {
             @Override
             public void serialize(
                 BigDecimal value,
                 JsonGenerator gen,
-                SerializerProvider serializers
-            ) throws IOException {
+                SerializationContext serializers
+            ) throws JacksonException {
                 gen.writeNumber(value.setScale(2, RoundingMode.HALF_EVEN).stripTrailingZeros());
             }
-        });
+        }));
     }
 }

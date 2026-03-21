@@ -28,7 +28,7 @@ public class JwtService {
 
     public String generate(User user) {
         Instant now = Instant.now();
-        boolean isAdmin = user.getAuthorities() != null && user.getAuthorities().contains(adminRole);
+        boolean isAdmin = user.getAuthorities().contains(adminRole);
         return JWT.create()
             .withIssuedAt(Date.from(now))
             .withExpiresAt(Date.from(now.plus(7L, ChronoUnit.DAYS)))

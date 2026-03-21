@@ -1,5 +1,14 @@
 package tech.sledger;
 
+import static com.mongodb.assertions.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static tech.sledger.BaseTest.SubmitMethod.POST;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,15 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import static com.mongodb.assertions.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static tech.sledger.BaseTest.SubmitMethod.POST;
 
 @DisabledInAotMode
 public class UserTests extends BaseTest {
@@ -139,7 +139,7 @@ public class UserTests extends BaseTest {
         User adminUser = userService.get("admin-user@company.com");
         DecodedJWT basicJwt = jwtService.validate(jwtService.generate(basicUser));
         DecodedJWT adminJwt = jwtService.validate(jwtService.generate(adminUser));
-        basicUser.setAuthorities(List.of());
+        basicUser.setRoles(List.of());
         DecodedJWT basicJwt2 = jwtService.validate(jwtService.generate(basicUser));
         assertEquals("false", basicJwt.getClaims().get("admin").toString());
         assertEquals("false", basicJwt2.getClaims().get("admin").toString());

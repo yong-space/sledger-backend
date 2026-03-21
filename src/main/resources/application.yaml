@@ -5,9 +5,10 @@ spring:
     banner-mode: off
     lazy-initialization: true
   data.mongodb:
-    uri: ${MONGO_URI}
     auto-index-creation: true
   jackson.default-property-inclusion: non_null
+  mongodb:
+    uri: ${MONGO_URI}
 
 sledger:
   uri: http://localhost:8080

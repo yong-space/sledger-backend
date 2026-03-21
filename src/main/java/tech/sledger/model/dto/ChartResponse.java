@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class ChartResponse {
-    private List<Instant> xAxis;
+    private List<Instant> xaxis;
     private List<ChartSeries> series;
     private List<?> summary;
 }

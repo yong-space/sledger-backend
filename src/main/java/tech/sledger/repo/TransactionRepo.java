@@ -20,11 +20,12 @@ public interface TransactionRepo extends MongoRepository<Transaction, Long>, Tra
     <T extends Transaction> T findFirstByAccountIdAndIdNotInAndDateBeforeOrderByDateDesc(long accountId, List<Long> ids, Instant date);
     @Query("{ 'accountId': ?0, 'date': { $gt: ?1 }, '_id': { $nin: ?2 } }")
     <T extends Transaction> List<T> findAllByAccountIdAndDateAfterExcludingIds(long accountId, Instant date, List<Long> ids);
-    List<? extends CashTransaction> findAllByAccountIdInAndRemarksContainingIgnoreCaseOrderByDate(List<Long> accountIds, String remarks);
+    @Query("{ 'accountId': { $in: ?0 }, 'remarks': { $regex: ?1, $options: 'i' } }")
+    <T extends CashTransaction> List<T> findAllByAccountIdInAndRemarksContainingIgnoreCaseOrderByDate(List<Long> accountIds, String remarks);
     @Query(value = "{ 'accountId': { $in: ?0 }, 'date': { $gte: ?1, $lte: ?2 } }", sort = "{ 'date': 1 }")
-    List<? extends CashTransaction> listAllByDateRange(List<Long> accountIds, Instant from, Instant to);
+    <T extends CashTransaction> List<T> listAllByDateRange(List<Long> accountIds, Instant from, Instant to);
     @Query(value = "{ 'accountId': { $in: ?0 }, 'category': ?1, 'date': { $gte: ?2, $lte: ?3 } }", sort = "{ 'date': 1 }")
-    List<? extends CashTransaction> listAllByCategoryAndDateRange(List<Long> accountIds, String category, Instant from, Instant to);
+    <T extends CashTransaction> List<T> listAllByCategoryAndDateRange(List<Long> accountIds, String category, Instant from, Instant to);
     @Query(value = "{ 'accountId': { $in: ?0 }, 'subCategory': ?1, 'date': { $gte: ?2, $lte: ?3 } }", sort = "{ 'date': 1 }")
-    List<? extends CashTransaction> listAllBySubCategoryAndDateRange(List<Long> accountIds, String subCategory, Instant from, Instant to);
+    <T extends CashTransaction> List<T> listAllBySubCategoryAndDateRange(List<Long> accountIds, String subCategory, Instant from, Instant to);
 }
