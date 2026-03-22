@@ -1,5 +1,7 @@
 package tech.sledger.config;
 
+import com.password4j.Argon2Function;
+import com.password4j.types.Argon2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +16,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password4j.Argon2Password4jPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -52,7 +54,8 @@ public class SecurityConfig {
     static class EncoderConfig {
         @Bean
         public PasswordEncoder passwordEncoder() {
-            return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+            var args = Argon2Function.getInstance(1 << 14, 2, 1, 32, Argon2.ID);
+            return new Argon2Password4jPasswordEncoder(args);
         }
     }
 

@@ -33,7 +33,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "com.resend:resend-java:4.13.0"
-    implementation "org.bouncycastle:bcprov-jdk18on:1.83"
+    implementation "com.password4j:password4j:1.8.2"
     implementation "com.auth0:java-jwt:4.5.1"
     implementation ("com.opencsv:opencsv:5.12.0") {
         exclude group: "commons-logging", module: "commons-logging"
@@ -86,7 +86,13 @@ jacocoTestReport {
     }
 }
 
-tasks.named("jar") { enabled = false }
+jar { enabled = false }
+
+// Temp until bug resolved
+// https://github.com/spring-projects/spring-data-mongodb/issues/5101
+processAot {
+    systemProperty 'spring.aot.data.accessors.enabled', 'false'
+}
 
 bootBuildImage {
     imageName = System.getenv("IMAGE_NAME") ?: "sledger-backend"
@@ -94,7 +100,7 @@ bootBuildImage {
     createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "25",
-        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets"
+        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets --initialize-at-run-time=com.password4j"
     ]
     docker {
         bindHostToBuilder = true
