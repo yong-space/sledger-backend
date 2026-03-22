@@ -75,6 +75,7 @@ public class UserEndpoints {
             log.info("User logged in: {}", user.getUsername());
             return new TokenResponse(jwt);
         } catch (AuthenticationException e) {
+            log.error("Auth failed for {}: {}", email, e.getMessage(), e);
             throw new ResponseStatusException(UNAUTHORIZED, "Invalid Credentials");
         }
     }
