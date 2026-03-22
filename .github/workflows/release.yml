@@ -58,6 +58,11 @@ jobs:
     - name: Build native image
       run: ./gradlew bootBuildImage
 
+    - name: Create and push git tag
+      run: |
+        git tag ${{ steps.tag.outputs.nextStrict }}
+        git push origin ${{ steps.tag.outputs.nextStrict }}
+
   release:
     needs: build
     runs-on: on-prem
