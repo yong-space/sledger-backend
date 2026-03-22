@@ -1,6 +1,5 @@
 package tech.sledger;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,11 +33,8 @@ import tech.sledger.service.AccountIssuerService;
 import tech.sledger.service.AccountService;
 import tech.sledger.service.TemplateService;
 import tech.sledger.service.UserService;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 @SpringBootTest(classes = Sledger.class)
 @AutoConfigureMockMvc
@@ -80,60 +76,9 @@ public class ImportTests {
     private long uobCreditAccountId2;
     private long grabAccountId;
     private long cpfAccountId;
-    byte[] ocbcCashCsv = """
-Account details for:,360 Account 111-111111-001
-Available Balance,"1,234.56"
-Ledger Balance,"1,234.56"
-
-Transaction History
-Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
-18/05/2023,16/05/2023,SAMPLE,12.34,
-,,CASE TEST
-17/05/2023,29/02/2024,INTEREST 1,,0.62
-16/05/2023,16/05/2023,COLLECTION,110.39,
-,,SHOPPING ITEM
-13/05/2023,13/05/2023,FAST PAYMENT,379.50,
-,,OTHR - Payment via PayNow-UEN
-01/05/2023,29/02/2024,INTEREST 2,,0.62
-            """.getBytes(UTF_8);
-    byte[] ocbcCashCsv2 = """
-Account details for:,360 Account 111-111111-001
-Available Balance,"1,234.56"
-Ledger Balance,"1,234.56"
-
-Transaction History
-Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
-13/05/2023,13/05/2023,FAST PAYMENT,379.50,
-,,OTHR - Payment via PayNow-UEN
-            """.getBytes(UTF_8);
-    byte[] ocbcCreditCsv = """
-Account details for:,OCBC 365 Credit Card 1111-1111-1111-1111
-Credit limit,"SGD 1,234.56"
-Credit left,"SGD 321.23"
-
-Transaction history
-Main credit card OCBC INFINITY Cashback Card 1111-1111-1111-1111
-Transaction date,Description,Withdrawals (SGD),Deposits (SGD)
-02/09/2024,-9489 KOUFU PTE LTD    Singapore     SGP,2.60,
-02/09/2024,-9489 BUS/MRT 498357444SINGAPORE     SGP,7.62,
-31/08/2024,-9489 BUS/MRT CM8880515SINGAPORE     SGP,,1.21
-02/09/2024,-9489 PIZZAKAYA-JEM    SINGAPORE     SGP,46.28,
-02/09/2024,credit card bill,,100
-            """.getBytes(UTF_8);
-    byte[] grabCsv = """
-Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Amount
-"05 Jan 2025, 06:08PM",A-7BP78NGGWJ7H,"Somewhere","Somewhere Else",JustGrab,SGD,10.2
-"18 Oct 2024, 03:29PM",A-7XJ9MW9WWF6S,"Somewhere","Somewhere Else",4 Seats GrabCar,SGD,28.1
-"14 Sep 2024, 05:19PM",A-6T7HBO2GWG7W,"Somewhere","Somewhere Else",GrabPet,SGD,23.7
-"04 Jan 2025, 04:35PM",A-7BKQVTMWWH5E,"Somewhere","Somewhere Else",GrabMart,SGD,105.9
-"19 Dec 2024, 08:19PM",A-79JI2BCWWFQS,"Somewhere","Somewhere Else",GrabFood,SGD,18.8
-            """.getBytes(UTF_8);
-    Map<String, byte[]> csvFiles = Map.of(
-        "ocbc-cash.csv", ocbcCashCsv,
-        "ocbc-cash-2.csv", ocbcCashCsv2,
-        "ocbc-credit.csv", ocbcCreditCsv,
-        "grab.csv", grabCsv
-    );
+    private long citiCashAccountId;
+    private long citiCreditAccountId;
+    private long citiCreditAccountId2;
 
     @PostConstruct
     public void init() {
@@ -152,6 +97,10 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
         AccountIssuer cpfIssuer = new AccountIssuer();
         cpfIssuer.setName("CPF");
         cpfIssuer = accountIssuerService.add(cpfIssuer);
+
+        AccountIssuer citiIssuer = new AccountIssuer();
+        citiIssuer.setName("Citi");
+        citiIssuer = accountIssuerService.add(citiIssuer);
 
         User user = userRepo.save(User.builder()
             .id(1)
@@ -213,6 +162,26 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
             .owner(user)
             .type(AccountType.Retirement)
             .build()).getId();
+        citiCashAccountId = accountService.add(CashAccount.builder()
+            .issuer(citiIssuer)
+            .name("My Citi Cash Account")
+            .owner(user)
+            .type(AccountType.Cash)
+            .build()).getId();
+        citiCreditAccountId = accountService.add(CreditAccount.builder()
+            .issuer(citiIssuer)
+            .name("My Citi Credit Account")
+            .owner(user)
+            .type(AccountType.Credit)
+            .billingCycle(1)
+            .build()).getId();
+        citiCreditAccountId2 = accountService.add(CreditAccount.builder()
+            .issuer(citiIssuer)
+            .name("My Citi Credit Account 2")
+            .owner(user)
+            .type(AccountType.Credit)
+            .billingCycle(25)
+            .build()).getId();
 
         Template template1 = Template.builder()
             .id(1L).reference("shop").remarks("Stuff").category("Gifts").subCategory("Shopping").build();
@@ -222,14 +191,11 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
     }
 
     private MockMultipartFile mockFile(String filename) throws IOException {
-        InputStream inputStream = filename.endsWith(".csv") ?
-            new ByteArrayInputStream(csvFiles.get(filename)) :
-            new ClassPathResource(filename).getInputStream();
         return new MockMultipartFile(
             "file",
             filename,
             MediaType.MULTIPART_FORM_DATA_VALUE,
-            inputStream
+            new ClassPathResource(filename).getInputStream()
         );
     }
 
@@ -292,6 +258,38 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
             .multipart("/api/import")
             .part(new MockPart("accountId", String.valueOf(uobCashAccountId).getBytes()))
             .file(mockFile("uob-credit.xls"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCashAccountId).getBytes()))
+            .file(mockFile("citi.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("ocbc-cash.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("citi-empty.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("citi-bad-date.csv"));
         mvc.perform(request)
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.detail").value("Invalid import file"));
@@ -395,5 +393,39 @@ Date/Time,Booking Code,Pick-up Address,Drop-off Address,Service Type,Currency,Am
             .andExpect(jsonPath("$.[?(@.remarks == 'GrabMart: Somewhere')]").exists())
             .andExpect(jsonPath("$.[?(@.category == 'Groceries')]").exists())
             .andExpect(jsonPath("$.[?(@.category == 'Food')]").exists());
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void citiCredit() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("citi.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(23)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Lazada')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Kopitiam Fp App Paymen')]").exists());
+
+        request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId2).getBytes()))
+            .file(mockFile("citi.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[0].billingMonth").value("2026-01-01T00:00:00Z"));
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void citiCreditShortRows() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("citi-short-rows.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(1)));
     }
 }

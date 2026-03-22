@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
 import tech.sledger.model.tx.Template;
 import tech.sledger.model.tx.Transaction;
+import tech.sledger.service.importer.CitiImporter;
 import tech.sledger.service.importer.GrabImporter;
 import tech.sledger.service.importer.Importer;
 import tech.sledger.service.importer.OcbcImporter;
@@ -26,7 +27,8 @@ public class ImportService {
     private final Map<String, Class<? extends Importer>> importerMap = Map.of(
         "OCBC", OcbcImporter.class,
         "UOB", UobImporter.class,
-        "Grab", GrabImporter.class
+        "Grab", GrabImporter.class,
+        "Citi", CitiImporter.class
     );
 
     public List<Transaction> process(
