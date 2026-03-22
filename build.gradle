@@ -94,7 +94,7 @@ bootBuildImage {
     createdDate = "now"
     environment = [
         "BP_JVM_VERSION": "25",
-        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets"
+        "BP_NATIVE_IMAGE_BUILD_ARGUMENTS": "-H:+AddAllCharsets --initialize-at-run-time=com.password4j"
     ]
     docker {
         bindHostToBuilder = true
