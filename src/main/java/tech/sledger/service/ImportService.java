@@ -18,17 +18,18 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImportService {
     private final TemplateService templateService;
-    private final Map<String, Class<? extends Importer>> importerMap = Map.of(
-        "OCBC", OcbcImporter.class,
-        "UOB", UobImporter.class,
-        "Grab", GrabImporter.class,
-        "Citi", CitiImporter.class
+    private final Map<String, Supplier<Importer>> importerMap = Map.of(
+        "OCBC", OcbcImporter::new,
+        "UOB", UobImporter::new,
+        "Grab", GrabImporter::new,
+        "Citi", CitiImporter::new
     );
 
     public List<Transaction> process(
@@ -48,7 +49,7 @@ public class ImportService {
             .toList();
 
         return importerMap.get(issuerName)
-            .getConstructor().newInstance().process(account, inputStream, templates)
+            .get().process(account, inputStream, templates)
             .stream()
             .sorted(comparing(Transaction::getDate))
             .peek(t -> t.setId(index.getAndIncrement()))
