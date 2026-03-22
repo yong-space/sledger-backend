@@ -1,5 +1,7 @@
 package tech.sledger.config;
 
+import com.password4j.Argon2Function;
+import com.password4j.types.Argon2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +54,8 @@ public class SecurityConfig {
     static class EncoderConfig {
         @Bean
         public PasswordEncoder passwordEncoder() {
-            return new Argon2Password4jPasswordEncoder();
+            var args = Argon2Function.getInstance(1 << 14, 2, 1, 32, Argon2.ID);
+            return new Argon2Password4jPasswordEncoder(args);
         }
     }
 
