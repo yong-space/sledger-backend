@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +19,7 @@ import tech.sledger.service.JwtService;
 import java.io.IOException;
 import java.util.Collection;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -42,6 +44,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 var authToken = new UsernamePasswordAuthenticationToken(user, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } catch (Exception e) {
+                log.error("JWT auth error", e);
                 response.setStatus(401);
             }
         }
