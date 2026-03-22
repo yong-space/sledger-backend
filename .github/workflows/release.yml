@@ -3,6 +3,10 @@ name: Build and Release
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.java'
+      - '**.gradle'
+      - '.github/workflows/**'
 
 env:
   REPO: ${{ github.event.repository.name }}
