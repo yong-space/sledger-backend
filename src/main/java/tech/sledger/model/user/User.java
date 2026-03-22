@@ -30,15 +30,16 @@ public class User implements UserDetails {
     private String password;
     @JsonIgnore
     @Builder.Default
-    private boolean accountNonExpired = true;
+    private Boolean accountNonExpired = true;
     @JsonIgnore
     @Builder.Default
-    private boolean accountNonLocked = true;
+    private Boolean accountNonLocked = true;
     @JsonIgnore
     @Builder.Default
-    private boolean credentialsNonExpired = true;
+    private Boolean credentialsNonExpired = true;
     @JsonIgnore
-    private boolean enabled;
+    @Builder.Default
+    private Boolean enabled = false;
     @JsonIgnore
     private List<String> roles;
 
@@ -46,5 +47,21 @@ public class User implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (roles == null) return List.of();
         return roles.stream().map(SimpleGrantedAuthority::new).toList();
+    }
+
+    public boolean isAccountNonExpired() {
+        return accountNonExpired;
+    }
+
+    public boolean isAccountNonLocked() {
+        return accountNonLocked;
+    }
+
+    public boolean isCredentialsNonExpired() {
+        return credentialsNonExpired;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 }

@@ -31,6 +31,6 @@ public class Account {
     private AccountType type;
     private String name;
     @Builder.Default
-    private boolean visible = true;
+    private Boolean visible = true;
     private int sortOrder;
 }

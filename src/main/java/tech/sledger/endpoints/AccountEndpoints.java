@@ -53,7 +53,7 @@ public class AccountEndpoints {
                 .name(newAccount.getName())
                 .type(newAccount.getType())
                 .owner(user)
-                .multiCurrency(newAccount.isMultiCurrency())
+                .multiCurrency(newAccount.getMultiCurrency())
                 .build();
             case Credit -> CreditAccount.builder()
                 .issuer(issuer)
@@ -62,7 +62,7 @@ public class AccountEndpoints {
                 .billingCycle(newAccount.getBillingCycle())
                 .billingMonthOffset(newAccount.getBillingMonthOffset())
                 .owner(user)
-                .multiCurrency(newAccount.isMultiCurrency())
+                .multiCurrency(newAccount.getMultiCurrency())
                 .build();
             case Retirement -> CPFAccount.builder()
                 .issuer(issuer)
@@ -103,13 +103,13 @@ public class AccountEndpoints {
         if (account instanceof CreditAccount creditAccount) {
             creditAccount.setIssuer(issuer);
             creditAccount.setName(editAccount.getName());
-            creditAccount.setMultiCurrency(editAccount.isMultiCurrency());
+            creditAccount.setMultiCurrency(editAccount.getMultiCurrency());
             creditAccount.setBillingCycle(editAccount.getBillingCycle());
             creditAccount.setBillingMonthOffset(editAccount.getBillingMonthOffset());
         } else if (account instanceof CashAccount cashAccount) {
             cashAccount.setIssuer(issuer);
             cashAccount.setName(editAccount.getName());
-            cashAccount.setMultiCurrency(editAccount.isMultiCurrency());
+            cashAccount.setMultiCurrency(editAccount.getMultiCurrency());
         } else {
             CPFAccount cpfAccount = (CPFAccount) account;
             cpfAccount.setOrdinaryRatio(editAccount.getOrdinaryRatio());

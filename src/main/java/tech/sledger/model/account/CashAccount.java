@@ -12,5 +12,5 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @Document("account")
 public class CashAccount extends Account {
-    private boolean multiCurrency;
+    private Boolean multiCurrency;
 }

@@ -12,7 +12,7 @@ public class NewAccount {
     private long issuerId;
     private int billingCycle;
     private int billingMonthOffset;
-    private boolean multiCurrency;
+    private Boolean multiCurrency;
     private BigDecimal ordinaryRatio;
     private BigDecimal specialRatio;
     private BigDecimal medisaveRatio;

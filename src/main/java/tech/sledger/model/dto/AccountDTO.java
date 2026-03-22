@@ -14,7 +14,7 @@ public class AccountDTO {
     private boolean visible;
     private BigDecimal balance;
     private long transactions;
-    private boolean multiCurrency;
+    private Boolean multiCurrency;
     private Integer billingCycle;
     private Integer billingMonthOffset;
     private BigDecimal ordinaryRatio;

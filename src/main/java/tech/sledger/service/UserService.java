@@ -6,6 +6,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,7 +33,7 @@ public class UserService {
 
     public Activation add(Registration registration) {
         String username = registration.getUsername().trim();
-        User existing = userRepo.findFirstByUsername(username);
+        UserDetails existing = userRepo.findFirstByUsername(username);
         if (existing != null) {
             if (!existing.isEnabled()) {
                 throw new ResponseStatusException(BAD_REQUEST, "Account pending activation");
