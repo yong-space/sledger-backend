@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sledger is a personal finance/savings ledger backend. It manages bank accounts, transactions, and portfolio snapshots for users. Built with Spring Boot 3.5.7 on Java 25, backed by MongoDB.
+Sledger is a personal finance/savings ledger backend. It manages bank accounts, transactions, and portfolio snapshots for users. Built with Spring Boot 4.0.4 on Java 25, backed by MongoDB.
 
 ## Commands
 
@@ -88,6 +88,10 @@ IDs are manually assigned sequential longs (not MongoDB ObjectIds) for both acco
 ### Email
 
 Handlebars templates in `src/main/resources/email/`. Sent via Resend API (`ResendService`). `EmailService` wraps async sends.
+
+## Deployment
+
+The app is deployed as a GraalVM native image. The CI pipeline (`.github/workflows/release.yml`) builds a native Docker image via `./gradlew bootBuildImage` using GraalVM 25, then performs a rolling update to a Kubernetes deployment (`kubectl set image`). AOT hints are registered in `config/AotHints.java` — update this when adding types that need reflection at native runtime.
 
 ## Testing
 

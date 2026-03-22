@@ -3,6 +3,10 @@ name: Build and Release
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.java'
+      - '**.gradle'
+      - '.github/workflows/**'
 
 env:
   REPO: ${{ github.event.repository.name }}
@@ -15,7 +19,7 @@ jobs:
       contents: write
       packages: write
     outputs:
-      tag: ${{ steps.tag.outputs.new_tag }}
+      tag: ${{ steps.tag.outputs.nextStrict }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -53,6 +57,11 @@ jobs:
 
     - name: Build native image
       run: ./gradlew bootBuildImage
+
+    - name: Create and push git tag
+      run: |
+        git tag ${{ steps.tag.outputs.nextStrict }}
+        git push origin ${{ steps.tag.outputs.nextStrict }}
 
   release:
     needs: build
