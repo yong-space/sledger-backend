@@ -6,7 +6,6 @@ import com.resend.services.emails.model.CreateEmailResponse;
 import org.apache.logging.log4j.message.DefaultFlowMessageFactory;
 import org.apache.logging.log4j.message.ParameterizedMessageFactory;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -21,8 +20,7 @@ public class AotHints implements RuntimeHintsRegistrar {
             ParameterizedMessageFactory.class,
             DefaultHelperRegistry.class,
             CreateEmailOptions.class,
-            CreateEmailResponse.class,
-            BouncyCastleProvider.class
+            CreateEmailResponse.class
         ).forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
 
         hints.resources().registerPattern("email/*");
