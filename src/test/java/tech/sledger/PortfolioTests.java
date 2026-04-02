@@ -159,6 +159,65 @@ public class PortfolioTests extends BaseTest {
             });
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    @WithUserDetails("basic-user2@company.com")
+    public void emailSnapshotWithNullPnl() throws Exception {
+        String mockData = """
+            [
+            { "ticker": "B", "name": "B", "lastPrice": 2.00, "dailyPnl": 1.00, "mktValue": 2.00 },
+            { "ticker": "A", "name": "A", "lastPrice": 1.00, "mktValue": 1.00 },
+            { "ticker": "CASH", "name": "Cash", "lastPrice": 0, "mktValue": 0 }
+            ]
+            """;
+        HttpResponse<String> response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(mockData);
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(response);
+        when(resendService.send(any(CreateEmailOptions.class)))
+            .thenReturn(new CreateEmailResponse("abc"));
+
+        mvc.perform(get("/api/portfolio/email-snapshot"))
+            .andExpect(status().isOk())
+            .andExpect(result -> {
+                String content = result.getResponse().getContentAsString();
+                Elements cells = Jsoup.parse(content).selectFirst("tr.summary-row").select("td");
+                assertCell(cells.get(1), "1", null, List.of("positive"));
+                assertCell(cells.get(5), "3", null, Collections.emptyList());
+            });
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    @WithUserDetails("basic-user2@company.com")
+    public void emailSnapshotWithTwoNullPnl() throws Exception {
+        String mockData = """
+            [
+            { "ticker": "A", "name": "A", "lastPrice": 1.00, "mktValue": 1.00 },
+            { "ticker": "B", "name": "B", "lastPrice": 2.00, "mktValue": 2.00 },
+            { "ticker": "C", "name": "C", "lastPrice": 3.00, "dailyPnl": 1.00, "unrealizedPnl": 1.00, "mktValue": 3.00 },
+            { "ticker": "CASH", "name": "Cash", "lastPrice": 0, "mktValue": 0 }
+            ]
+            """;
+        HttpResponse<String> response = (HttpResponse<String>) mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(mockData);
+        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(response);
+        when(resendService.send(any(CreateEmailOptions.class)))
+            .thenReturn(new CreateEmailResponse("abc"));
+
+        mvc.perform(get("/api/portfolio/email-snapshot"))
+            .andExpect(status().isOk())
+            .andExpect(result -> {
+                String content = result.getResponse().getContentAsString();
+                Elements cells = Jsoup.parse(content).selectFirst("tr.summary-row").select("td");
+                assertCell(cells.get(1), "1", null, List.of("positive"));
+                assertCell(cells.get(5), "6", null, Collections.emptyList());
+            });
+    }
+
     private void assertCell(Element cell, String text, String colspan, List<String> classes) {
         assertEquals(text, cell.text().trim(), "Cell text mismatch");
         assertEquals(Set.copyOf(classes), cell.classNames(), "CSS classes mismatch");
