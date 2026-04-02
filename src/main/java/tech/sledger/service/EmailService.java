@@ -33,13 +33,15 @@ public class EmailService {
     @PostConstruct
     public void init() {
         Helper<BigDecimal> formatCurrency = (value, _) -> {
+            if (value == null) return "";
             NumberFormat format = NumberFormat.getNumberInstance();
             format.setMaximumFractionDigits(0);
             format.setMinimumFractionDigits(0);
             return format.format(value);
         };
-        Helper<BigDecimal> formatPercentage = (value, _) -> String.format("%.1f%%", value);
+        Helper<BigDecimal> formatPercentage = (value, _) -> value == null ? "" : String.format("%.1f%%", value);
         Helper<BigDecimal> signClass = (value, _) -> {
+            if (value == null) return "";
             int i = value.compareTo(BigDecimal.ZERO);
             return i == 0 ? "" : i > 0 ? "positive" : "negative";
         };
