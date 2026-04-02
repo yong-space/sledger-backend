@@ -14,6 +14,7 @@ import tech.sledger.model.dto.CategoryInsight;
 import tech.sledger.model.dto.CategorySuggestion;
 import tech.sledger.model.dto.Insight;
 import tech.sledger.model.dto.MonthlyBalance;
+import tech.sledger.model.portfolio.PortfolioPosition;
 import java.util.List;
 
 public class AotHints implements RuntimeHintsRegistrar {
@@ -30,7 +31,8 @@ public class AotHints implements RuntimeHintsRegistrar {
             CategoryInsight.class,
             CategorySuggestion.class,
             Insight.class,
-            MonthlyBalance.class
+            MonthlyBalance.class,
+            PortfolioPosition.class
         ).forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
 
         hints.resources().registerPattern("email/*");
