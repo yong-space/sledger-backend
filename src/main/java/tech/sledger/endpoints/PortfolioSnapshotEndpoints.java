@@ -87,6 +87,8 @@ public class PortfolioSnapshotEndpoints {
         positions.sort((a, b) -> {
             if ("CASH".equals(a.getTicker())) return 1;
             if ("CASH".equals(b.getTicker())) return -1;
+            if (b.getDailyPnl() == null) return a.getDailyPnl() == null ? 0 : -1;
+            if (a.getDailyPnl() == null) return 1;
             return b.getDailyPnl().compareTo(a.getDailyPnl());
         });
 
