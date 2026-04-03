@@ -83,7 +83,7 @@ public class PortfolioSnapshotEndpoints {
     }
 
     private EmailSnapshot buildSnapshotData() {
-        List<PortfolioPosition> positions = http("/positions", new TypeReference<>() {});
+        List<PortfolioPosition> positions = http("/positions/eod", new TypeReference<>() {});
         positions.sort((a, b) -> {
             if ("CASH".equals(a.getTicker())) return 1;
             if ("CASH".equals(b.getTicker())) return -1;
