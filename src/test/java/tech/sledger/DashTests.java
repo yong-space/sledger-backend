@@ -155,6 +155,7 @@ public class DashTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
             .andExpect(jsonPath("$.[?(@.month == '" + month + "')].amount").value(-2))
+            .andExpect(jsonPath("$.[?(@.month == '" + month + "')].outstanding").value(-2))
             .andExpect(jsonPath("$.[?(@.month == '" + month + "')].transactions").value(4));
     }
 

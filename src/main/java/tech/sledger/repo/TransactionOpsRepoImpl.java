@@ -25,17 +25,19 @@ public class TransactionOpsRepoImpl implements TransactionOpsRepo {
 
     @Override
     public List<CreditCardStatement> getCreditCardBills(long accountId) {
-        Criteria creditCardBill = Criteria.where("_id.category").ne("Credit Card Bill");
+        Criteria isPayment = Criteria.where("_id.category").is("Credit Card Bill");
+        Criteria isSpend = Criteria.where("_id.category").ne("Credit Card Bill");
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("accountId").is(accountId)),
             group("billingMonth", "category")
                 .sum(ConvertOperators.valueOf("amount").convertToDouble()).as("totalAmount")
                 .count().as("transactions"),
             group("_id.billingMonth")
-                .sum("$totalAmount").as("net")
-                .sum(Cond.when(creditCardBill).then("$totalAmount").otherwise(0))
+                .sum(Cond.when(isPayment).then("$totalAmount").otherwise(0))
+                    .as("paid")
+                .sum(Cond.when(isSpend).then("$totalAmount").otherwise(0))
                     .as("amount")
-                .sum(Cond.when(creditCardBill).then("$transactions").otherwise(0))
+                .sum(Cond.when(isSpend).then("$transactions").otherwise(0))
                     .as("transactions"),
             _ -> Document.parse("""
             {
@@ -43,10 +45,17 @@ public class TransactionOpsRepoImpl implements TransactionOpsRepo {
                     sortBy: { _id: 1 },
                     output: {
                         balance: {
-                            $sum: "$net",
+                            $sum: { $add: ["$amount", "$paid"] },
                             window: { documents: ["unbounded", "current"] }
                         }
                     }
+                }
+            }
+            """),
+            _ -> Document.parse("""
+            {
+                $addFields: {
+                    outstanding: { $subtract: ["$balance", "$paid"] }
                 }
             }
             """)
