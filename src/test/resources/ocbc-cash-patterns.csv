@@ -38,3 +38,11 @@ ABCD12345EFGH IJKL                OTHR Anon Last Merchant",15.50,
 999999999999999",16.50,
 17/06/2025,17/06/2025,"FUND TRANSFER
 MISC -                            from Anon Lastrow ABCInternet Banking",17.50,
+18/06/2025,18/06/2025,"FAST PAYMENT
+Anon Empty Merchant               OTHR x1234567",18.50,
+19/06/2025,19/06/2025,"FUND TRANSFER
+MISC -                            from Internet Banking",,19.50
+20/06/2025,20/06/2025,"FUND TRANSFER
+SVCS -                            from Anon PersonInternet Banking",,20.50
+21/06/2025,21/06/2025,"FUND TRANSFER
+SVCS - Detail                     from Anon Smith JonesInternet Banking",,21.50
