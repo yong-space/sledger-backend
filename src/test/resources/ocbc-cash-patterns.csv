@@ -1,0 +1,48 @@
+Account details for:,360 Account 111-111111-001
+Available Balance,"1,234.56"
+Ledger Balance,"1,234.56"
+
+Transaction History
+Transaction date,Value date,Description,Withdrawals (SGD),Deposits (SGD)
+01/06/2025,01/06/2025,"NETS QR
+ANON COFFEE                       12345601           NETS QR PURCHASE   ",1.50,
+02/06/2025,02/06/2025,"NETS QR
+9999990000000000                  50,000 IDR         QRIS ANON OVERSEAS",2.50,
+03/06/2025,03/06/2025,"FAST PAYMENT
+EPOSSPABCDEF12345                 OTHR ANON ONE PTE.DBSS 99999999",3.50,
+04/06/2025,04/06/2025,"FAST PAYMENT
+OTHR-Mobile                       to Anon Recipient  via PayNow-UEN",4.50,
+05/06/2025,05/06/2025,"FUND TRANSFER
+OTHR - Lunch                      to ANON RECIPIENT Pte. via PayNow-Mobile",5.50,
+06/06/2025,06/06/2025,"FUND TRANSFER
+OTHR - 99999                      to ANON BUDDY      via PayNow-Mobile",6.50,
+07/06/2025,07/06/2025,"FUND TRANSFER
+SVCS - Service Fee                from Anon Sender ANOInternet Banking",7.50,
+08/06/2025,08/06/2025,"FUND TRANSFER
+MISC - Anon Bare Detail           from Internet Banking",8.50,
+09/06/2025,09/06/2025,"PAYMENT/TRANSFER
+OTHR REF 12345 ANON BENEFIT       via PayNow-GPNT    from ANON ONESENDER",,9.50
+10/06/2025,10/06/2025,"PAYMENT/TRANSFER
+OTHR Birthday Gift                from ANON TWOSENDER Avia PayNow-DBSS",,10.50
+11/06/2025,11/06/2025,"PAYMENT/TRANSFER
+OTHR Anon Threesender             from Anon ThreesenderTRWI",,11.50
+12/06/2025,12/06/2025,"FAST PAYMENT
+Anon Detail                       OTHR ANON STORENAME 99999999",12.50,
+13/06/2025,13/06/2025,"FAST PAYMENT
+Anon Detail                       OTHR Anon Placex123456",13.50,
+14/06/2025,14/06/2025,"FAST PAYMENT
+SF1234567 OtherText DBSS 1234567 9999999OTHR Anon Glued Merchant",14.50,
+15/06/2025,15/06/2025,"FAST PAYMENT
+ABCD12345EFGH IJKL                OTHR Anon Last Merchant",15.50,
+16/06/2025,16/06/2025,"LOAN PAYMENT
+999999999999999",16.50,
+17/06/2025,17/06/2025,"FUND TRANSFER
+MISC -                            from Anon Lastrow ABCInternet Banking",17.50,
+18/06/2025,18/06/2025,"FAST PAYMENT
+Anon Empty Merchant               OTHR x1234567",18.50,
+19/06/2025,19/06/2025,"FUND TRANSFER
+MISC -                            from Internet Banking",,19.50
+20/06/2025,20/06/2025,"FUND TRANSFER
+SVCS -                            from Anon PersonInternet Banking",,20.50
+21/06/2025,21/06/2025,"FUND TRANSFER
+SVCS - Detail                     from Anon Smith JonesInternet Banking",,21.50
