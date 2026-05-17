@@ -327,7 +327,7 @@ public class ImportTests {
             .file(mockFile("ocbc-cash-patterns.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(17)))
+            .andExpect(jsonPath("$", iterableWithSize(21)))
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Coffee')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Overseas')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon One Pte.')]").exists())
@@ -344,7 +344,9 @@ public class ImportTests {
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Glued Merchant: Othertext')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Last Merchant: Ijkl')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Loan Payment 999999999999999')]").exists())
-            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Lastrow')]").exists());
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Lastrow')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Person')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Smith Jones: Detail')]").exists());
     }
 
     @Test
@@ -456,5 +458,17 @@ public class ImportTests {
         mvc.perform(request)
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", iterableWithSize(1)));
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
+    public void citiCreditInvalidColumns() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(citiCreditAccountId).getBytes()))
+            .file(mockFile("citi-invalid-cols.csv"));
+        mvc.perform(request)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value("Invalid import file"));
     }
 }

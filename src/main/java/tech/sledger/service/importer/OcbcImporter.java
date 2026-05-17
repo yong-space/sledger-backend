@@ -181,11 +181,9 @@ public class OcbcImporter implements Importer {
             String recipient = m.group(2).trim()
                 .replaceAll("(?i)\\s+Pte\\.?.*$", "")
                 .trim();
-            if (!recipient.isEmpty()) {
-                return detail.isEmpty()
-                    ? capitalizeFirst(recipient)
-                    : capitalizeFirst(recipient) + ": " + capitalizeFirst(detail);
-            }
+            return detail.isEmpty()
+                ? capitalizeFirst(recipient)
+                : capitalizeFirst(recipient) + ": " + capitalizeFirst(detail);
         }
 
         m = FUND_TRANSFER_INTERNET_PAT.matcher(cleaned);
