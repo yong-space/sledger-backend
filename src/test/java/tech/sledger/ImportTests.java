@@ -320,6 +320,35 @@ public class ImportTests {
 
     @Test
     @WithUserDetails("basic-user@company.com")
+    public void ocbcCashPatterns() throws Exception {
+        var request = MockMvcRequestBuilders
+            .multipart("/api/import")
+            .part(new MockPart("accountId", String.valueOf(ocbcCashAccountId).getBytes()))
+            .file(mockFile("ocbc-cash-patterns.csv"));
+        mvc.perform(request)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", iterableWithSize(17)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Coffee')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Overseas')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon One Pte.')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Recipient')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Recipient: Lunch')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Buddy')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Sender: Service Fee')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Bare Detail')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Onesender')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Twosender A: Birthday Gift')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Threesender')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Storename: Anon Detail')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Place: Anon Detail')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Glued Merchant: Othertext')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Last Merchant: Ijkl')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Loan Payment 999999999999999')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Lastrow')]").exists());
+    }
+
+    @Test
+    @WithUserDetails("basic-user@company.com")
     public void ocbcCredit() throws Exception {
         var request = MockMvcRequestBuilders
             .multipart("/api/import")

@@ -17,6 +17,8 @@ import tech.sledger.model.tx.Template;
 import tech.sledger.model.tx.Transaction;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -123,9 +125,148 @@ public class OcbcImporter implements Importer {
         return output;
     }
 
+    private static final Pattern NETS_QR_PAT = Pattern.compile(
+        "(?i)Nets Qr ?(.+?) ?(?:\\d+ ?)?Nets Qr Purchase(?: ?\\d+)?");
+    private static final Pattern NETS_QRIS_PAT = Pattern.compile(
+        "(?i)Qris\\s+(.+)$");
+    private static final Pattern FAST_OTHR_PAT = Pattern.compile(
+        "(?i)^Fast\\s*(?:Payment|Transfer)\\s*(.*?)\\s+Othr\\s+(.*?)$");
+    private static final Pattern FAST_PAYMENT_PAYNOW_PAT = Pattern.compile(
+        "(?i)^Fast\\s*Payment\\s*othr-\\S*\\s+To\\s+(.*?)\\s+[A-Za-z]{0,3}via\\s+Paynow");
+    private static final Pattern FUND_TRANSFER_PAYNOW_PAT = Pattern.compile(
+        "(?i)^Fund\\s*Transfer\\s*othr\\s*-\\s*(.*?)\\s+To\\s+(.*?)\\s+[A-Za-z]{0,3}via\\s+Paynow");
+    private static final Pattern FUND_TRANSFER_INTERNET_PAT = Pattern.compile(
+        "(?i)^Fund\\s*Transfer\\s+\\S+\\s*-\\s*(.*?)\\s+from\\s+(.*?)\\s*Internet\\s+Banking$");
+    private static final Pattern PAYMENT_TRANSFER_VIAFROM_PAT = Pattern.compile(
+        "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+via\\s+Paynow-\\S+\\s+from\\s+(.+)$");
+    private static final Pattern PAYMENT_TRANSFER_FROMVIA_PAT = Pattern.compile(
+        "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+from\\s+(.*?)\\s*via\\s+Paynow-\\S+\\s*$");
+    private static final Pattern PAYMENT_TRANSFER_FROM_PAT = Pattern.compile(
+        "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+from\\s+(.+?)$");
+
     private String cleanCashRemarks(String raw) {
-        return raw.replaceAll("\\s{2,}", " ")
-            .replaceAll("[\\r\\n]+", "");
+        String cleaned = raw.replaceAll("\\s+", " ").trim()
+            .replaceAll("(?i)(\\d)(Othr)\\b", "$1 $2");
+
+        Matcher m = NETS_QR_PAT.matcher(cleaned);
+        if (m.find()) {
+            String detail = m.group(1).trim();
+            return Character.toUpperCase(detail.charAt(0)) + detail.substring(1);
+        }
+
+        m = NETS_QRIS_PAT.matcher(cleaned);
+        if (m.find()) {
+            return capitalizeFirst(m.group(1).trim());
+        }
+
+        m = FAST_OTHR_PAT.matcher(cleaned);
+        if (m.find()) {
+            String merchant = cleanOthrMerchant(m.group(2).trim());
+            String detail   = cleanOthrDetail(m.group(1).trim());
+            if (!merchant.isEmpty()) {
+                return detail.isEmpty()
+                    ? capitalizeFirst(merchant)
+                    : capitalizeFirst(merchant) + ": " + capitalizeFirst(detail);
+            }
+        }
+
+        m = FAST_PAYMENT_PAYNOW_PAT.matcher(cleaned);
+        if (m.find()) {
+            return capitalizeFirst(m.group(1).trim());
+        }
+
+        m = FUND_TRANSFER_PAYNOW_PAT.matcher(cleaned);
+        if (m.find()) {
+            String detail    = stripFundTransferRefCode(m.group(1).trim());
+            String recipient = m.group(2).trim()
+                .replaceAll("(?i)\\s+Pte\\.?.*$", "")
+                .trim();
+            if (!recipient.isEmpty()) {
+                return detail.isEmpty()
+                    ? capitalizeFirst(recipient)
+                    : capitalizeFirst(recipient) + ": " + capitalizeFirst(detail);
+            }
+        }
+
+        m = FUND_TRANSFER_INTERNET_PAT.matcher(cleaned);
+        if (m.find()) {
+            String detail = m.group(1).trim();
+            String sender = cleanFundTransferSender(m.group(2).trim());
+            if (!sender.isEmpty()) {
+                return detail.isEmpty()
+                    ? capitalizeFirst(sender)
+                    : capitalizeFirst(sender) + ": " + capitalizeFirst(detail);
+            }
+            return capitalizeFirst(detail);
+        }
+
+        m = PAYMENT_TRANSFER_VIAFROM_PAT.matcher(cleaned);
+        if (m.find()) {
+            return formatPaymentTransferPayNow(m.group(1), m.group(2));
+        }
+        m = PAYMENT_TRANSFER_FROMVIA_PAT.matcher(cleaned);
+        if (m.find()) {
+            return formatPaymentTransferPayNow(m.group(1), m.group(2));
+        }
+        m = PAYMENT_TRANSFER_FROM_PAT.matcher(cleaned);
+        if (m.find()) {
+            return formatPaymentTransferPayNow(m.group(1), m.group(2));
+        }
+        return cleaned;
+    }
+
+    private String formatPaymentTransferPayNow(String detail, String sender) {
+        String cleanSender = sender.trim()
+            .replaceAll("(?<=[a-z])[A-Z]{3,5}$", "")
+            .trim();
+        String cleanDetail = detail.trim();
+        if (cleanDetail.chars().anyMatch(Character::isDigit)
+            || cleanDetail.equalsIgnoreCase(cleanSender)) {
+            cleanDetail = "";
+        }
+        String result = "PayNow from " + capitalizeFirst(cleanSender);
+        if (!cleanDetail.isEmpty()) {
+            result += ": " + capitalizeFirst(cleanDetail);
+        }
+        return result;
+    }
+
+    private String cleanOthrDetail(String s) {
+        return s
+            .replaceAll("(?i)epossp\\S+", "")
+            .replaceAll("(?i)\\bsf\\d+\\b", "")
+            .replaceAll("(?i)\\b[A-Za-z]{2,5}\\s+\\d{7,}\\b", "")
+            .replaceAll("(?i)(?=\\S*\\d)(?=\\S*[A-Z])\\b[A-Z0-9]{12,}\\b", "")
+            .replaceAll("\\b\\d{7,}\\b", "")
+            .replaceAll("\\s{2,}", " ")
+            .trim();
+    }
+
+    private String cleanOthrMerchant(String s) {
+        return s
+            .replaceAll("(?i)(?<=[\\s.])[A-Za-z]{2,5}\\s+\\d{7,}$", "")
+            .replaceAll("\\s+\\d{8,}$", "")
+            .replaceAll("[a-z]\\d{6,}$", "")
+            .trim();
+    }
+
+    private String stripFundTransferRefCode(String s) {
+        return s.chars().anyMatch(Character::isDigit) ? "" : s;
+    }
+
+    private String cleanFundTransferSender(String sender) {
+        String trimmed = sender.trim();
+        int lastSpace = trimmed.lastIndexOf(' ');
+        if (lastSpace > 0 && trimmed.indexOf(' ') != lastSpace
+            && trimmed.substring(lastSpace + 1).matches("[A-Z]+")) {
+            return trimmed.substring(0, lastSpace);
+        }
+        return trimmed;
+    }
+
+    private String capitalizeFirst(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private String cleanCreditRemarks(String raw) {
