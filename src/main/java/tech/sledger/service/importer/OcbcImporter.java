@@ -263,7 +263,7 @@ public class OcbcImporter implements Importer {
     }
 
     private String capitalizeFirst(String s) {
-        if (s == null || s.isEmpty()) return s;
+        if (s.isEmpty()) return s;
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
