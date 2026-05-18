@@ -358,8 +358,10 @@ public class ImportTests {
             .file(mockFile("ocbc-credit.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(5)))
-            .andExpect(jsonPath("$.[?(@.remarks == 'Bus/Mrt Cm8880515')]").exists());
+            .andExpect(jsonPath("$", iterableWithSize(7)))
+            .andExpect(jsonPath("$.[?(@.remarks == 'Bus/Mrt Cm8880515')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Dessert - Place')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Store')]").exists());
 
         request = MockMvcRequestBuilders
             .multipart("/api/import")

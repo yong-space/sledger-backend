@@ -102,9 +102,14 @@ public class OcbcImporter implements Importer {
         return output;
     }
 
+    private static final Pattern CREDIT_DATE_PAT = Pattern.compile("\\d{1,2}/\\d{1,2}/\\d{4}");
+
     private List<Transaction> processCredit(List<String[]> data, Account account, List<Template> templates) {
         List<Transaction> output = new ArrayList<>();
         for (String[] row : data) {
+            if (row.length < 4 || !CREDIT_DATE_PAT.matcher(row[0]).matches()) {
+                continue;
+            }
             LocalDate localDate = LocalDate.parse(row[0], dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             Template template = matchTemplate(cleanCreditRemarks(row[1]), templates);
