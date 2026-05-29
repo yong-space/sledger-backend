@@ -64,9 +64,13 @@ public class OcbcImporter implements Importer {
 
     private void completeTransaction(CashTransaction tx, String remarks, List<Template> templates) {
         Template template = matchTemplate(cleanCashRemarks(remarks), templates);
-        tx.setRemarks(template.getRemarks());
+        tx.setRemarks(restorePayNowCasing(template.getRemarks()));
         tx.setCategory(template.getCategory());
         tx.setSubCategory(template.getSubCategory());
+    }
+
+    private String restorePayNowCasing(String remarks) {
+        return remarks.replace("Paynow", "PayNow");
     }
 
     private List<Transaction> processCash(List<String[]> data, Account account, List<Template> templates) {
@@ -120,7 +124,7 @@ public class OcbcImporter implements Importer {
             output.add(CreditTransaction.builder()
                 .date(date)
                 .billingMonth(billingMonth)
-                .remarks(template.getRemarks())
+                .remarks(restorePayNowCasing(template.getRemarks()))
                 .category(template.getCategory())
                 .subCategory(template.getSubCategory())
                 .amount(credit.subtract(debit))
@@ -130,33 +134,43 @@ public class OcbcImporter implements Importer {
         return output;
     }
 
+    private static final Pattern VIA_PAYNOW_PAT = Pattern.compile(
+        "(?i)via\\s+Paynow-\\S+");
     private static final Pattern NETS_QR_PAT = Pattern.compile(
         "(?i)Nets Qr ?(.+?) ?(?:\\d+ ?)?Nets Qr Purchase(?: ?\\d+)?");
     private static final Pattern NETS_QRIS_PAT = Pattern.compile(
         "(?i)Qris\\s+(.+)$");
     private static final Pattern FAST_OTHR_PAT = Pattern.compile(
         "(?i)^Fast\\s*(?:Payment|Transfer)\\s*(.*?)\\s+Othr\\s+(.*?)$");
-    private static final Pattern FAST_PAYMENT_PAYNOW_PAT = Pattern.compile(
-        "(?i)^Fast\\s*Payment\\s*othr-\\S*\\s+To\\s+(.*?)\\s+[A-Za-z]{0,3}via\\s+Paynow");
-    private static final Pattern FUND_TRANSFER_PAYNOW_PAT = Pattern.compile(
-        "(?i)^Fund\\s*Transfer\\s*othr\\s*-\\s*(.*?)\\s+To\\s+(.*?)\\s+[A-Za-z]{0,3}via\\s+Paynow");
+    private static final Pattern FAST_PAYMENT_OTHR_TO_PAT = Pattern.compile(
+        "(?i)^Fast\\s*Payment\\s*othr-\\S+(?:\\s+\\S+)?\\s+To\\s+(.+?)$");
+    private static final Pattern FUND_TRANSFER_OTHR_TO_PAT = Pattern.compile(
+        "(?i)^Fund\\s*Transfer\\s*Othr\\s*-\\s*(.*?)\\s+To\\s+(.+?)$");
+    private static final Pattern FUND_TRANSFER_OTHR_FROM_PAT = Pattern.compile(
+        "(?i)^Fund\\s*Transfer\\s*Othr\\s*-\\s*(.*?)\\s+from\\s+(.+?)$");
     private static final Pattern FUND_TRANSFER_INTERNET_PAT = Pattern.compile(
         "(?i)^Fund\\s*Transfer\\s+\\S+\\s*-\\s*(.*?)\\s+from\\s+(.*?)\\s*Internet\\s+Banking$");
-    private static final Pattern PAYMENT_TRANSFER_VIAFROM_PAT = Pattern.compile(
-        "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+via\\s+Paynow-\\S+\\s+from\\s+(.+)$");
-    private static final Pattern PAYMENT_TRANSFER_FROMVIA_PAT = Pattern.compile(
-        "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+from\\s+(.*?)\\s*via\\s+Paynow-\\S+\\s*$");
-    private static final Pattern PAYMENT_TRANSFER_FROM_PAT = Pattern.compile(
+    private static final Pattern PAYMENT_TRANSFER_SALA_PAT = Pattern.compile(
+        "(?i)^Payment/Transfer\\s+Sala\\s+\\S+\\s+from\\s+(.+)$");
+    private static final Pattern PAYMENT_TRANSFER_OTHR_FROM_PAT = Pattern.compile(
         "(?i)^Payment/Transfer\\s+Othr\\s+(.+?)\\s+from\\s+(.+?)$");
 
     private String cleanCashRemarks(String raw) {
         String cleaned = raw.replaceAll("\\s+", " ").trim()
             .replaceAll("(?i)(\\d)(Othr)\\b", "$1 $2");
 
+        // Pre-strip the PayNow channel marker so subsequent patterns are order-invariant
+        // for "from X via Paynow-Y" vs "via Paynow-Y from X" merged-column variants.
+        boolean isPaynow = false;
+        Matcher viaPaynow = VIA_PAYNOW_PAT.matcher(cleaned);
+        if (viaPaynow.find()) {
+            isPaynow = true;
+            cleaned = viaPaynow.replaceAll(" ").replaceAll("\\s+", " ").trim();
+        }
+
         Matcher m = NETS_QR_PAT.matcher(cleaned);
         if (m.find()) {
-            String detail = m.group(1).trim();
-            return Character.toUpperCase(detail.charAt(0)) + detail.substring(1);
+            return capitalizeFirst(m.group(1).trim());
         }
 
         m = NETS_QRIS_PAT.matcher(cleaned);
@@ -169,69 +183,73 @@ public class OcbcImporter implements Importer {
             String merchant = cleanOthrMerchant(m.group(2).trim());
             String detail   = cleanOthrDetail(m.group(1).trim());
             if (!merchant.isEmpty()) {
-                return detail.isEmpty()
-                    ? capitalizeFirst(merchant)
-                    : capitalizeFirst(merchant) + ": " + capitalizeFirst(detail);
+                return headline("", merchant, detail);
             }
         }
 
-        m = FAST_PAYMENT_PAYNOW_PAT.matcher(cleaned);
+        m = FAST_PAYMENT_OTHR_TO_PAT.matcher(cleaned);
         if (m.find()) {
-            return capitalizeFirst(m.group(1).trim());
+            String recipient = m.group(1).trim();
+            return isPaynow ? capitalizeFirst(recipient) : headline("To ", recipient, "");
         }
 
-        m = FUND_TRANSFER_PAYNOW_PAT.matcher(cleaned);
-        if (m.find()) {
-            String detail    = stripFundTransferRefCode(m.group(1).trim());
-            String recipient = m.group(2).trim()
-                .replaceAll("(?i)\\s+Pte\\.?.*$", "")
-                .trim();
-            return detail.isEmpty()
-                ? capitalizeFirst(recipient)
-                : capitalizeFirst(recipient) + ": " + capitalizeFirst(detail);
+        if (isPaynow) {
+            m = FUND_TRANSFER_OTHR_TO_PAT.matcher(cleaned);
+            if (m.find()) {
+                String detail    = stripFundTransferRefCode(m.group(1).trim());
+                String recipient = m.group(2).trim()
+                    .replaceAll("(?i)\\s+Pte\\.?.*$", "")
+                    .trim();
+                return headline("", recipient, detail);
+            }
+            m = FUND_TRANSFER_OTHR_FROM_PAT.matcher(cleaned);
+            if (m.find()) {
+                return formatPayNowFromSender(m.group(1), m.group(2));
+            }
         }
 
         m = FUND_TRANSFER_INTERNET_PAT.matcher(cleaned);
         if (m.find()) {
             String detail = m.group(1).trim();
             String sender = cleanFundTransferSender(m.group(2).trim());
-            if (!sender.isEmpty()) {
-                return detail.isEmpty()
-                    ? capitalizeFirst(sender)
-                    : capitalizeFirst(sender) + ": " + capitalizeFirst(detail);
-            }
-            return capitalizeFirst(detail);
+            return sender.isEmpty() ? capitalizeFirst(detail) : headline("", sender, detail);
         }
 
-        m = PAYMENT_TRANSFER_VIAFROM_PAT.matcher(cleaned);
+        m = PAYMENT_TRANSFER_SALA_PAT.matcher(cleaned);
         if (m.find()) {
-            return formatPaymentTransferPayNow(m.group(1), m.group(2));
+            return headline("Salary from ", m.group(1), "");
         }
-        m = PAYMENT_TRANSFER_FROMVIA_PAT.matcher(cleaned);
+
+        m = PAYMENT_TRANSFER_OTHR_FROM_PAT.matcher(cleaned);
         if (m.find()) {
-            return formatPaymentTransferPayNow(m.group(1), m.group(2));
+            return formatPayNowFromSender(m.group(1), m.group(2));
         }
-        m = PAYMENT_TRANSFER_FROM_PAT.matcher(cleaned);
-        if (m.find()) {
-            return formatPaymentTransferPayNow(m.group(1), m.group(2));
-        }
+
         return cleaned;
     }
 
-    private String formatPaymentTransferPayNow(String detail, String sender) {
+    private String headline(String prefix, String head, String detail) {
+        String result = prefix + capitalizeFirst(head.trim());
+        String d = detail.trim();
+        if (!d.isEmpty()) {
+            result += ": " + capitalizeFirst(d);
+        }
+        return result;
+    }
+
+    private boolean isMeaninglessDetail(String detail, String sender) {
+        String d = detail.trim();
+        return d.chars().anyMatch(Character::isDigit)
+            || d.equalsIgnoreCase(sender)
+            || d.equalsIgnoreCase("Othr");
+    }
+
+    private String formatPayNowFromSender(String detail, String sender) {
         String cleanSender = sender.trim()
             .replaceAll("(?<=[a-z])[A-Z]{3,5}$", "")
             .trim();
-        String cleanDetail = detail.trim();
-        if (cleanDetail.chars().anyMatch(Character::isDigit)
-            || cleanDetail.equalsIgnoreCase(cleanSender)) {
-            cleanDetail = "";
-        }
-        String result = "PayNow from " + capitalizeFirst(cleanSender);
-        if (!cleanDetail.isEmpty()) {
-            result += ": " + capitalizeFirst(cleanDetail);
-        }
-        return result;
+        String d = isMeaninglessDetail(detail, cleanSender) ? "" : detail.trim();
+        return headline("PayNow from ", cleanSender, d);
     }
 
     private String cleanOthrDetail(String s) {

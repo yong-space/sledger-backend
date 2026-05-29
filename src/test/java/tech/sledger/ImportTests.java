@@ -327,7 +327,7 @@ public class ImportTests {
             .file(mockFile("ocbc-cash-patterns.csv"));
         mvc.perform(request)
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$", iterableWithSize(21)))
+            .andExpect(jsonPath("$", iterableWithSize(27)))
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Coffee')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Overseas')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon One Pte.')]").exists())
@@ -336,9 +336,9 @@ public class ImportTests {
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Buddy')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Sender: Service Fee')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Bare Detail')]").exists())
-            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Onesender')]").exists())
-            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Twosender A: Birthday Gift')]").exists())
-            .andExpect(jsonPath("$.[?(@.remarks == 'Paynow From Anon Threesender')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Onesender')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Twosender A: Birthday Gift')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Threesender')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Storename: Anon Detail')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Place: Anon Detail')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Glued Merchant: Othertext')]").exists())
@@ -346,7 +346,13 @@ public class ImportTests {
             .andExpect(jsonPath("$.[?(@.remarks == 'Loan Payment 999999999999999')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Lastrow')]").exists())
             .andExpect(jsonPath("$.[?(@.remarks == 'Anon Person')]").exists())
-            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Smith Jones: Detail')]").exists());
+            .andExpect(jsonPath("$.[?(@.remarks == 'Anon Smith Jones: Detail')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'Salary From Anon Company Ispt')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Sender One: Txry')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Sender Two')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Sender Three')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'PayNow From Anon Sender Four: Anon Gift Detail')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'To Anon Bank')]").exists());
     }
 
     @Test
