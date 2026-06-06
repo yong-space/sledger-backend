@@ -128,7 +128,9 @@ public class DashTests {
             creditTx(epoch.plusMonths(3).plusDays(5), "Insight A", 20),
             creditTx(epoch.plusMonths(3).plusDays(6), "Insight A", -14),
             creditTx(epoch.plusMonths(3).plusDays(7), "Insight B", -67),
-            creditTx(epoch.plusMonths(3).plusDays(8), "Insight B", 51)
+            creditTx(epoch.plusMonths(3).plusDays(8), "Insight B", 51),
+            creditTx(epoch.plusMonths(3).plusDays(9), "Insight C", "Sub X", 7),
+            creditTx(epoch.plusMonths(3).plusDays(10), "Insight C", "Sub Y", 16)
         );
         mvc.perform(request(POST, "/api/transaction", transactions))
             .andExpect(status().isOk());
@@ -141,6 +143,7 @@ public class DashTests {
         mvc.perform(get("/api/dash/insights"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.series[?(@.id == '+Insight A')].data[2]").value(6))
+            .andExpect(jsonPath("$.series[?(@.id == '+Insight C')].data[3]").value(23))
             .andExpect(jsonPath("$.series[?(@.id == '-Insight B')].stack").value("Debit"))
             .andExpect(jsonPath("$.summary[?(@.category == 'Insight A')].average").value(1))
             .andExpect(jsonPath("$.summary[?(@.category == 'Insight B')].average").value(-2));
@@ -224,12 +227,16 @@ public class DashTests {
     }
 
     Map<String, ?> creditTx(ZonedDateTime date, String category, int amount) {
+        return creditTx(date, category, category, amount);
+    }
+
+    Map<String, ?> creditTx(ZonedDateTime date, String category, String subCategory, int amount) {
         return Map.of(
             "@type", "credit",
             "date", date,
             "billingMonth", date.withDayOfMonth(1),
             "category", category,
-            "subCategory", category,
+            "subCategory", subCategory,
             "accountId", creditAccountId,
             "amount", amount,
             "remarks", "x"

@@ -90,9 +90,8 @@ public class DashEndpoints {
                 for (Instant m : months) {
                     BigDecimal total = value.stream()
                         .filter(e -> e.getMonth().equals(m))
-                        .findFirst()
-                        .orElse(Insight.builder().total(BigDecimal.ZERO).build())
-                        .getTotal();
+                        .map(Insight::getTotal)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                     boolean isCredit = total.compareTo(BigDecimal.ZERO) > 0;
                     positives.add(isCredit ? total.abs() : BigDecimal.ZERO);
