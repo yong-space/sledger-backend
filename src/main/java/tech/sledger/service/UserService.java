@@ -31,7 +31,7 @@ public class UserService {
     private final AccountService accountService;
 
     public Activation add(Registration registration) {
-        String username = registration.getUsername().trim();
+        String username = registration.getUsername().trim().toLowerCase();
         User existing = userRepo.findFirstByUsername(username);
         if (existing != null) {
             if (!existing.isEnabled()) {
@@ -72,13 +72,13 @@ public class UserService {
             }
             user.setPassword(passwordEncoder.encode(profile.getNewPassword().trim()));
         }
-        user.setUsername(profile.getUsername());
+        user.setUsername(profile.getUsername().trim().toLowerCase());
         user.setDisplayName(profile.getDisplayName());
         return userRepo.save(user);
     }
 
     public User get(String username) {
-        return userRepo.findFirstByUsername(username.toLowerCase());
+        return userRepo.findFirstByUsername(username.trim().toLowerCase());
     }
 
     public void delete(User user) {
@@ -112,7 +112,7 @@ public class UserService {
         }
     }
 
-    @Cacheable(value="authorise", key="#accountId")
+    @Cacheable(value="authorise", key="#auth.principal.id + '-' + #accountId")
     public Account authorise(Authentication auth, long accountId) {
         Account account = accountService.get(accountId);
         if (account == null) {
