@@ -497,4 +497,52 @@ public class TransactionTests extends BaseTest {
         mvc.perform(request(POST, "/api/transaction", List.of(payload)))
             .andExpect(status().isOk());
     }
+
+    @Test
+    @Order(14)
+    @WithUserDetails("basic-user@company.com")
+    public void bulkUpdateEvictsAllAccountCaches() throws Exception {
+        // Regression: a bulk update can span multiple accounts, so editAsIs must evict the
+        // tx cache for every affected account, not just the first. Both accounts' lists are
+        // primed into the cache, then changed in a single cross-account bulk request.
+        AccountIssuer issuer = new AccountIssuer();
+        issuer.setName("multi-evict-issuer");
+        issuer = accountIssuerService.add(issuer);
+        User user = userService.get("basic-user@company.com");
+
+        long accA = accountService.add(CashAccount.builder()
+            .issuer(issuer).name("Evict A").owner(user)
+            .multiCurrency(false).type(AccountType.Cash).build()).getId();
+        long accB = accountService.add(CashAccount.builder()
+            .issuer(issuer).name("Evict B").owner(user)
+            .multiCurrency(false).type(AccountType.Cash).build()).getId();
+
+        Map<String, Object> txA = Map.of("@type", "cash", "date", date("2019-01-01"),
+            "category", "C", "subCategory", "S", "accountId", accA, "amount", 1, "remarks", "Before");
+        Map<String, Object> txB = Map.of("@type", "cash", "date", date("2019-01-01"),
+            "category", "C", "subCategory", "S", "accountId", accB, "amount", 1, "remarks", "Before");
+        String rA = mvc.perform(request(POST, "/api/transaction", List.of(txA)))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String rB = mvc.perform(request(POST, "/api/transaction", List.of(txB)))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        Integer idA = JsonPath.parse(rA).read("$.[0].id");
+        Integer idB = JsonPath.parse(rB).read("$.[0].id");
+
+        // Prime both accounts' lists into the tx cache
+        mvc.perform(get("/api/transaction/" + accA))
+            .andExpect(jsonPath("$.[0].remarks").value("Before"));
+        mvc.perform(get("/api/transaction/" + accB))
+            .andExpect(jsonPath("$.[0].remarks").value("Before"));
+
+        // One bulk request touching both accounts
+        mvc.perform(request(PUT, "/api/transaction/bulk",
+                Map.of("ids", List.of(idA, idB), "remarks", "After")))
+            .andExpect(status().isOk());
+
+        // Both caches must have been evicted, so both reads reflect the update
+        mvc.perform(get("/api/transaction/" + accA))
+            .andExpect(jsonPath("$.[0].remarks").value("After"));
+        mvc.perform(get("/api/transaction/" + accB))
+            .andExpect(jsonPath("$.[0].remarks").value("After"));
+    }
 }

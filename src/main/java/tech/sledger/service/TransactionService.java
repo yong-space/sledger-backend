@@ -6,6 +6,7 @@ import static tech.sledger.model.account.AccountType.Cash;
 import static tech.sledger.model.account.AccountType.Credit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -39,6 +40,7 @@ public class TransactionService {
         return txRepo.findAllById(ids);
     }
 
+    @Cacheable(value="tx", key="#account.id")
     public <T extends Transaction> List<T> list(Account account) {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
@@ -150,7 +152,11 @@ public class TransactionService {
 
     @Transactional
     public <T extends Transaction> List<T> editAsIs(List<T> transactions) {
-        cache.clearTxCache(transactions.getFirst().getAccountId());
+        // Bulk updates can span multiple accounts, so evict every affected account's cache
+        transactions.stream()
+            .map(Transaction::getAccountId)
+            .distinct()
+            .forEach(cache::clearTxCache);
         Map<Long, BigDecimal> balances = txRepo.findAllById(transactions.stream().map(Transaction::getId).toList())
             .stream().collect(Collectors.toMap(Transaction::getId, Transaction::getBalance));
         transactions.forEach(t -> t.setBalance(balances.get(t.getId())));
