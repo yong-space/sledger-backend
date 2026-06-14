@@ -49,6 +49,7 @@ public class TransactionService {
         return txRepo.findAllByAccountIdAndDateBetweenOrderByDate(account.getId(), from, to);
     }
 
+    @Cacheable(value="txAll", key="#user.id")
     public <T extends Transaction> List<T> listAll(User user) {
         List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
             .stream().map(Account::getId).toList();

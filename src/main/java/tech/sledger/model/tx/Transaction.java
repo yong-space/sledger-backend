@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,6 +17,7 @@ import java.time.Instant;
 @SuperBuilder
 @NoArgsConstructor
 @Document(collection = "transaction")
+@CompoundIndex(name = "accountId_date", def = "{'accountId': 1, 'date': 1}")
 @JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = CashTransaction.class, name = "cash"),
