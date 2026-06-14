@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import tech.sledger.model.account.Account;
+import tech.sledger.model.account.AccountType;
 import tech.sledger.model.dto.BulkTransactionUpdate;
 import tech.sledger.model.tx.CashTransaction;
 import tech.sledger.model.tx.CreditTransaction;
@@ -106,6 +107,12 @@ public class TransactionEndpoints {
             return txService.listAll(user);
         }
         Account account = userService.authorise(auth, accountId);
+        if (account.getType() == AccountType.Cash || account.getType() == AccountType.Credit) {
+            // Served from the cached per-user union so the same rows aren't cached per account too
+            User user = (User) auth.getPrincipal();
+            return txService.filterByAccount(txService.listAll(user), accountId, from, to);
+        }
+        // Retirement/Other accounts aren't part of the union — read directly
         if (from != null && to != null) {
             return txService.listByDates(account, from, to);
         }

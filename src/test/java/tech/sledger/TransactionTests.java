@@ -545,4 +545,38 @@ public class TransactionTests extends BaseTest {
         mvc.perform(get("/api/transaction/" + accB))
             .andExpect(jsonPath("$.[0].remarks").value("After"));
     }
+
+    @Test
+    @Order(15)
+    @WithUserDetails("basic-user@company.com")
+    public void listNonUnionAccountDirectly() throws Exception {
+        // Retirement/Other accounts aren't in the cached per-user union, so the single-account
+        // endpoint serves them via list()/listByDates() directly (the non-Cash/Credit branch).
+        // No dates -> list(account)
+        mvc.perform(get("/api/transaction/" + cpfAccountId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.ordinaryAmount == 400)]").exists());
+
+        // from + to -> listByDates(account, from, to)
+        mvc.perform(get("/api/transaction/" + cpfAccountId + "?from=2022-01-01T00:00:00.000Z&to=2022-01-02T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)));
+
+        // from only (partial range) -> falls through to list(account)
+        mvc.perform(get("/api/transaction/" + cpfAccountId + "?from=2022-01-01T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @Order(16)
+    @WithUserDetails("basic-user@company.com")
+    public void singleAccountDateRangeExcludesOutOfRange() throws Exception {
+        // The cash account has transactions before 2010 (the year-2000 edits) and after (2020s),
+        // but none within — exercising filterByAccount's isBefore(from)=true and isAfter(to)=true
+        // branches. Result is empty, but every transaction is still evaluated against both bounds.
+        mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2010-01-01T00:00:00.000Z&to=2010-12-31T00:00:00.000Z"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
 }
