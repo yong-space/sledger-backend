@@ -108,18 +108,30 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
 
     @Override
     public List<Insight> getInsights(long ownerId, Instant from, Instant to) {
-        Criteria criteria = new Criteria().andOperator(
-            Criteria.where("category").exists(true),
-            Criteria.where("category").ne("Credit Card Bill"),
-            Criteria.where("date").gte(from),
-            Criteria.where("date").lte(to)
-        );
+        // Filter date range + category inside the $lookup so the {accountId, date} index restricts
+        // the read, instead of pulling all history and discarding it after $unwind. Date bounds are
+        // injected as epoch-millis extended JSON (typed longs, so no injection risk).
+        AggregationOperation lookup = stage("""
+            {
+                $lookup: {
+                  from: "transaction",
+                  let: { accountId: "$_id" },
+                  pipeline: [
+                    { $match: {
+                        $expr: { $eq: [ "$accountId", "$$accountId" ] },
+                        date: { $gte: { $date: { $numberLong: "%d" } }, $lte: { $date: { $numberLong: "%d" } } },
+                        category: { $exists: true, $ne: "Credit Card Bill" }
+                    } }
+                  ],
+                  as: "transactions"
+                }
+            }
+            """.formatted(from.toEpochMilli(), to.toEpochMilli()));
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("owner.$id").is(ownerId)),
-            lookup("transaction", "_id", "accountId", "transactions"),
+            lookup,
             unwind("$transactions"),
             replaceRoot("$transactions"),
-            match(criteria),
             stage("""
                 { $group: {
                     _id: {
@@ -140,16 +152,29 @@ public class AccountOpsRepoImpl implements AccountOpsRepo {
 
     @Override
     public List<CategorySuggestion> getCategories(long ownerId) {
-        Criteria criteria = new Criteria().andOperator(
-            Criteria.where("category").exists(true),
-            Criteria.where("category").ne("")
-        );
+        // Filter category inside the $lookup so fewer docs cross the $unwind boundary (no date
+        // window here, so the join still reads each account's history, but non-cash/blank-category
+        // transactions are dropped server-side).
+        AggregationOperation lookup = stage("""
+            {
+                $lookup: {
+                  from: "transaction",
+                  let: { accountId: "$_id" },
+                  pipeline: [
+                    { $match: {
+                        $expr: { $eq: [ "$accountId", "$$accountId" ] },
+                        category: { $exists: true, $ne: "" }
+                    } }
+                  ],
+                  as: "transactions"
+                }
+            }
+            """);
         return mongoOps.aggregate(newAggregation(
             match(Criteria.where("owner.$id").is(ownerId)),
-            lookup("transaction", "_id", "accountId", "transactions"),
+            lookup,
             unwind("$transactions"),
             replaceRoot("$transactions"),
-            match(criteria),
             group("category", "subCategory").count().as("count"),
             sort(DESC, "count").and(ASC, "_id"),
             stage("{ $replaceRoot: { newRoot: \"$_id\" } }")

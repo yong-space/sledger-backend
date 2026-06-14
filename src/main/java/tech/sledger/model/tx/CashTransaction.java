@@ -15,6 +15,5 @@ public class CashTransaction extends Transaction {
     private String category;
     @Indexed
     private String subCategory;
-    @Indexed
     private String remarks;
 }

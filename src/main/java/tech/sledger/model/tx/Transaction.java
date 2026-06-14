@@ -18,6 +18,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @Document(collection = "transaction")
 @CompoundIndex(name = "accountId_date", def = "{'accountId': 1, 'date': 1}")
+@CompoundIndex(name = "accountId_category_date", def = "{'accountId': 1, 'category': 1, 'date': 1}")
 @JsonTypeInfo(use = NAME, include = PROPERTY)
 @JsonSubTypes({
     @JsonSubTypes.Type(value = CashTransaction.class, name = "cash"),
