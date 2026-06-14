@@ -9,6 +9,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
+import org.springframework.aot.hint.TypeReference;
 import tech.sledger.model.dto.AccountDTO;
 import tech.sledger.model.dto.CategoryInsight;
 import tech.sledger.model.dto.CategorySuggestion;
@@ -38,6 +39,19 @@ public class AotHints implements RuntimeHintsRegistrar {
             PortfolioPosition.class,
             PortfolioSummary.class
         ).forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
+
+        // Caffeine picks its bounded-cache and node implementations reflectively via a name that
+        // encodes the enabled features. The weighted (txAll) and size-based (authorise) variants
+        // aren't in the default reachability metadata, so register the exact classes our CacheConfig
+        // builders select (discovered by instantiating the same builders on the JVM).
+        // Caffeine instantiates these via a reflectively-read static FACTORY field plus a constructor,
+        // so register full reflection (fields + constructors), not just constructors.
+        List.of(
+            "com.github.benmanes.caffeine.cache.SSMWA", // txAll cache: strong keys/values, max-weight, access-expiry
+            "com.github.benmanes.caffeine.cache.PSAMW", // txAll node
+            "com.github.benmanes.caffeine.cache.SSMSA", // authorise cache: strong keys/values, max-size, access-expiry
+            "com.github.benmanes.caffeine.cache.PSAMS"  // authorise node
+        ).forEach(c -> hints.reflection().registerType(TypeReference.of(c), MemberCategory.values()));
 
         hints.resources().registerPattern("email/*");
     }

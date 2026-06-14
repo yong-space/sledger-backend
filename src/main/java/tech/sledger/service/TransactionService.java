@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,7 +41,9 @@ public class TransactionService {
         return txRepo.findAllById(ids);
     }
 
-    @Cacheable(value="tx", key="#account.id")
+    // Not cached: Cash/Credit single-account views are served by filtering the cached per-user
+    // union (see filterByAccount) so transactions are held once, not duplicated per account. This
+    // direct read remains for account types absent from the union (Retirement/Other).
     public <T extends Transaction> List<T> list(Account account) {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
@@ -54,6 +57,16 @@ public class TransactionService {
         List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
             .stream().map(Account::getId).toList();
         return txRepo.findAllByAccountIdInOrderByDate(accounts);
+    }
+
+    // Derive a single account's view from the cached union (no second cache copy). The union is
+    // date-ordered, so filtering by accountId preserves per-account date order and stored balances.
+    public List<? extends Transaction> filterByAccount(List<? extends Transaction> union, long accountId, Instant from, Instant to) {
+        boolean dateBounded = from != null && to != null;
+        return union.stream()
+            .filter(t -> t.getAccountId() == accountId)
+            .filter(t -> !dateBounded || (!t.getDate().isBefore(from) && !t.getDate().isAfter(to)))
+            .toList();
     }
 
     public List<? extends Transaction> listAll(User user, String remarks) {
@@ -98,7 +111,9 @@ public class TransactionService {
             .collect(Collectors.toMap(
                 t -> t.getDate().atZone(ZoneOffset.UTC).toLocalDate(),
                 Transaction::getDate,
-                (a, b) -> a.isAfter(b) ? a : b
+                // Keep the latest timestamp per day. maxBy keeps the comparison inside the JDK so
+                // there's no in-house branch that depends on the query's result ordering.
+                BinaryOperator.maxBy(Comparator.naturalOrder())
             ));
 
         log.debug("Day max dates in range {}-{}: {}", rangeAfter, rangeBefore, dayMaxDate);
