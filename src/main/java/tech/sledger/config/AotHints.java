@@ -18,6 +18,9 @@ import tech.sledger.model.dto.MonthlyBalance;
 import tech.sledger.model.portfolio.EmailSnapshot;
 import tech.sledger.model.portfolio.PortfolioPosition;
 import tech.sledger.model.portfolio.PortfolioSummary;
+import tech.sledger.model.validation.ComplexPasswordValidator;
+import tech.sledger.model.validation.NoAliasedEmailValidator;
+import tech.sledger.model.validation.SanitiseValidator;
 import java.util.List;
 
 public class AotHints implements RuntimeHintsRegistrar {
@@ -37,7 +40,12 @@ public class AotHints implements RuntimeHintsRegistrar {
             MonthlyBalance.class,
             EmailSnapshot.class,
             PortfolioPosition.class,
-            PortfolioSummary.class
+            PortfolioSummary.class,
+            // Custom ConstraintValidators are instantiated reflectively by
+            // SpringConstraintValidatorFactory on first validation of each constraint
+            ComplexPasswordValidator.class,
+            NoAliasedEmailValidator.class,
+            SanitiseValidator.class
         ).forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
 
         // Caffeine picks its bounded-cache and node implementations reflectively via a name that

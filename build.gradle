@@ -1,14 +1,16 @@
 plugins {
-    id "com.github.ben-manes.versions" version "0.53.0"
-    id "org.springframework.boot" version "4.0.4"
+    id "com.github.ben-manes.versions" version "0.54.0"
+    id "org.springframework.boot" version "4.1.0"
     id "io.spring.dependency-management" version "1.1.7"
-    id "io.freefair.lombok" version "9.2.0"
-    id "org.graalvm.buildtools.native" version "0.11.5"
+    id "io.freefair.lombok" version "9.5.0"
+    id "org.graalvm.buildtools.native" version "1.1.4"
     id "java"
     id "jacoco"
 }
 
 group = "tech.sledger"
+
+ext["junit-jupiter.version"] = "6.1.1"
 
 java {
     toolchain {
@@ -24,6 +26,8 @@ tasks.withType(JavaCompile).configureEach {
 
 configurations { mockitoAgent }
 
+lombok { version = "1.18.46" }
+
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.boot:spring-boot-starter-json"
@@ -34,21 +38,21 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "com.resend:resend-java:4.13.0"
-    implementation "com.password4j:password4j:1.8.2"
-    implementation "com.auth0:java-jwt:4.5.1"
+    implementation "com.password4j:password4j:1.8.4"
+    implementation "com.auth0:java-jwt:4.5.2"
     implementation ("com.opencsv:opencsv:5.12.0") {
         exclude group: "commons-logging", module: "commons-logging"
     }
     implementation "org.apache.poi:poi:5.5.1"
-    implementation "com.github.jknack:handlebars:4.5.0"
+    implementation "com.github.jknack:handlebars:4.5.3"
     developmentOnly "org.springframework.boot:spring-boot-devtools"
-    testImplementation "org.junit.jupiter:junit-jupiter:6.0.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.1.1"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation "org.testcontainers:junit-jupiter:1.21.4"
     testImplementation "org.testcontainers:mongodb:1.21.4"
-    testImplementation 'org.jsoup:jsoup:1.22.1'
+    testImplementation 'org.jsoup:jsoup:1.22.2'
     mockitoAgent 'org.mockito:mockito-core'
 }
 
@@ -111,6 +115,19 @@ bootBuildImage {
             username = System.getenv("DOCKER_USER")
             password = System.getenv("DOCKER_PASS")
         }
+    }
+}
+
+graalvmNative {
+    metadataRepository {
+        // native-build-tools 1.1.4 bug: hibernate-validator's metadata index has a
+        // "requires org.jboss.logging:jboss-logging" clause, and the repository resolves both
+        // directories under hibernate-validator's own coordinates — the copy step then lets
+        // jboss-logging's 2KB metadata clobber hibernate-validator's real metadata, losing the
+        // Log_$logger reflection entry and crashing the native image at startup. Forcing the
+        // metadata version makes the required-module lookup miss (forced lookups don't fall back
+        // to "latest"), so only hibernate-validator's own metadata is copied.
+        moduleToConfigVersion.put("org.hibernate.validator:hibernate-validator", "7.0.4.Final")
     }
 }
 
