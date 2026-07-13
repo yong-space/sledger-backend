@@ -41,9 +41,7 @@ public class TransactionService {
         return txRepo.findAllById(ids);
     }
 
-    // Not cached: Cash/Credit single-account views are served by filtering the cached per-user
-    // union (see filterByAccount) so transactions are held once, not duplicated per account. This
-    // direct read remains for account types absent from the union (Retirement/Other).
+    @Cacheable(value="tx", key="#account.id")
     public <T extends Transaction> List<T> list(Account account) {
         return txRepo.findAllByAccountIdOrderByDate(account.getId());
     }
@@ -52,21 +50,13 @@ public class TransactionService {
         return txRepo.findAllByAccountIdAndDateBetweenOrderByDate(account.getId(), from, to);
     }
 
+    // The all-accounts listing ("account 0") gets its own cache entry, keyed by user id since
+    // account ids and user ids could collide in the tx cache. Evicted on any transaction mutation.
     @Cacheable(value="txAll", key="#user.id")
     public <T extends Transaction> List<T> listAll(User user) {
         List<Long> accounts = accountRepo.findAllByOwnerAndTypeIn(user, List.of(Cash, Credit))
             .stream().map(Account::getId).toList();
         return txRepo.findAllByAccountIdInOrderByDate(accounts);
-    }
-
-    // Derive a single account's view from the cached union (no second cache copy). The union is
-    // date-ordered, so filtering by accountId preserves per-account date order and stored balances.
-    public List<? extends Transaction> filterByAccount(List<? extends Transaction> union, long accountId, Instant from, Instant to) {
-        boolean dateBounded = from != null && to != null;
-        return union.stream()
-            .filter(t -> t.getAccountId() == accountId)
-            .filter(t -> !dateBounded || (!t.getDate().isBefore(from) && !t.getDate().isAfter(to)))
-            .toList();
     }
 
     public List<? extends Transaction> listAll(User user, String remarks) {

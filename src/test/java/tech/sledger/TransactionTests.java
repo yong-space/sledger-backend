@@ -550,8 +550,8 @@ public class TransactionTests extends BaseTest {
     @Order(15)
     @WithUserDetails("basic-user@company.com")
     public void listNonUnionAccountDirectly() throws Exception {
-        // Retirement/Other accounts aren't in the cached per-user union, so the single-account
-        // endpoint serves them via list()/listByDates() directly (the non-Cash/Credit branch).
+        // Retirement/Other accounts follow the same single-account paths as Cash/Credit:
+        // cached list(account) when unbounded, listByDates(account, from, to) when bounded.
         // No dates -> list(account)
         mvc.perform(get("/api/transaction/" + cpfAccountId))
             .andExpect(status().isOk())
@@ -573,10 +573,40 @@ public class TransactionTests extends BaseTest {
     @WithUserDetails("basic-user@company.com")
     public void singleAccountDateRangeExcludesOutOfRange() throws Exception {
         // The cash account has transactions before 2010 (the year-2000 edits) and after (2020s),
-        // but none within — exercising filterByAccount's isBefore(from)=true and isAfter(to)=true
-        // branches. Result is empty, but every transaction is still evaluated against both bounds.
+        // but none within — the bounded read goes to listByDates, whose $gte/$lte bounds must
+        // exclude both sides. Result is empty despite the account having plenty of transactions.
         mvc.perform(get("/api/transaction/" + cashAccountId + "?from=2010-01-01T00:00:00.000Z&to=2010-12-31T00:00:00.000Z"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @Order(17)
+    @WithUserDetails("basic-user@company.com")
+    public void allAccountsListingEvictedOnMutation() throws Exception {
+        // The all-accounts listing ("account 0") is cached as its own entry, so any transaction
+        // mutation must evict it — otherwise the next all-accounts read would serve stale rows.
+        Map<String, Object> tx = Map.of("@type", "cash", "date", date("2021-06-01"),
+            "accountId", cashAccountId, "amount", 5, "remarks", "AllBefore");
+        String response = mvc.perform(request(POST, "/api/transaction", List.of(tx)))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        int id = JsonPath.parse(response).read("$.[0].id");
+        String storedDate = JsonPath.parse(response).read("$.[0].date");
+
+        // Prime the all-accounts cache entry
+        mvc.perform(get("/api/transaction/0"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.remarks == 'AllBefore')]").exists());
+
+        // Same date and amount keeps the edit on the no-balance-impact path, which must also evict
+        Map<String, Object> edit = Map.of("@type", "cash", "date", storedDate,
+            "accountId", cashAccountId, "id", id, "amount", 5, "remarks", "AllAfter");
+        mvc.perform(request(PUT, "/api/transaction", List.of(edit)))
+            .andExpect(status().isOk());
+
+        mvc.perform(get("/api/transaction/0"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.[?(@.remarks == 'AllAfter')]").exists())
+            .andExpect(jsonPath("$.[?(@.remarks == 'AllBefore')]").doesNotExist());
     }
 }
