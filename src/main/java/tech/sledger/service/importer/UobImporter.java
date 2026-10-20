@@ -40,9 +40,13 @@ public class UobImporter implements Importer {
     ) {
         Map<Integer, List<Object>> data = parseExcel(inputStream);
 
-        String accountNumber = data.get(4).get(1).toString();
-        long accountNumberLength = accountNumber.length();
+        int accountRow = findRow(data, "Account Number:");
+        int headerRow = findRow(data, "Transaction Date");
+        if (accountRow < 0 || headerRow < 0 || data.get(accountRow).size() < 2) {
+            throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
+        }
 
+        int accountNumberLength = data.get(accountRow).get(1).toString().length();
         if (
             (account.getType() == Cash && accountNumberLength != 10) ||
             (account.getType() == Credit && accountNumberLength != 16)
@@ -50,8 +54,16 @@ public class UobImporter implements Importer {
             throw new ResponseStatusException(BAD_REQUEST, "Invalid import file");
         }
 
-        return account.getType() == AccountType.Cash ?
-            processCash(data, account, templates) : processCredit(data, account, templates);
+        return account.getType() == Cash ?
+            processCash(data, account, templates, headerRow) :
+            processCredit(data, account, templates, headerRow);
+    }
+
+    private int findRow(Map<Integer, List<Object>> data, String label) {
+        return data.entrySet().stream()
+            .filter(e -> !e.getValue().isEmpty() && label.equals(e.getValue().getFirst().toString().trim()))
+            .map(Map.Entry::getKey)
+            .findFirst().orElse(-1);
     }
 
     private Map<Integer, List<Object>> parseExcel(InputStream inputStream) {
@@ -74,11 +86,14 @@ public class UobImporter implements Importer {
         return data;
     }
 
-    private List<Transaction> processCash(Map<Integer, List<Object>> data, Account account, List<Template> templates) {
+    private List<Transaction> processCash(Map<Integer, List<Object>> data, Account account, List<Template> templates, int headerRow) {
         List<Transaction> output = new ArrayList<>();
 
-        for (int i = 8; i < data.size(); i++) {
+        for (int i = headerRow + 1; i < data.size(); i++) {
             List<Object> dataRow = data.get(i);
+            if (dataRow == null || dataRow.isEmpty()) {
+                continue;
+            }
             String dateContents = dataRow.getFirst().toString();
             if (!hasText(dateContents)) {
                 continue;
@@ -103,12 +118,16 @@ public class UobImporter implements Importer {
     }
 
     private List<Transaction> processCredit(
-        Map<Integer, List<Object>> data, Account account, List<Template> templates
+        Map<Integer, List<Object>> data, Account account, List<Template> templates, int headerRow
     ) {
         List<Transaction> output = new ArrayList<>();
 
-        for (int i = 11; i < data.size(); i++) {
+        for (int i = headerRow + 1; i < data.size(); i++) {
             List<Object> dataRow = data.get(i);
+            // skips the "Previous Balance" row, which has no dates
+            if (dataRow == null || dataRow.size() < 7 || !hasText(dataRow.getFirst().toString())) {
+                continue;
+            }
             LocalDate localDate = LocalDate.parse(dataRow.getFirst().toString(), dateFormat);
             Instant date = localDate.atStartOfDay(ZoneOffset.UTC).toInstant();
             String remarks = dataRow.get(2).toString().trim();
