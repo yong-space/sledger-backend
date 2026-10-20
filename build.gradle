@@ -103,6 +103,7 @@ bootBuildImage {
     imageName = System.getenv("IMAGE_NAME") ?: "sledger-backend"
     publish = System.getenv("DOCKER_PASS") != null
     createdDate = "now"
+    network = "host"
     environment = [
         "BP_JVM_VERSION": "25",
         // --enable-monitoring=heapdump bakes heap-dump capability into the native image so a dump can be
